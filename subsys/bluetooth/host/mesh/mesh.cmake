@@ -1,5 +1,5 @@
  
-target_sources(mesh PRIVATE
+target_sources(bluetooth PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/main.c >
     ${CMAKE_CURRENT_LIST_DIR}/madv.c >
     ${CMAKE_CURRENT_LIST_DIR}/mbeacon.c >
@@ -20,7 +20,5 @@ target_sources(mesh PRIVATE
     $<$<AND:$<BOOL:${CONFIG_BT_MESH}>,$<BOOL:${CONFIG_BT_MESH_SHELL}>>:      ${CMAKE_CURRENT_LIST_DIR}/shell.c >
 )
 
-target_link_libraries(mesh subsys__bluetooth)
-
-set_target_properties(mesh PROPERTIES TRUE)
+set_target_properties(bluetooth PROPERTIES TRUE)
 

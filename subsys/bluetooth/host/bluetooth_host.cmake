@@ -1,6 +1,6 @@
 
 # Using CMake standard way here actually allows for better handling of what populates private, public, interface properties
-target_sources(bluetooth_host PRIVATE
+target_sources(bluetooth PRIVATE
     $<$<BOOL:${CONFIG_BT_INTERNAL_STORAGE}>: ${CMAKE_CURRENT_LIST_DIR}/storage.c >
     $<$<BOOL:${CONFIG_BT_HCI_RAW}>:          ${CMAKE_CURRENT_LIST_DIR}/hci_raw.c >
     $<$<BOOL:${CONFIG_BT_DEBUG_MONITOR}>:    ${CMAKE_CURRENT_LIST_DIR}/monitor.c >
@@ -28,8 +28,8 @@ target_sources(bluetooth_host PRIVATE
     $<$<AND:$<BOOL:${CONFIG_BT_HCI_HOST}>,$<BOOL:${CONFIG_BT_CONN}>,$<NOT:$<BOOL:${CONFIG_BT_SMP}>>>: ${CMAKE_CURRENT_LIST_DIR}/smp_null.c >
 )
 
-target_link_libraries(bluetooth_host
-                      subsys__bluetooth
+# If internal storage is enabled, we link the subsys fs lib
+target_link_libraries(bluetooth PUBLIC
                       "$<$<BOOL:${CONFIG_BT_INTERNAL_STORAGE}>:subsys__fs>"
 )
 
