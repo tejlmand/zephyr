@@ -1,36 +1,51 @@
 
-# Using CMake standard way here actually allows for better handling of what populates private, public, interface properties
-target_sources(bluetooth PRIVATE
-    $<$<BOOL:${CONFIG_BT_INTERNAL_STORAGE}>: ${CMAKE_CURRENT_LIST_DIR}/storage.c >
-    $<$<BOOL:${CONFIG_BT_HCI_RAW}>:          ${CMAKE_CURRENT_LIST_DIR}/hci_raw.c >
-    $<$<BOOL:${CONFIG_BT_DEBUG_MONITOR}>:    ${CMAKE_CURRENT_LIST_DIR}/monitor.c >
-    $<$<BOOL:${CONFIG_BT_TINYCRYPT_ECC}>:    ${CMAKE_CURRENT_LIST_DIR}/hci_ecc.c >
-    $<$<BOOL:${CONFIG_BT_A2DP}>:             ${CMAKE_CURRENT_LIST_DIR}/a2dp.c >
-    $<$<BOOL:${CONFIG_BT_AVDTP}>:            ${CMAKE_CURRENT_LIST_DIR}/avdtp.c >
-    $<$<BOOL:${CONFIG_BT_RFCOMM}>:           ${CMAKE_CURRENT_LIST_DIR}/rfcomm.c >
-    $<$<BOOL:${CONFIG_BT_TESTING}>:          ${CMAKE_CURRENT_LIST_DIR}/testing.c >
-    $<$<BOOL:${CONFIG_BT_BREDR}>:            ${CMAKE_CURRENT_LIST_DIR}/keys_br.c >
-    $<$<BOOL:${CONFIG_BT_BREDR}>:            ${CMAKE_CURRENT_LIST_DIR}/l2cap_br.c >
-    $<$<BOOL:${CONFIG_BT_BREDR}>:            ${CMAKE_CURRENT_LIST_DIR}/sdp.c >
-    $<$<BOOL:${CONFIG_BT_HFP_HF}>:           ${CMAKE_CURRENT_LIST_DIR}/hfp_hf.c >
-    $<$<BOOL:${CONFIG_BT_HFP_HF}>:           ${CMAKE_CURRENT_LIST_DIR}/at.c >
-    $<$<BOOL:${CONFIG_BT_HCI_HOST}>:         ${CMAKE_CURRENT_LIST_DIR}/uuid.c >
-    $<$<BOOL:${CONFIG_BT_HCI_HOST}>:         ${CMAKE_CURRENT_LIST_DIR}/hci_core.c >
-
-    $<$<AND:$<BOOL:${CONFIG_BT_HCI_HOST}>,$<BOOL:${CONFIG_BT_HOST_CRYPTO}>>: ${CMAKE_CURRENT_LIST_DIR}/crypto.c >
-    $<$<AND:$<BOOL:${CONFIG_BT_HCI_HOST}>,$<BOOL:${CONFIG_BT_CONN}>>: ${CMAKE_CURRENT_LIST_DIR}/conn.c >
-    $<$<AND:$<BOOL:${CONFIG_BT_HCI_HOST}>,$<BOOL:${CONFIG_BT_CONN}>>: ${CMAKE_CURRENT_LIST_DIR}/l2cap.c >
-    $<$<AND:$<BOOL:${CONFIG_BT_HCI_HOST}>,$<BOOL:${CONFIG_BT_CONN}>>: ${CMAKE_CURRENT_LIST_DIR}/att.c >
-    $<$<AND:$<BOOL:${CONFIG_BT_HCI_HOST}>,$<BOOL:${CONFIG_BT_CONN}>>: ${CMAKE_CURRENT_LIST_DIR}/gatt.c >
-
-    $<$<AND:$<BOOL:${CONFIG_BT_HCI_HOST}>,$<BOOL:${CONFIG_BT_CONN}>,$<BOOL:${CONFIG_BT_SMP}>>: ${CMAKE_CURRENT_LIST_DIR}/smp.c >
-    $<$<AND:$<BOOL:${CONFIG_BT_HCI_HOST}>,$<BOOL:${CONFIG_BT_CONN}>,$<BOOL:${CONFIG_BT_SMP}>>: ${CMAKE_CURRENT_LIST_DIR}/keys.c >
-    $<$<AND:$<BOOL:${CONFIG_BT_HCI_HOST}>,$<BOOL:${CONFIG_BT_CONN}>,$<NOT:$<BOOL:${CONFIG_BT_SMP}>>>: ${CMAKE_CURRENT_LIST_DIR}/smp_null.c >
+# Just use the default, where PREPEND_PATH is set to ${CMAKE_CURRENT_SOURCE_DIR} and output variable is PRIVATE_SOURCES
+zephyr_populate_source_list(
+  IFDEF:${CONFIG_BT_INTERNAL_STORAGE} storage.c # If the variable is true, then append sources
+  IFDEF:${CONFIG_BT_HCI_RAW}          hci_raw.c
+  IFDEF:${CONFIG_BT_DEBUG_MONITOR}    monitor.c
+  IFDEF:${CONFIG_BT_TINYCRYPT_ECC}    hci_ecc.c
+  IFDEF:${CONFIG_BT_A2DP}             a2dp.c
+  IFDEF:${CONFIG_BT_AVDTP}            avdtp.c
+  IFDEF:${CONFIG_BT_RFCOMM}           rfcomm.c
+  IFDEF:${CONFIG_BT_TESTING}          testing.c
+  IFDEF:${CONFIG_BT_BREDR}            keys_br.c
+                                      l2cap_br.c 
+                                      sdp.c
+  IFDEF:${CONFIG_BT_HFP_HF}           hfp_hf.c
+                                      at.c
 )
+
+if(CONFIG_BT_HCI_HOST)
+  zephyr_populate_source_list(
+    APPEND                                  # APPEND to the PRIVATE_SOURCES as we already did one call to populate_sources.
+    uuid.c
+    hci_core.c
+    IFDEF:${CONFIG_BT_HOST_CRYPTO} crypto.c
+    IFDEF:${CONFIG_BT_CONN}        conn.c
+                                   l2cap.c
+                                   att.c
+                                   gatt.c
+  )  
+
+  if(CONFIG_BT_CONN)
+    # Show some more optional arguments to the macro.
+    zephyr_populate_source_list(
+      PREPEND_PATH ${CMAKE_CURRENT_LIST_DIR}  # Specify a specific PREPEND_PATH to use for all sources provided as arguments.
+      OUTPUT       SMP_SOURCES                # Specifying specific output variable, just to give an example
+      IFDEF:${CONFIG_BT_SMP} smp.c
+                             keys.c
+      IFNDEF:${CONFIG_BT_SMP} smp_null.c
+    )  
+  endif()
+endif()
+
+# Call the standard CMake function.
+target_sources(bluetooth PRIVATE ${PRIVATE_SOURCES} ${SMP_SOURCES})
 
 # If internal storage is enabled, we link the subsys fs lib
 target_link_libraries(bluetooth PUBLIC
-                      "$<$<BOOL:${CONFIG_BT_INTERNAL_STORAGE}>:subsys__fs>"
+                      "$<$<BOOL:${CONFIG_BT_INTERNAL_STORAGE}>:subsys__fs>" # Please disregard this for know, but focus on the source changes. Then this can change later.
 )
 
 if(CONFIG_BT_MESH)

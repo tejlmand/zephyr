@@ -418,6 +418,81 @@ macro(zephyr_library_named name)
   target_link_libraries(${name} zephyr_interface)
 endmacro()
 
+# Macro for populate a given source list variable with the list of sources based on KConfig settings.
+#
+# Macro takes the following arguments:
+# param[in] APPEND              Option flag with no value. Indicates that sources should be appended
+#                               to an existing list, Default is to clear the list.
+# param[in] PREPEND_PATH <path> Prepend <path> to each source file before adding to the list.
+#                               Default is to prepend the source file with ${CMAKE_CURRENT_LIST_DIR}
+#                               Note, <path> should given as ${MY_PATH}
+# param[out] OUTPUT <list>      Place the parsed sources in <list>.
+#                               Note, <list> should given as MY_LIST not ${MY_LIST}
+#                               Default is to place the sources in the variable ${PRIVATE_SOURCES}
+#
+# param[in]  <file1.c> ... <fileN.c>                       Set the files <file1.c> ... <fileN.c> in the list
+# param[in]  IFDEF:${KCONFIG_VAR} <file1.c> ... <fileN.c>  Set the files <file1.c> ... <fileN.c> in the list if ${KCONFIG_VAR} is defined and <y|True|1>
+# param[in]  IFNDEF:${KCONFIG_VAR} <file1.c> ... <fileN.c> Set the files <file1.c> ... <fileN.c> in the list if ${KCONFIG_VAR} is not defined or different from <y|True|1>
+#
+# Note, source to always add must come first in list before using the keywords IFDEF or IFNDEF.
+# Note, the arguments APPEND, PREPEND_PATH, OUTPUT must be specified before any file name is given.
+#
+# Example uses:
+# Populating the default list: ${PRIVATE_SOURCES}
+# zephyr_populate_source_list(always_add.c
+#                             IFDEF:${ADD_IF_TRUE} file1.c file2.c
+#                             IFNDEF:${ADD_IF_NOT_DEF_OR_FALSE} file3.c )
+#
+# Appending to existing custom list ${MY_LIST} and prepend each source with ${CUSTOM_PATH}
+# zephyr_populate_source_list(APPEND
+#                             PREPEND_PATH ${CUSTOM_PATH}
+#                             OUTPUT MY_LIST
+#                             always_add.c
+#                             IFDEF:${ADD_IF_TRUE} file1.c file2.c )
+macro(zephyr_populate_source_list)
+  set(options      APPEND )
+  set(single_args  OUTPUT PREPEND_PATH)
+  cmake_parse_arguments(ZEPHYR_POPULATE_SOURCE_LIST "${options}" "${single_args}" "" ${ARGN} )
+
+  # Default if caller does not provide his own setting using arguments.
+  set(LOCAL_PREPEND_PATH ${CMAKE_CURRENT_LIST_DIR} )
+  set(LOCAL_SOURCE_LIST PRIVATE_SOURCES)
+
+  # Caller has specified output variable to use.
+  if(ZEPHYR_POPULATE_SOURCE_LIST_OUTPUT)
+    set(LOCAL_SOURCE_LIST ${ZEPHYR_POPULATE_SOURCE_LIST_OUTPUT})
+  endif()
+
+  # Caller has specified prepend path to use instead of default.
+  if(${ZEPHYR_POPULATE_SOURCE_LIST_PREPEND_PATH})
+    set(LOCAL_PREPEND_PATH ${ZEPHYR_POPULATE_SOURCE_LIST_PREPEND_PATH} )
+  endif()
+
+  # Clear the list before use, as caller did not specify APPEND
+  if(NOT ${ZEPHYR_POPULATE_SOURCE_LIST_APPEND})
+    set(${LOCAL_SOURCE_LIST})
+  endif()
+
+
+  set(PARSE_ARGUMENT_SOURCE_FILES  True) # Add all sources until keyword is found.
+  foreach(arg ${ZEPHYR_POPULATE_SOURCE_LIST_UNPARSED_ARGUMENTS}) # Parse additional arguments, currently supported: IFDEF, IFNDEF
+    if("${arg}" MATCHES "^IFDEF:(y|True|1)$")
+      # The IFDEF is y,True,1 and thus the following arguments are sources until next keyword.
+      set(PARSE_ARGUMENT_SOURCE_FILES  True)
+    elseif("${arg}" MATCHES "^IFDEF:.*$")
+      # The IFDEF was either not given a y,True,1 value but is empty or something else, hense, skip sources unitil next keyword.
+      set(PARSE_ARGUMENT_SOURCE_FILES  False)
+    elseif("${arg}" MATCHES "^IFNDEF:(y|True|1)$")
+      # The IFNDEF is y,True,1 and thus the following arguments are sources until next keyword, but IFNDEF means we shuld skip the files.
+      set(PARSE_ARGUMENT_SOURCE_FILES  False)
+    elseif("${arg}" MATCHES "^IFNDEF:.*$")
+      # The IFNDEF was either not given a y,True,1 value but is empty or something else, so add sources until next keyword.
+      set(PARSE_ARGUMENT_SOURCE_FILES  True)
+    elseif(PARSE_ARGUMENT_SOURCE_FILES)
+      list(APPEND ${LOCAL_SOURCE_LIST} ${LOCAL_PREPEND_PATH}/${arg})
+    endif()
+  endforeach()
+endmacro(zephyr_populate_source_list)
 
 function(zephyr_link_interface interface)
   target_link_libraries(${interface} INTERFACE zephyr_interface)

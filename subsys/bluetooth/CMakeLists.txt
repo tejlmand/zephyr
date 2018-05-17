@@ -1,6 +1,3 @@
-add_library(subsys__bluetooth INTERFACE)
-
-
 # We are just defining avaiable libaries created in the Bluetooth subsystem in order to provide
 # easy understanding og what is available Mesh is part of host in this example.
 
