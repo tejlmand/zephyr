@@ -375,7 +375,7 @@ DEVICE_DECLARE(gpio_nrf5_P1);
  *
  * @return N/A
  */
-static void gpio_nrf5_port_isr(void *arg)
+void gpio_nrf5_port_isr(void *arg)
 {
 	volatile struct _gpiote *gpiote = (void *)NRF_GPIOTE_BASE;
 	struct gpio_nrf5_data *data;

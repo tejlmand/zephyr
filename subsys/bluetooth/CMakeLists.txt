@@ -3,7 +3,7 @@
 
 add_library(bluetooth STATIC "")
 target_include_directories(bluetooth PUBLIC ${CMAKE_CURRENT_LIST_DIR})
-zephyr_append_cmake_library(bluetooth) # This is currently still needed in order to ensure the lib is linked inside --start-group and --end-group. Normally this would not be needed in a regular CMake setup, but haven't explorer complete zephyr build system to find out the reason for linking this way.
+zephyr_append_cmake_library(bluetooth) # Needed to ensure the lib is linked inside --whole-archive.
 
 include(${CMAKE_CURRENT_LIST_DIR}/common/bluetooth_common.cmake)
 
@@ -17,4 +17,4 @@ endif()
 
 add_subdirectory_ifdef(CONFIG_BT_SHELL shell)
 
-target_link_libraries(bluetooth PUBLIC zephyr_interface)
+target_link_libraries(bluetooth PUBLIC zephyr kernel net )

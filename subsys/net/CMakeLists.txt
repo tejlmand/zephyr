@@ -1,13 +1,12 @@
-zephyr_library()
-zephyr_library_sources_ifdef(CONFIG_NET_BUF             buf.c)
-zephyr_library_sources_ifdef(CONFIG_NET_HOSTNAME_ENABLE hostname.c)
+add_library(net STATIC "")
+zephyr_append_cmake_library(net) # Needed to ensure the lib is linked inside --whole-archive.
 
-if(CONFIG_NETWORKING)
-  if(CONFIG_NET_RAW_MODE)
-    zephyr_library_sources(ip/net_pkt.c)
-  else()
-    add_subdirectory(ip)
-  endif()
+include(${CMAKE_CURRENT_LIST_DIR}/net.cmake)
+
+if(CONFIG_NETWORKING AND (NOT CONFIG_NET_RAW_MODE))
+  include(${CMAKE_CURRENT_LIST_DIR}/ip/net_ip.cmake)
 endif()
 
 add_subdirectory(lib)
+
+target_link_libraries(net zephyr kernel)

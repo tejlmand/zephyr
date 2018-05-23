@@ -106,7 +106,7 @@ static const int _INIT_LEVEL_APPLICATION = 1;
 		.name = drv_name, .init = (init_fn),			  \
 		.config_info = (cfg_info)				  \
 	};								  \
-	static struct device _CONCAT(__device_, dev_name) __used	  \
+	struct device _CONCAT(__device_, dev_name) __used	  \
 	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
 		.config = &_CONCAT(__config_, dev_name),		  \
 		.driver_api = api,					  \
@@ -203,7 +203,7 @@ static const int _INIT_LEVEL_APPLICATION = 1;
  *
  * @param name Device name
  */
-#define DEVICE_DECLARE(name) static struct device DEVICE_NAME_GET(name)
+#define DEVICE_DECLARE(name) struct device DEVICE_NAME_GET(name)
 
 struct device;
 

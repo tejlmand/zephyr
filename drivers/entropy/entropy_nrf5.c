@@ -210,7 +210,7 @@ static int isr(struct rand *rng, bool store)
 	return -EBUSY;
 }
 
-static void isr_rand(void *arg)
+void isr_rand(void *arg)
 {
 	struct device *device = arg;
 

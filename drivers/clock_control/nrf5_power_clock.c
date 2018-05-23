@@ -249,7 +249,7 @@ static inline void power_event_cb(nrf_power_event_t event)
 }
 #endif
 
-static void _power_clock_isr(void *arg)
+void _power_clock_isr(void *arg)
 {
 	u8_t pof, hf_intenset, hf_stat, hf, lf, done, ctto;
 #if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)

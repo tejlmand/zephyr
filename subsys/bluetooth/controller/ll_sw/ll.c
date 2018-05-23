@@ -86,7 +86,7 @@ ISR_DIRECT_DECLARE(radio_nrf5_isr)
 	return 1;
 }
 
-static void rtc0_nrf5_isr(void *arg)
+void rtc0_nrf5_isr(void *arg)
 {
 	u32_t compare0, compare1;
 
@@ -111,7 +111,7 @@ static void rtc0_nrf5_isr(void *arg)
 	mayfly_run(MAYFLY_CALL_ID_0);
 }
 
-static void swi4_nrf5_isr(void *arg)
+void swi4_nrf5_isr(void *arg)
 {
 	mayfly_run(MAYFLY_CALL_ID_1);
 }

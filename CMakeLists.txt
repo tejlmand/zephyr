@@ -36,6 +36,8 @@ add_library(zephyr_interface INTERFACE)
 # built purely with the include paths, defines, and other compiler
 # flags that come with zephyr_interface.
 zephyr_library_named(zephyr)
+target_link_libraries(zephyr kernel offsets app) # For some strange reason, someone has decided that the standard C components should go into libapp.a in lib/libc/CMakeLists.txt
+
 
 zephyr_include_directories(
   kernel/include
@@ -388,7 +390,7 @@ set(OFFSETS_O_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/offsets.dir/arch/${ARC
 set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
 
 add_library(          offsets STATIC ${OFFSETS_C_PATH})
-target_link_libraries(offsets zephyr_interface)
+target_link_libraries(offsets zephyr_interface -u_OffsetAbsSyms -u_ConfigAbsSyms )
 add_dependencies(     offsets
   syscall_list_h_target
   syscall_macros_h_target
@@ -623,15 +625,16 @@ get_property(E_KERNEL_ENTRY GLOBAL PROPERTY E_KERNEL_ENTRY)
 
 set(zephyr_lnk
   ${LINKERFLAGPREFIX},-Map=${PROJECT_BINARY_DIR}/${KERNEL_MAP_NAME}
-  -u_OffsetAbsSyms
-  -u_ConfigAbsSyms
-  ${E_KERNEL_ENTRY}
+#  -u_OffsetAbsSyms  # Setting this value on the offsets lib allows propagation for users of the module, who doesn't know about it.
+#  -u_ConfigAbsSyms  # Setting this value on the offsets lib allows propagation for users of the module, who doesn't know about it.
+#  ${E_KERNEL_ENTRY} # Setting this value on the kernel lib allows propagation for users of the module, who doesn't know about it.
+  # The start group, end group and whole archive can be removed with the new proposal.
   ${LINKERFLAGPREFIX},--start-group
   ${LINKERFLAGPREFIX},--whole-archive
   ${ZEPHYR_LIBS_PROPERTY}
   ${LINKERFLAGPREFIX},--no-whole-archive
-  kernel
-  ${OFFSETS_O_PATH}
+#  kernel            # Now a link dependency to other targets so default CMake handling is ensured
+#  ${OFFSETS_O_PATH} # Now a link dependency to other targets so default CMake handling is ensured
   ${LINKERFLAGPREFIX},--end-group
   ${LIB_INCLUDE_DIR}
   -L${PROJECT_BINARY_DIR}

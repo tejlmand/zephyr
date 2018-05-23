@@ -1,4 +1,3 @@
-target_include_directories(net PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 zephyr_populate_source_list(
   net_context.c
   net_core.c
@@ -22,10 +21,11 @@ zephyr_populate_source_list(
   IFDEF:${CONFIG_NET_UDP}          connection.c udp.c
 )
 
-set_source_file_propoerties(${PRIVATE_SOURCES} PROPERTIES COMPILE_DEFINITIONS $<$<BOOL:${CONFIG_NEWLIB_LIBC}>:__LINUX_ERRNO_EXTENSIONS__>)
+set_source_file_properties(${PRIVATE_SOURCES} PROPERTIES COMPILE_DEFINITIONS $<$<BOOL:${CONFIG_NEWLIB_LIBC}>:__LINUX_ERRNO_EXTENSIONS__>)
 target_sources(net PRIVATE ${PRIVATE_SOURCES})
+target_include_directories(net PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 
-include(l2/net_ip_l2.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/l2/net_ip_l2.cmake)
 
 if(CONFIG_NET_SHELL)
   zephyr_link_interface_ifdef(CONFIG_MBEDTLS mbedTLS)
