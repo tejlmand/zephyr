@@ -40,8 +40,14 @@ if(CONFIG_BT_HCI_HOST)
   endif()
 endif()
 
+zephyr_populate_source_exe_list(
+  controller_sys_init.c
+)
+
 # Call the standard CMake function.
-target_sources(bluetooth PRIVATE ${PRIVATE_SOURCES} ${SMP_SOURCES})
+target_sources(bluetooth PRIVATE   ${PRIVATE_SOURCES} ${SMP_SOURCES}
+                         INTERFACE ${INTERFACE_EXE_SOURCES}
+)
 
 # If internal storage is enabled, we link the subsys fs lib
 target_link_libraries(bluetooth PUBLIC

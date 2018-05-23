@@ -70,6 +70,14 @@ extern "C" {
 	DEVICE_DEFINE(_SYS_NAME(init_fn), drv_name, init_fn, pm_control_fn, \
 		      NULL, NULL, level, prio, NULL)
 
+#define SYS_INIT_REFERENCE(init_fn)             \
+        extern int init_fn(struct device *arg); \
+        void init_fn ## _reference  (void)      \
+        {                                       \
+          init_fn(NULL);                        \
+        }
+
+
 #ifdef __cplusplus
 }
 #endif

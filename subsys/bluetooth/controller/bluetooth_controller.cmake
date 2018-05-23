@@ -31,8 +31,11 @@ if(CONFIG_BT_LL_SW)
   )
 endif()
 
+zephyr_populate_source_exe_list( hci/hci_sys_init.c )
 
-target_sources(bluetooth PRIVATE ${PRIVATE_SOURCES})
+target_sources(bluetooth PRIVATE   ${PRIVATE_SOURCES}
+                         INTERFACE ${INTERFACE_EXE_SOURCES}
+)
 
 #
 # The lines below can be updated in similar way, if principle is approved.

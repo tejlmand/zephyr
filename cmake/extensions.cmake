@@ -494,6 +494,52 @@ macro(zephyr_populate_source_list)
   endforeach()
 endmacro(zephyr_populate_source_list)
 
+# TODO: If accepted, then merge the to macros into a single for reduced maointainability
+macro(zephyr_populate_source_exe_list)
+  set(options      APPEND )
+  set(single_args  OUTPUT PREPEND_PATH)
+  cmake_parse_arguments(ZEPHYR_POPULATE_SOURCE_EXE_LIST "${options}" "${single_args}" "" ${ARGN} )
+
+  # Default if caller does not provide his own setting using arguments.
+  set(LOCAL_PREPEND_PATH ${CMAKE_CURRENT_LIST_DIR} )
+  set(LOCAL_SOURCE_LIST INTERFACE_EXE_SOURCES)
+
+  # Caller has specified output variable to use.
+  if(ZEPHYR_POPULATE_SOURCE_EXE_LIST_OUTPUT)
+    set(LOCAL_SOURCE_LIST ${ZEPHYR_POPULATE_SOURCE_EXE_LIST_OUTPUT})
+  endif()
+
+  # Caller has specified prepend path to use instead of default.
+  if(${ZEPHYR_POPULATE_SOURCE_EXE_LIST_PREPEND_PATH})
+    set(LOCAL_PREPEND_PATH ${ZEPHYR_POPULATE_SOURCE_EXE_LIST_PREPEND_PATH} )
+  endif()
+
+  # Clear the list before use, as caller did not specify APPEND
+  if(NOT ${ZEPHYR_POPULATE_SOURCE_EXE_LIST_APPEND})
+    set(${LOCAL_SOURCE_LIST})
+  endif()
+
+
+  set(PARSE_ARGUMENT_SOURCE_FILES  True) # Add all sources until keyword is found.
+  foreach(arg ${ZEPHYR_POPULATE_SOURCE_EXE_LIST_UNPARSED_ARGUMENTS}) # Parse additional arguments, currently supported: IFDEF, IFNDEF
+    if("${arg}" MATCHES "^IFDEF:(y|True|1)$")
+      # The IFDEF is y,True,1 and thus the following arguments are sources until next keyword.
+      set(PARSE_ARGUMENT_SOURCE_FILES  True)
+    elseif("${arg}" MATCHES "^IFDEF:.*$")
+      # The IFDEF was either not given a y,True,1 value but is empty or something else, hense, skip sources unitil next keyword.
+      set(PARSE_ARGUMENT_SOURCE_FILES  False)
+    elseif("${arg}" MATCHES "^IFNDEF:(y|True|1)$")
+      # The IFNDEF is y,True,1 and thus the following arguments are sources until next keyword, but IFNDEF means we shuld skip the files.
+      set(PARSE_ARGUMENT_SOURCE_FILES  False)
+    elseif("${arg}" MATCHES "^IFNDEF:.*$")
+      # The IFNDEF was either not given a y,True,1 value but is empty or something else, so add sources until next keyword.
+      set(PARSE_ARGUMENT_SOURCE_FILES  True)
+    elseif(PARSE_ARGUMENT_SOURCE_FILES)
+      list(APPEND ${LOCAL_SOURCE_LIST} "$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:${LOCAL_PREPEND_PATH}/${arg}>")
+    endif()
+  endforeach()
+endmacro(zephyr_populate_source_exe_list)
+
 function(zephyr_link_interface interface)
   target_link_libraries(${interface} INTERFACE zephyr_interface)
 endfunction()
