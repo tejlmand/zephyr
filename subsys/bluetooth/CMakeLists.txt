@@ -3,7 +3,6 @@
 
 add_library(bluetooth STATIC "")
 target_include_directories(bluetooth PUBLIC ${CMAKE_CURRENT_LIST_DIR})
-zephyr_append_cmake_library(bluetooth) # Needed to ensure the lib is linked inside --whole-archive.
 
 include(${CMAKE_CURRENT_LIST_DIR}/common/bluetooth_common.cmake)
 

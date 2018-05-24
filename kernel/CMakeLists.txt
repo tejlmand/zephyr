@@ -47,5 +47,5 @@ get_property(E_KERNEL_ENTRY GLOBAL PROPERTY E_KERNEL_ENTRY)
 
 add_dependencies(kernel offsets_h)
 
-target_link_libraries(kernel zephyr_interface)
-target_link_libraries(kernel ${E_KERNEL_ENTRY})
+target_link_libraries(kernel PUBLIC zephyr_interface)
+target_link_libraries(kernel INTERFACE ${E_KERNEL_ENTRY} ${TOOLCHAIN_LIBS})

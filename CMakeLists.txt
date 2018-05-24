@@ -638,8 +638,8 @@ set(zephyr_lnk
   ${LINKERFLAGPREFIX},--end-group
   ${LIB_INCLUDE_DIR}
   -L${PROJECT_BINARY_DIR}
-  ${TOOLCHAIN_LIBS}
-  )
+#  ${TOOLCHAIN_LIBS} # Now a link dependency on kernel target so default CMake handling is ensured
+)
 
 if(CONFIG_GEN_ISR_TABLES)
   if(CONFIG_GEN_SW_ISR_TABLE)

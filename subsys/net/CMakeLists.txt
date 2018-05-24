@@ -1,5 +1,4 @@
 add_library(net STATIC "")
-zephyr_append_cmake_library(net) # Needed to ensure the lib is linked inside --whole-archive.
 
 include(${CMAKE_CURRENT_LIST_DIR}/net.cmake)
 

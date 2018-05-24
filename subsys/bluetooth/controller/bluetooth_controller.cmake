@@ -31,8 +31,7 @@ if(CONFIG_BT_LL_SW)
   )
 endif()
 
-
-target_sources(bluetooth PRIVATE ${PRIVATE_SOURCES})
+target_sources(bluetooth PRIVATE   ${PRIVATE_SOURCES})
 
 #
 # The lines below can be updated in similar way, if principle is approved.
@@ -49,4 +48,7 @@ target_compile_definitions(bluetooth PRIVATE
   $<$<BOOL:${CONFIG_BT_CTLR_FAST_ENC}>: -Ofast >
 )
 
-
+# We must tell the linker not to remove the _hci_driver_init function during linking.
+# Notice: This is done in the same file where we have the knowledge that hci_driver.c is added to
+#         the library target.
+target_link_libraries(bluetooth INTERFACE -u_hci_driver_init)
