@@ -1,0 +1,15 @@
+if(CONFIG_HTTP_PARSER_STRICT)
+  SET_SOURCE_FILES_PROPERTIES(${PRIVATE_SOURCES} PROPERTIES
+                              COMPILE_DEFINITIONS HTTP_PARSER_STRICT)
+endif()
+
+zephyr_list(SOURCES
+  OUTPUT PRIVATE_SOURCES
+  http.c
+  IFDEF:${CONFIG_HTTP_PARSER}     http_parser.c
+  IFDEF:${CONFIG_HTTP_PARSER_URL} http_parser_url.c
+  IFDEF:${CONFIG_HTTP_SERVER}     http_server.c
+  IFDEF:${CONFIG_HTTP_CLIENT}     http_client.c
+)
+
+target_sources(subsys_net PRIVATE ${PRIVATE_SOURCES})

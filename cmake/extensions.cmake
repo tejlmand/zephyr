@@ -481,7 +481,7 @@ function(zephyr_list)
   endif()
 
   if(${ZEPHYR_LIST_SOURCES})
-    set(LOCAL_PREPEND_PATH "${CMAKE_CURRENT_LIST_DIR}/")
+    set(LOCAL_PREPEND_STR "${CMAKE_CURRENT_LIST_DIR}/")
   endif()
 
   # Caller has specified prepend path to use instead of default.
@@ -877,6 +877,12 @@ endfunction()
 # ifdef functions are added on an as-need basis. See
 # https://cmake.org/cmake/help/latest/manual/cmake-commands.7.html for
 # a list of available functions.
+function(include_relative_ifdef feature_toggle file)
+  if(${${feature_toggle}})
+    include(${CMAKE_CURRENT_LIST_DIR}/${file})
+  endif()
+endfunction()
+
 function(add_subdirectory_ifdef feature_toggle dir)
   if(${${feature_toggle}})
     add_subdirectory(${dir})

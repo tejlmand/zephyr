@@ -347,7 +347,7 @@ static inline void syslog_net_init(void)
 }
 
 #if defined(CONFIG_NET_APP_AUTO_INIT)
-static int init_net_app(struct device *device)
+int init_net_app(struct device *device)
 {
 	u32_t flags = 0;
 	int ret;

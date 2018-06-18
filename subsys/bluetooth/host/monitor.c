@@ -241,7 +241,7 @@ extern void __stdout_hook_install(int (*fn)(int));
 #define CONFIG_BT_MONITOR_ON_DEV_NAME CONFIG_UART_CONSOLE_ON_DEV_NAME
 #endif
 
-static int bt_monitor_init(struct device *d)
+int bt_monitor_init(struct device *d)
 {
 	ARG_UNUSED(d);
 

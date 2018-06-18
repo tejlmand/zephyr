@@ -1,15 +1,20 @@
-add_library(subsys__bluetooth INTERFACE)
+# We are just defining available libraries created in the Bluetooth subsystem in order to provide
+# easy understanding of what is available. Mesh is part of host in this example.
 
-target_include_directories(subsys__bluetooth INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(subsys_bluetooth STATIC "")
 
-add_subdirectory(common)
-add_subdirectory_ifdef(CONFIG_BT_HCI host)
-add_subdirectory_ifdef(CONFIG_BT_SHELL shell)
+include(${CMAKE_CURRENT_LIST_DIR}/common/bluetooth_common.cmake)
 
-if(CONFIG_BT_CTLR)
-  if(CONFIG_BT_LL_SW)
-    add_subdirectory(controller)
-  endif()
+if(CONFIG_BT_HCI)
+  include(${CMAKE_CURRENT_LIST_DIR}/host/bluetooth_host.cmake)
 endif()
 
-target_link_libraries(subsys__bluetooth INTERFACE zephyr_interface)
+if(CONFIG_BT_CTLR)
+  include(${CMAKE_CURRENT_LIST_DIR}/controller/bluetooth_controller.cmake)
+endif()
+
+if(CONFIG_BT_SHELL)
+  include(${CMAKE_CURRENT_LIST_DIR}/shell/bluetooth_shell.cmake)
+endif()
+
+target_link_libraries(subsys_bluetooth PUBLIC zephyr subsys_net )
