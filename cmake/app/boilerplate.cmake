@@ -321,3 +321,6 @@ foreach(boilerplate_lib ${ZEPHYR_INTERFACE_LIBS_PROPERTY})
     ${boilerplate_lib}
     )
 endforeach()
+
+target_link_libraries_ifdef(CONFIG_BT      app subsys_bluetooth)
+target_link_libraries_ifdef(CONFIG_NET_BUF app subsys_net)
