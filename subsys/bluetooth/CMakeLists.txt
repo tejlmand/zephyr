@@ -18,3 +18,4 @@ if(CONFIG_BT_SHELL)
 endif()
 
 target_link_libraries(subsys_bluetooth PUBLIC zephyr subsys_net )
+zephyr_set_property(TARGET subsys_bluetooth MEMORY_SPACE kernel)
