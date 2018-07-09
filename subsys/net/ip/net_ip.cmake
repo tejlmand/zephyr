@@ -25,4 +25,3 @@ zephyr_list(SOURCES
 
 target_sources(subsys_net PRIVATE ${PRIVATE_SOURCES})
 target_include_directories(subsys_net PRIVATE ${CMAKE_CURRENT_LIST_DIR})
-target_link_libraries(subsys_net INTERFACE -unet_init)

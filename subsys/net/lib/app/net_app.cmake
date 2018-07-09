@@ -6,4 +6,3 @@ zephyr_list(SOURCES
 
 
 target_sources(subsys_net PRIVATE ${PRIVATE_SOURCES})
-target_link_libraries(subsys_net INTERFACE -uinit_net_app)

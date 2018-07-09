@@ -53,7 +53,3 @@ if(CONFIG_BT_CTLR_FAST_ENC)
   SET_SOURCE_FILES_PROPERTIES( ${PRIVATE_SOURCES} PROPERTIES COMPILE_FLAGS -Ofast)
 endif()
 
-# Request the linker not to remove the _hci_driver_init function.
-# Notice: This is done in the same file where we have the knowledge that
-#         hci_driver.c is added to the library target.
-target_link_libraries(subsys_bluetooth INTERFACE -u_hci_driver_init)
