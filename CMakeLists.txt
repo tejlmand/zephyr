@@ -37,6 +37,7 @@ define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS 
 set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH})
 
 add_custom_target(memory_space_kernel)
+add_custom_target(sysinit)
 
 # zephyr_interface is a source-less library that has all the global
 # compiler options needed by all source files. All zephyr libraries,
@@ -616,6 +617,7 @@ function(construct_add_custom_command_for_linker_pass linker_output_name output_
   set(${output_variable}
     OUTPUT ${linker_cmd_file_name}
     DEPENDS ${LINKER_SCRIPT}
+    sysinit
     ${KERNEL_OBJECTS_H}
     ${LINKER_SCRIPT_DEP}
     COMMAND ${CMAKE_C_COMPILER}
@@ -625,6 +627,7 @@ function(construct_add_custom_command_for_linker_pass linker_output_name output_
     -MD -MF ${linker_cmd_file_name}.dep -MT ${BASE_NAME}/${linker_cmd_file_name}
     ${IMACROS_KERNEL_OBJECTS_H}
     ${ZEPHYR_INCLUDES}
+    $<TARGET_PROPERTY:sysinit,LD_INCLUDE_SOURCES>
     ${LINKER_SCRIPT_DEFINES}
     ${LINKER_PASS_DEFINE}
     -E ${LINKER_SCRIPT}
@@ -632,7 +635,7 @@ function(construct_add_custom_command_for_linker_pass linker_output_name output_
     -o ${linker_cmd_file_name}
     VERBATIM
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-
+    COMMAND_EXPAND_LISTS
     PARENT_SCOPE
     )
 

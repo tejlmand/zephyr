@@ -528,17 +528,60 @@ endfunction(zephyr_list)
 #                                 Currently supported locations are: kernel.
 #                                 Note: Requires CONFIG_APPLICATION_MEMORY to
 #                                       be enabled in KConfig to be active
+# param[in] SYSINIT               Flag specifying this library contains SYSINIT
+#                                 symbols that should be included as undefinedi
+#                                 in output file
 #
 # Example uses:
 # zephyr_set_property(TARGET zephyr MEMORY_SPACE kernel)
 #
 function(zephyr_set_property)
+  set(options      SYSINIT)
   set(single_args  TARGET MEMORY_SPACE)
-  cmake_parse_arguments(ZEPHYR_SET_PROPERTY "" "${single_args}" "" ${ARGN} )
+  cmake_parse_arguments(ZEPHYR_SET_PROPERTY "${options}" "${single_args}" "" ${ARGN} )
+
+  # Ensure target_binary_dir is not empty.
+  set(target_binary_dir ${PROJECT_BINARY_DIR})
 
   # Caller has specified output variable to use.
   if(NOT ZEPHYR_SET_PROPERTY_TARGET)
     message(FATAL_ERROR "TARGET not specified.")
+  endif()
+
+  if(ZEPHYR_SET_PROPERTY_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR "Unknown argument(s): ${ZEPHYR_SET_PROPERTY_UNPARSED_ARGUMENTS}")
+  endif()
+
+  if(ZEPHYR_SET_PROPERTY_SYSINIT)
+    set(LINK_INCLUDE_LD
+        ${PROJECT_BINARY_DIR}/misc/generated/${ZEPHYR_SET_PROPERTY_TARGET}_extern_include.ld)
+
+    add_custom_command(TARGET ${ZEPHYR_SET_PROPERTY_TARGET}
+      POST_BUILD
+      COMMAND ${CMAKE_OBJDUMP} -t
+              $<TARGET_FILE:${ZEPHYR_SET_PROPERTY_TARGET}> >
+              ${LINK_INCLUDE_LD}
+      COMMAND ${PYTHON_EXECUTABLE} -c
+      \"import re \;
+        linepattern = re.compile("r'.*.devconfig.init.*'") \;
+        datapattern = re.compile("r'__config_sys_init_([a-zA-Z0-9_\\-]*)[0-9]$$'") \;
+        lines = [match.group() for match in [linepattern.search(line)
+                 for line in open('${LINK_INCLUDE_LD}')] if match] \;
+        data = [match.group(1) for match in [datapattern.search(line)
+                for line in lines] if match] \;
+        out = ''.join('EXTERN(%s)\\n' % (s) for s in data) \;
+        f=open('${LINK_INCLUDE_LD}','w') \;
+        f.write(out) \;
+        f.close() \"
+      BYPRODUCTS ${LINK_INCLUDE_LD}
+    )
+
+    set_property(TARGET sysinit
+                 APPEND PROPERTY
+                 LD_INCLUDE_SOURCES
+                 -include ${LINK_INCLUDE_LD}
+    )
+    add_dependencies(sysinit ${ZEPHYR_SET_PROPERTY_TARGET})
   endif()
 
   if(ZEPHYR_SET_PROPERTY_MEMORY_SPACE)
