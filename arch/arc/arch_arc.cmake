@@ -10,5 +10,6 @@ zephyr_cc_option(-fno-delete-null-pointer-checks)
 
 zephyr_cc_option_ifdef (CONFIG_LTO         -flto)
 
-add_subdirectory(soc/${SOC_PATH})
-add_subdirectory(core)
+
+include_relative(soc/${SOC_PATH}/arc_${SOC_PATH}.cmake)
+include_relative(core/arc_core.cmake)

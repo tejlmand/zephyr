@@ -9,7 +9,9 @@ zephyr_set_property(TARGET arch_${ARCH}
 
 include_relative(common/arch_common.cmake)
 
-if( ${ARCH} STREQUAL arm )
+if( ( ${ARCH} STREQUAL arm ) OR
+    ( ${ARCH} STREQUAL arc )
+)
   include_relative(${ARCH}/arch_${ARCH}.cmake)
 else()
   # Not updated archs
