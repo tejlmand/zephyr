@@ -32,5 +32,6 @@ else()
 zephyr_cc_option(-mno-hw-div)
 endif()
 
-add_subdirectory(soc/${SOC_PATH})
-add_subdirectory(core)
+
+include_relative(soc/${SOC_PATH}/nios2_${SOC_PATH}.cmake)
+include_relative(core/nios2_core.cmake)
