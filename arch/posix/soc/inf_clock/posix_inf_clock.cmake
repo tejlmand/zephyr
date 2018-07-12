@@ -1,5 +1,1 @@
-zephyr_library()
-zephyr_library_compile_definitions(_POSIX_CHEATS_H)
-zephyr_library_sources(
-	soc.c
-	)
+target_sources(arch_posix PRIVATE ${CMAKE_CURRENT_LIST_DIR}/soc.c)

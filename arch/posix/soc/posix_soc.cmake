@@ -1,6 +1,5 @@
 if(SOC_FAMILY)
-  add_subdirectory(${SOC_FAMILY})
+  include_relative(${SOC_FAMILY}/posix_${SOC_FAMILY}.cmake)
 else()
-  add_subdirectory(${SOC_NAME})
+  include_relative(${SOC_NAME}/posix_${SOC_NAME}.cmake)
 endif()
-

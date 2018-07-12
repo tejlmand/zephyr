@@ -33,6 +33,8 @@ zephyr_ld_options(
   -m32
 )
 
+target_compile_definitions(arch_posix PRIVATE _POSIX_CHEATS_H)
+
 # About the -include directive: The reason to do it this way, is because in this
 # manner it is transparent to the application. Otherwise posix_cheats.h needs to
 # be included in all the applications' files which define main( ), and in any
@@ -41,6 +43,5 @@ zephyr_ld_options(
 # Zephyr which will clash with the native POSIX API] . It would also need to
 # be included in a few zephyr kernel files.
 
-
-add_subdirectory(soc)
-add_subdirectory(core)
+include_relative(soc/posix_soc.cmake)
+include_relative(core/posix_core.cmake)
