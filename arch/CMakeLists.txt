@@ -12,6 +12,7 @@ include_relative(common/arch_common.cmake)
 if( ( ${ARCH} STREQUAL arm ) OR
     ( ${ARCH} STREQUAL arc ) OR
     ( ${ARCH} STREQUAL posix ) OR
+    ( ${ARCH} STREQUAL riscv32 ) OR
     ( ${ARCH} STREQUAL nios2 )
 )
   include_relative(${ARCH}/arch_${ARCH}.cmake)

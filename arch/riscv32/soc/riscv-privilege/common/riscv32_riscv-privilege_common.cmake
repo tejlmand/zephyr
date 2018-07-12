@@ -1,11 +1,11 @@
 zephyr_include_directories(.)
 
-zephyr_sources(
-  idle.c
-  soc_irq.S
-  soc_common_irq.c
-  )
+zephyr_list(SOURCES
+            OUTPUT PRIVATE_SOURCES
+            idle.c
+            soc_irq.S
+            soc_common_irq.c
+            IFNDEF:${CONFIG_SOC_SERIES_RISCV32_QEMU} vector.S
+)
 
-if(NOT(CONFIG_SOC_SERIES_RISCV32_QEMU))
-  zephyr_sources(vector.S)
-endif()
+target_sources(arch_riscv32 PRIVATE ${PRIVATE_SOURCES})

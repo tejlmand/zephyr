@@ -1,6 +1,5 @@
 if(SOC_FAMILY)
-  add_subdirectory(${SOC_FAMILY})
+  include_relative(${SOC_FAMILY}/riscv32_${SOC_FAMILY}.cmake)
 else()
-  add_subdirectory(${SOC_NAME})
+  include_relative(${SOC_NAME}/riscv32_${SOC_NAME}.cmake)
 endif()
-
