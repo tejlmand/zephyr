@@ -17,5 +17,10 @@ zephyr_compile_options(
   ${ARCH_FLAG}
   )
 
-add_subdirectory(soc)
-add_subdirectory(core)
+if(SOC_FAMILY)
+  include_relative(soc/${SOC_FAMILY}/arm_${SOC_FAMILY}.cmake)
+else()
+  include_relative(soc/${SOC_NAME}/arm_${SOC_NAME}.cmake)
+endif()
+
+include_relative(core/arm_core.cmake)

@@ -3,9 +3,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
+zephyr_list(SOURCES
+            OUTPUT PRIVATE_SOURCES
+            soc.c
+            IFDEF:${CONFIG_ARM_MPU_IMX_RT} arm_mpu_regions.c
+)
 
-zephyr_sources(
-  soc.c
-  )
-
-zephyr_sources_ifdef(CONFIG_ARM_MPU_IMX_RT arm_mpu_regions.c)
+target_sources(arch_arm PRIVATE ${PRIVATE_SOURCES})

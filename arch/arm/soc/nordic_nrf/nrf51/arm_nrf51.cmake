@@ -4,6 +4,4 @@ zephyr_compile_definitions_ifdef(
   NRF51822
   )
 
-zephyr_sources(
-  soc.c
-  )
+target_sources(arch_arm PRIVATE ${CMAKE_CURRENT_LIST_DIR}/soc.c)
