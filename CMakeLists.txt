@@ -563,16 +563,14 @@ if(CONFIG_APPLICATION_MEMORY)
   set(KERNEL_OBJECTS_H ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/kernel_objects.h)
   set(IMACROS_KERNEL_OBJECTS_H -imacros ${KERNEL_OBJECTS_H})
 
-  add_custom_command(OUTPUT ${KERNEL_OBJECTS_H}
-    COMMAND ${PYTHON_EXECUTABLE} -c
-       \"list='$<TARGET_PROPERTY:memory_space_kernel,COMPILE_DEFINITIONS>'.split('\;') \;
-         s=('\#define NUM_KERNEL_OBJECT_FILES %s\\n' % len(list)) \;
-         s+=''.join('\#define KERNEL_OBJECT_FILE_%s %s\\n' % (i,item) for i, item in enumerate(list)) \;
-         f=open('${KERNEL_OBJECTS_H}','w') \;
-         f.write(s) \;
-         f.close() \"
-         COMMENT "Populating ${KERNEL_OBJECTS_H} with kernel space symbols"
-)
+  add_custom_command(
+    OUTPUT ${KERNEL_OBJECTS_H}
+    COMMAND ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/gen_kernel_objects.py
+    --object-files-as-csv $<JOIN:$<TARGET_PROPERTY:memory_space_kernel,COMPILE_DEFINITIONS>,,>
+    --output-file ${KERNEL_OBJECTS_H}
+    COMMENT "Populating ${KERNEL_OBJECTS_H} with kernel space symbols"
+    )
 endif(CONFIG_APPLICATION_MEMORY)
 
 # Declare MPU userspace dependencies before the linker scripts to make
