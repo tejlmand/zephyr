@@ -22,6 +22,7 @@ manifest:
   projects:
     - name: mcuboot
       remote: upstream-mcuboot
+      revision: 90abedc7528e020d4eef49c85917b85293557b75
 
   self:
     path: zephyr
