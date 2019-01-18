@@ -1,11 +1,8 @@
 # The default West manifest file to be used for Zephyr.
 
 west:
-  url: file:////projects/github/tejlmand/west
-  revision: feauture_west_update_rework
-
-#  url: https://github.com/zephyrproject-rtos/west
-#  revision: master
+  url: https://github.com/tejlmand/west
+  revision: feature_west_update_rework
 
 manifest:
   defaults:
@@ -22,7 +19,7 @@ manifest:
   projects:
     - name: mcuboot
       remote: upstream-mcuboot
-      revision: 90abedc7528e020d4eef49c85917b85293557b75
+      revision: master
 
   self:
     path: zephyr
