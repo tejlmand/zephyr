@@ -8,6 +8,8 @@ project(NONE)
 # Make sure we are using a compatible board target.
 if((${BOARD} STREQUAL "mps2_an521_nonsecure"))
 	set(PSA_ARCH_TESTS_BOARD "tgt_dev_apis_tfm_an521")
+elseif((${BOARD} STREQUAL "v2m_musca_b1_nonsecure"))
+	set(PSA_ARCH_TESTS_BOARD "tgt_dev_apis_tfm_musca_b1")
 else()
         message(FATAL_ERROR "${BOARD} unsupported. Please use \'${ZEPHYRBOARD}\'.")
 endif()
