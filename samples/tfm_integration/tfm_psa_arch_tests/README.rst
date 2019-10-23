@@ -56,6 +56,27 @@ On MPS2+ AN521:
 
 #. Reset MPS2+ board.
 
+On V2M Musca B1:
+================
+
+#. Build Zephyr with a non-secure configuration (``-DBOARD=v2m_musca_b1_nonsecure``).
+
+   .. code-block:: bash
+
+      cd $ZEPHYR_ROOT/samples/tfm_integration/tfm_psa_arch_tests/
+      mkdir build
+      cd build
+      cmake -GNinja -DBOARD=v2m_musca_b1_nonsecure ..
+      ninja -v
+
+#. The binary file ``tfm_zephyr.hex`` will be signed and combined
+   automatically into the build folder.
+#. Connect the USB cable from your development system
+   to the Musca B1 board, and press the power-on button.
+#. Copy ``tfm_zephyr.hex`` to the root of the MUSCA_B USB mass storage drive.
+#. Reset the board.
+
+
 Sample Output
 =============
 
