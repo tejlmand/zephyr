@@ -5,3 +5,13 @@
 
 config BUILD_WITH_TFM
 	bool "Build with TF-M for Secure Execution"
+
+config PSA_ARCH_API_TEST
+	bool "Build psa-arch-tests with Zephyr"
+
+config PSA_API_TEST_SUITE
+	depends on PSA_ARCH_API_TEST
+	string "PSA arch API test suite"
+	help
+	  Indicates which test suite(s) will be run.
+	  Support: crypto, protected_storage, initial_attestation
