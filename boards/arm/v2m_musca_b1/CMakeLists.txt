@@ -9,47 +9,46 @@ zephyr_library_sources(pinmux.c)
 zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
 
 if (CONFIG_BUILD_WITH_TFM)
-	set (TFM_ROOT_PATH $ENV{ZEPHYR_BASE}/../modules/tee/tfm/trusted-firmware-m)
-	set (MCUBOOT_DIR "${TFM_ROOT_PATH}/bl2/ext/mcuboot")
-	set (PREPROCESSED_FILE "${TFM_ROOT_PATH}/build/image_macros_preprocessed.c")
+	# TODO: Relocate to TF-M module
+	include(${ZEPHYR_BASE}/samples/tfm_integration/CMakeLists.inc)
 
-	if (NOT DEFINED IMAGE_VERSION)
-		set(IMAGE_VERSION 0.0.0+0)
-	endif()
+	set (PREPROCESSED_FILE "${APPLICATION_SOURCE_DIR}/build/tfm-prefix/src/tfm-build/image_macros_preprocessed")
 
-	#Find Python3 interpreter
-	find_package(PythonInterp 3)
-	if (NOT PYTHONINTERP_FOUND)
-		message(FATAL_ERROR "Failed to find Python3 interpreter. Pyhton3 must be installed and available on the PATH.")
-	endif()
+	# Configure which format (full or hash) to include the public key in
+	# the image manifest
+	set(TFM_PUBLIC_KEY_FORMAT "full")
 
-	set(KEY_FILE    "${MCUBOOT_DIR}/root-rsa-3072.pem")
-
-	#Configure in which format (full or hash) include the public key to the image manifest
-	set(PUBLIC_KEY_FORMAT "full")
+	#Set srec_cat binary name
+	set(SREC_CAT "srec_cat")
 
 	#Create and sign for concatenated binary image should align with the TF-M BL2
 	set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
 		#Create concatenated binary image from the two binary file
-		COMMAND ${PYTHON_EXECUTABLE} ${MCUBOOT_DIR}/scripts/assemble.py
-		ARGS --layout ${PREPROCESSED_FILE}
-			-s ${TFM_ROOT_PATH}/build/install/outputs/MUSCA_B1/tfm_s.bin
+		COMMAND ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/assemble.py
+		ARGS --layout ${PREPROCESSED_FILE}.c
+			-s ${APPLICATION_SOURCE_DIR}/build/tfm-prefix/src/tfm-build/install/outputs/MUSCA_B1/tfm_s.bin
 			-n ${CMAKE_BINARY_DIR}/zephyr/zephyr.bin
 			-o ${CMAKE_BINARY_DIR}/tfm_full.bin
 
 		#Sign concatenated binary image with default public key in mcuboot folder
-		COMMAND ${PYTHON_EXECUTABLE} ${MCUBOOT_DIR}/scripts/imgtool.py
+		COMMAND ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/imgtool.py
 		ARGS sign
-			--layout ${PREPROCESSED_FILE}
-			-k ${KEY_FILE}
-			--public-key-format ${PUBLIC_KEY_FORMAT}
+			--layout ${PREPROCESSED_FILE}.c
+			-k ${TFM_KEY_FILE_S}
+			--public-key-format ${TFM_PUBLIC_KEY_FORMAT}
 			--align 1
-			-v ${IMAGE_VERSION}
+			-v ${TFM_IMAGE_VERSION_S}
 			${ADD_SECURITY_COUNTER}
 			-H 0x400
 			${CMAKE_BINARY_DIR}/tfm_full.bin
 			${CMAKE_BINARY_DIR}/tfm_sign.bin
 
 		#srec_cat to combine images into hex for drag and drop
-		COMMAND srec_cat ${TFM_ROOT_PATH}/build/bl2/ext/mcuboot/mcuboot.bin -Binary -offset 0xA000000 ${CMAKE_BINARY_DIR}/tfm_sign.bin -Binary -offset 0xA020000 -o ${CMAKE_BINARY_DIR}/tfm_zephyr.hex -Intel)
+		COMMAND ${SREC_CAT}
+		ARGS ${APPLICATION_SOURCE_DIR}/build/tfm-prefix/src/tfm-build/bl2/ext/mcuboot/mcuboot.bin -binary
+			-offset 0xA000000
+			${CMAKE_BINARY_DIR}/tfm_sign.bin -binary
+			-offset 0xA020000
+			-o ${CMAKE_BINARY_DIR}/tfm_zephyr.hex -Intel --line-length=44
+	)
 endif()
