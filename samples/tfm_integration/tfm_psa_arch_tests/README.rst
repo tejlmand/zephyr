@@ -12,12 +12,12 @@ to run in a secure configuration with Zephyr itself in a non-secure configuratio
 The sample prints test info to the console as a multi-thread application.
 
 The psa-arch-tests provides different test suite configurations:
-``crypto``, ``protected_storage``, or ``initial_attestation``, as set in
-the sample's ``prj.conf`` file, for example:
+``ìpc``, ``crypto``, ``protected_storage``, ``internal_trusted_storage``,
+``initial_attestation``, as set in the sample's ``prj.conf`` file, for example:
 
 .. code-block:: bash
 
-   CONFIG_PSA_API_TEST_SUITE="crypto"
+   CONFIG_PSA_ARCH_TEST_SUITE="crypto"
 
 Building and Running
 ********************
