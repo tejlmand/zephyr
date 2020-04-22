@@ -5,9 +5,7 @@
 cmake_minimum_required(VERSION 3.13.1)
 project(NONE)
 
-# Set the TF-M output folders. This is placed here and not in the build folder
-# since you will generally only want to do the clone and build operations
-# once for trusted-firmware-m and dependencies.
+# Set TF-M folders
 set(TFM_REMOTE_DIR "$ENV{ZEPHYR_BASE}/../modules/tee/tfm")
 set(TFM_BASE_DIR "${TFM_REMOTE_DIR}/trusted-firmware-m")
 set(TFM_PSA_API_DIR "${TFM_BASE_DIR}/build/install/export/tee/tfm")

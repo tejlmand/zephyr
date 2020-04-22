@@ -7,7 +7,12 @@
 #include <zephyr.h>
 #include <sys/printk.h>
 #include "cmsis_os2.h"
-#include "tfm_ns_interface.h"
+/* #include "tfm_ns_interface.h" */
+
+#include "tfm_api.h"
+#ifdef TFM_PSA_API
+#include "psa_manifest/sid.h"
+#endif
 
 /**
  * \brief This symbol is the entry point provided by the PSA API compliance

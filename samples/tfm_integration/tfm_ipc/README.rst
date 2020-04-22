@@ -68,6 +68,7 @@ As part of the normal build process above, a binary is also produced that can
 be run via ``qemu-system-arm``. The binary can be executed as follows:
 
    .. code-block:: bash
+   
       qemu-system-arm -M mps2-an521 -device loader,file=tfm_qemu.hex -serial stdio
 
 Sample Output
