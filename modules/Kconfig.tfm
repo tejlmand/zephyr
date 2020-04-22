@@ -1,17 +1,14 @@
 # TF-M/PSA Related
 
-# Copyright (c) 2019 Linaro Limited
+# Copyright (c) 2019, 2020 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
 config BUILD_WITH_TFM
 	bool "Build with TF-M for Secure Execution"
 
-config PSA_ARCH_API_TEST
-	bool "Build psa-arch-tests with Zephyr"
-
-config PSA_API_TEST_SUITE
-	depends on PSA_ARCH_API_TEST
+config PSA_ARCH_TEST_SUITE
 	string "PSA arch API test suite"
+	default "ipc"
 	help
 	  Indicates which test suite(s) will be run.
-	  Support: crypto, protected_storage, initial_attestation
+	  Support: ipc, crypto, protected_storage, internal_trusted_storage, initial_attestation

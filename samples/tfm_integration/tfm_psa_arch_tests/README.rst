@@ -36,7 +36,7 @@ On MPS2+ AN521:
       mkdir build
       cd build
       cmake -GNinja -DBOARD=mps2_an521_nonsecure ..
-      ninja -v
+      make
 
 #. Copy application binary files (mcuboot.bin and tfm_sign.bin) to ``<MPS2 device name>/SOFTWARE/``.
 #. Open ``<MPS2 device name>/MB/HBI0263C/AN521/images.txt``. Edit the ``AN521/images.txt`` file as follows:
@@ -67,7 +67,7 @@ On V2M Musca B1:
       mkdir build
       cd build
       cmake -GNinja -DBOARD=v2m_musca_b1_nonsecure ..
-      ninja -v
+      make
 
 #. The binary file ``tfm_zephyr.hex`` will be signed and combined
    automatically into the build folder.
