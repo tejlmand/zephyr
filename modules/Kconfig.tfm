@@ -5,10 +5,3 @@
 
 config BUILD_WITH_TFM
 	bool "Build with TF-M for Secure Execution"
-
-config PSA_ARCH_TEST_SUITE
-	string "PSA arch API test suite"
-	default "ipc"
-	help
-	  Indicates which test suite(s) will be run.
-	  Support: ipc, crypto, protected_storage, internal_trusted_storage, initial_attestation
