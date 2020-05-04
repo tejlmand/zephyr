@@ -10,22 +10,23 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.inc)
 
 include(ExternalProject)
 
+set(BINARY_DIR ${CMAKE_BINARY_DIR}/tfm)
+set(TFM_EXPORT_PATH ${BINARY_DIR}/install/export)
+
 set(TFMCONFIG "ConfigRegressionIPC")
 ExternalProject_Add(
   tfm
   SOURCE_DIR ${TFM_BASE_DIR}
+  BINARY_DIR ${BINARY_DIR}
+  BUILD_BYPRODUCTS ${TFM_EXPORT_PATH}/tfm/veneers/s_veneers.o
   CMAKE_ARGS -DPROJ_CONFIG=${TFM_BASE_DIR}/configs/${TFMCONFIG}.cmake
              -DTARGET_PLATFORM=${TFMBOARD} -DBL2=True -DCOMPILER=GNUARM
 	     -DGNUARM_PREFIX=arm-zephyr-eabi
 	     -DGNUARM_PATH=${ZEPHYR_SDK_INSTALL_DIR}/arm-zephyr-eabi
-  BUILD_BYPRODUCTS ${BINARY_DIR}/tfm/veneers/s_veneers.o
 )
 project(tfm_ipc)
 
 add_dependencies(app tfm)
-
-ExternalProject_Get_property(tfm BINARY_DIR)
-set (TFM_EXPORT_PATH ${BINARY_DIR}/install/export)
 
 target_sources(app PRIVATE src/main.c)
 
