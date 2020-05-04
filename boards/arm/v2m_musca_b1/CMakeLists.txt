@@ -10,7 +10,7 @@ zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
 
 if (CONFIG_BUILD_WITH_TFM)
 	# TODO: Relocate to TF-M module
-	include(${ZEPHYR_BASE}/samples/tfm_integration/CMakeLists.inc)
+	include(${ZEPHYR_BASE}/samples/tfm_integration/tfm_common.cmake)
 
 	set (PREPROCESSED_FILE "${APPLICATION_SOURCE_DIR}/build/tfm/image_macros_preprocessed")
 
