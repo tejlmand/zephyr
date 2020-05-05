@@ -101,13 +101,17 @@ static void tfm_ipc_test_1004(void)
 	char str1[] = "str1";
 	char str2[] = "str2";
 	char str3[128], str4[128];
-	struct psa_invec invecs[2] = { { str1, sizeof(str1) / sizeof(char) },
-				       { str2, sizeof(str2) / sizeof(char) } };
-	struct psa_outvec outvecs[2] = { { str3, sizeof(str3) / sizeof(char) },
-					 { str4, sizeof(str4) / sizeof(char) } };
+	struct psa_invec invecs[2] = { { str1, sizeof(str1) /
+					 sizeof(char) },
+				       { str2, sizeof(str2) /
+					 sizeof(char) } };
+	struct psa_outvec outvecs[2] = { { str3, sizeof(str3) /
+					   sizeof(char) },
+					 { str4, sizeof(str4) /
+					   sizeof(char) } };
 	psa_handle_t handle;
 	psa_status_t status;
-	uint32_t version;
+	u32_t version;
 
 	version = tfm_psa_version_veneer(IPC_SERVICE_TEST_BASIC_SID);
 	printk("TFM service support version is %d.\n", version);
@@ -134,7 +138,8 @@ static void tfm_ipc_test_1005(void)
 	psa_handle_t handle;
 	psa_status_t status;
 	int test_result;
-	struct psa_outvec outvecs[1] = { { &test_result, sizeof(test_result) } };
+	struct psa_outvec outvecs[1] = { { &test_result,
+					   sizeof(test_result) } };
 
 	handle = tfm_psa_connect_veneer(IPC_CLIENT_TEST_BASIC_SID,
 					IPC_CLIENT_TEST_BASIC_VERSION);
@@ -164,10 +169,12 @@ static void tfm_ipc_test_1006(void)
 	psa_handle_t handle;
 	psa_status_t status;
 	int test_result;
-	struct psa_outvec outvecs[1] = { { &test_result, sizeof(test_result) } };
+	struct psa_outvec outvecs[1] = { { &test_result,
+					   sizeof(test_result) } };
 
-	handle = tfm_psa_connect_veneer(IPC_CLIENT_TEST_PSA_ACCESS_APP_MEM_SID,
-					IPC_CLIENT_TEST_PSA_ACCESS_APP_MEM_VERSION);
+	handle = tfm_psa_connect_veneer(
+		IPC_CLIENT_TEST_PSA_ACCESS_APP_MEM_SID,
+		IPC_CLIENT_TEST_PSA_ACCESS_APP_MEM_VERSION);
 	if (handle > 0) {
 		printk("Connect success!\n");
 	} else {
