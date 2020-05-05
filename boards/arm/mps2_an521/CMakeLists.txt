@@ -12,7 +12,7 @@ if (CONFIG_BUILD_WITH_TFM)
 	# TODO: Relocate to TF-M module
 	include(${ZEPHYR_BASE}/samples/tfm_integration/tfm_common.cmake)
 
-	set (PREPROCESSED_FILE "${APPLICATION_SOURCE_DIR}/build/tfm/image_macros_preprocessed")
+	set (PREPROCESSED_FILE "${CMAKE_BINARY_DIR}/tfm/image_macros_preprocessed")
 
 	# Configure which format (full or hash) to include the public key in
 	# the image manifest
@@ -35,7 +35,7 @@ if (CONFIG_BUILD_WITH_TFM)
 			 ${ADD_NS_IMAGE_MIN_VER}
 			 ${ADD_SECURITY_COUNTER_S}
 			 -H 0x400
-			 ${APPLICATION_SOURCE_DIR}/build/tfm/install/outputs/AN521/tfm_s.bin
+			 ${CMAKE_BINARY_DIR}/tfm/install/outputs/AN521/tfm_s.bin
 			 ${CMAKE_BINARY_DIR}/tfm_s_signed.bin
 
 		#Sign non-secure binary image with public key
@@ -60,7 +60,7 @@ if (CONFIG_BUILD_WITH_TFM)
 			 -o ${CMAKE_BINARY_DIR}/tfm_sign.bin
 
 		#Copy mcuboot.bin
-		COMMAND cp ${APPLICATION_SOURCE_DIR}/build/tfm/bl2/ext/mcuboot/mcuboot.bin ${CMAKE_BINARY_DIR}
+		COMMAND cp ${CMAKE_BINARY_DIR}/tfm/bl2/ext/mcuboot/mcuboot.bin ${CMAKE_BINARY_DIR}
 
 		#Merge mcuboot.bin and tfm_sign.bin for QEMU
 		COMMAND ${SREC_CAT}
