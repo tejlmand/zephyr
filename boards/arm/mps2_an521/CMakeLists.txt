@@ -28,7 +28,7 @@ if (CONFIG_BUILD_WITH_TFM)
 		COMMAND ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/imgtool.py
 		ARGS sign
 			 --layout ${PREPROCESSED_FILE}_s.c
-			 -k ${TFM_KEY_FILE_S}
+			 -k ${CONFIG_TFM_KEY_FILE_S}
 			 --public-key-format ${TFM_PUBLIC_KEY_FORMAT}
 			 --align 1
 			 -v ${TFM_IMAGE_VERSION_S}
@@ -42,7 +42,7 @@ if (CONFIG_BUILD_WITH_TFM)
 		COMMAND ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/imgtool.py
 		ARGS sign
 			 --layout ${PREPROCESSED_FILE}_ns.c
-			 -k ${TFM_KEY_FILE_NS}
+			 -k ${CONFIG_TFM_KEY_FILE_NS}
 			 --public-key-format ${TFM_PUBLIC_KEY_FORMAT}
 			 --align 1
 			 -v ${TFM_IMAGE_VERSION_NS}

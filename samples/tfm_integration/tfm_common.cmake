@@ -17,11 +17,3 @@ endif()
 if (NOT DEFINED TFM_IMAGE_VERSION_NS)
 	set(TFM_IMAGE_VERSION_NS 0.0.0+0)
 endif()
-
-# Use default signing keys if not defined elsewhere
-if (NOT DEFINED TFM_KEY_FILE_S)
-	set(TFM_KEY_FILE_S  "${TFM_MCUBOOT_DIR}/root-rsa-3072.pem")
-endif()
-if (NOT DEFINED TFM_KEY_FILE_NS)
-	set(TFM_KEY_FILE_NS "${TFM_MCUBOOT_DIR}/root-rsa-3072_1.pem")
-endif()
