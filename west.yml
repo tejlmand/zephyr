@@ -129,7 +129,7 @@ manifest:
       revision: c39888ff74acf421eeff9a7514fa9b172c3373f7
     - name: trusted-firmware-m
       path: modules/tee/tfm
-      revision: bb0124f76a917f42f7f309f76403f3ce3ca1e14a
+      revision: pull/6/head
 
   self:
     path: zephyr

@@ -6,25 +6,11 @@ set(QEMU_KERNEL_OPTION "-device;loader,file=${CMAKE_BINARY_DIR}/tfm_qemu.hex")
 
 find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/../tfm_common.cmake)
+trusted_firmware_build(BINARY_DIR ${CMAKE_BINARY_DIR}/tfm
+                       BOARD ${TFMBOARD}
+		       OUT_VENEERS_FILE VENEERS_FILE
+		       OUT_INCLUDE_PATH TFM_INCLUDE_PATH)
 
-include(ExternalProject)
-
-set(BINARY_DIR ${CMAKE_BINARY_DIR}/tfm)
-set(TFM_EXPORT_PATH ${BINARY_DIR}/install/export)
-
-set(TFMCONFIG "ConfigRegressionIPC")
-ExternalProject_Add(
-  tfm
-  SOURCE_DIR ${TFM_BASE_DIR}
-  BINARY_DIR ${BINARY_DIR}
-  BUILD_BYPRODUCTS ${TFM_EXPORT_PATH}/tfm/veneers/s_veneers.o
-  CMAKE_ARGS -DPROJ_CONFIG=${TFM_BASE_DIR}/configs/${TFMCONFIG}.cmake
-             -DTARGET_PLATFORM=${TFMBOARD} -DBL2=True -DCOMPILER=GNUARM
-             # These value should be updated when not using the Zephyr SDK
-             -DGNUARM_PREFIX=arm-zephyr-eabi
-             -DGNUARM_PATH=${ZEPHYR_SDK_INSTALL_DIR}/arm-zephyr-eabi
-)
 project(tfm_ipc)
 
 add_dependencies(app tfm)
@@ -32,11 +18,12 @@ add_dependencies(app tfm)
 target_sources(app PRIVATE src/main.c)
 
 target_include_directories(app PRIVATE
-  ${TFM_EXPORT_PATH}/tfm/include
+  ${TFM_INCLUDE_PATH}
   )
 
+
 target_link_libraries(${ZEPHYR_CURRENT_LIBRARY} PRIVATE
-  ${TFM_EXPORT_PATH}/tfm/veneers/s_veneers.o
+  ${VENEERS_FILE}
   )
 
 target_compile_definitions(app PRIVATE
