@@ -126,6 +126,26 @@
 
 #define APP_SMEM_SECTION() KEEP(*(SORT("data_smem_*")))
 
+/*
+ * Right shift x n-times, and OR the result with x.
+ * This is a helper macro for facilitating ROUND_POWER_2(x)
+ *
+ */
+#define RSHIFT_OR(x, n) (x | (x >> n))
+
+/*
+ * Round the value up to the next power of 2.
+ * Examples:
+ *   ROUND_POWER_2(0x0400) gives 0x0400 as it is already a power of 2
+ *   ROUND_POWER_2(0x0410) gives 0x0800 as that will be the next power of 2.
+ *
+ * This can be used instead of `( 1 << LOG2CEIL(x))` which is not supported by
+ * all linkers.
+ */
+#define ROUND_POWER_2(x) ((x & (-x)) == x ? x : 		\
+		(RSHIFT_OR(RSHIFT_OR(RSHIFT_OR(RSHIFT_OR(	\
+		RSHIFT_OR(x, 1), 2), 4), 8), 16)+1))
+
 #elif defined(_ASMLANGUAGE)
 
 /* Assembly FILES: declaration defined by the linker script */

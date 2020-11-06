@@ -83,7 +83,7 @@ _region_min_align = 4;
 #if !defined(CONFIG_CUSTOM_SECTION_ALIGN) && defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
 #define MPU_ALIGN(region_size) \
     . = ALIGN(_region_min_align); \
-    . = ALIGN( 1 << LOG2CEIL(region_size))
+    . = ALIGN(ROUND_POWER_2(region_size))
 #else
 #define MPU_ALIGN(region_size) \
     . = ALIGN(_region_min_align)

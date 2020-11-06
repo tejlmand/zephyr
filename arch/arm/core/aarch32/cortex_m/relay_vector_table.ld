@@ -15,7 +15,7 @@
 /* VTOR bits 0:6 are reserved (RES0). This requires that the base address
  * of the vector table is 32-word aligned.
  */
-. = ALIGN( 1 << LOG2CEIL(4 * 32) );
+. = ALIGN(ROUND_POWER_2(4 * 32));
 
 /* When setting TBLOFF in VTOR we must align the offset to the number of
  * exception entries in the vector table. The minimum alignment of 32 words
@@ -25,7 +25,7 @@
  * setting in any Cortex-M implementation (might not be required in every
  * Cortex-M processor).
  */
-. = ALIGN( 1 << LOG2CEIL(4 * (16 + CONFIG_NUM_IRQS)) );
+. = ALIGN(ROUND_POWER_2(4 * (16 + CONFIG_NUM_IRQS)));
 #endif
 
 KEEP(*(.vector_relay_table))

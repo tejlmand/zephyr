@@ -8,7 +8,7 @@
 #if defined(CONFIG_CPU_HAS_NRF_IDAU) && CONFIG_ARM_NSC_REGION_BASE_ADDRESS == 0
 	/* This SOC needs the NSC region to be at the end of an SPU region. */
 	#define __NSC_ALIGN (ALIGN(CONFIG_NRF_SPU_FLASH_REGION_SIZE) \
-			- MAX(32, (1 << LOG2CEIL(__sg_size))))
+			- MAX(32, (ROUND_POWER_2(__sg_size))))
 	#define NSC_ALIGN \
 		. =  (__NSC_ALIGN + ((ABSOLUTE(.) > __NSC_ALIGN) \
 				? CONFIG_NRF_SPU_FLASH_REGION_SIZE : 0))
@@ -45,7 +45,7 @@ __nsc_size = . - __sg_start;
 	#define NRF_SG_START (__sg_start % CONFIG_NRF_SPU_FLASH_REGION_SIZE)
 	#define NRF_SG_SIZE (CONFIG_NRF_SPU_FLASH_REGION_SIZE - NRF_SG_START)
 	ASSERT((__sg_size == 0)
-		|| (((1 << LOG2CEIL(NRF_SG_SIZE)) == NRF_SG_SIZE) /* Pow of 2 */
+		|| (((ROUND_POWER_2(NRF_SG_SIZE)) == NRF_SG_SIZE) /* Pow of 2 */
 			&& (NRF_SG_SIZE >= 32)
 			&& (NRF_SG_SIZE <= 4096)),
 		"The Non-Secure Callable region size must be a power of 2 \
