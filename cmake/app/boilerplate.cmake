@@ -229,55 +229,47 @@ file(GLOB revision_candidates LIST_DIRECTORIES false RELATIVE ${BOARD_DIR}
      ${BOARD_DIR}/${BOARD}_[0-9]*_defconfig
 )
 
-if(NOT BOARD_REVISIONS)
+if(NOT ACTIVE_BOARD_REVISION)
   foreach(candidate ${revision_candidates})
     if(${candidate} MATCHES "${BOARD}_((0|[1-9]+)(_[0-9]+)?(_[0-9]+)?)_defconfig")
       string(REPLACE "_" "." FOUND_BOARD_REVISION ${CMAKE_MATCH_1})
 
-      # From CMake 3.18 it will be possible to directly append to the list and
-      # do a list(SORT <list> ORDER NATURAL) on the final list.
-      # But as long as Zephyr requires CMake 3.13 as minimum, the revision must
-      # be inserted manually.
-      set(index 0)
-      foreach(rev ${BOARD_REVISIONS})
-        if(${FOUND_BOARD_REVISION} VERSION_GREATER ${rev})
+      if(BOARD_REVISION)
+        if(${BOARD_REVISION} STREQUAL ${FOUND_BOARD_REVISION})
+          set(ACTIVE_BOARD_REVISION ${BOARD_REVISION} CACHE INTERNAL
+              "Active board revision")
           break()
+        elseif(
+          (${BOARD_REVISION} VERSION_GREATER_EQUAL ${FOUND_BOARD_REVISION}) AND
+          (${FOUND_BOARD_REVISION} VERSION_GREATER "${ACTIVE_BOARD_REVISION}")
+        )
+          set(ACTIVE_BOARD_REVISION ${FOUND_BOARD_REVISION} CACHE INTERNAL
+              "Active board revision (Differs from user selected)")
         endif()
-        math(EXPR index "${index} + 1")
-      endforeach()
-      list(INSERT BOARD_REVISIONS ${index} ${FOUND_BOARD_REVISION})
+      elseif(${FOUND_BOARD_REVISION} VERSION_GREATER "${ACTIVE_BOARD_REVISION}")
+        set(ACTIVE_BOARD_REVISION ${FOUND_BOARD_REVISION} CACHE INTERNAL
+            "Active board revision (Auto-selected)")
+      endif()
     endif()
   endforeach()
-  set(BOARD_REVISIONS ${BOARD_REVISIONS} CACHE INTERNAL "Board revisions")
 endif()
 
-if(BOARD_REVISION AND NOT BOARD_REVISIONS)
+if(BOARD_REVISION AND NOT FOUND_BOARD_REVISION)
   message(WARNING "Board revision ${BOARD_REVISION} specified for ${BOARD}, \
           but board has no revision so revision will be ignored.")
 endif()
 
-if(BOARD_REVISIONS)
-  if(BOARD_REVISION AND ("${BOARD_REVISION}" IN_LIST BOARD_REVISIONS))
-    set(ACTIVE_BOARD_REVISION ${BOARD_REVISION} CACHE INTERNAL "Active board revision (May differ from user selected)")
-  elseif(BOARD_REVISION)
-    foreach(rev ${BOARD_REVISIONS})
-      if(${BOARD_REVISION} VERSION_GREATER ${rev})
-        set(ACTIVE_BOARD_REVISION ${rev} CACHE INTERNAL "Active board revision (May differ from user selected)")
-        break()
-      endif()
-    endforeach()
-  else()
-    list(GET BOARD_REVISIONS 0 BOARD_REVISION)
-    set(ACTIVE_BOARD_REVISION ${BOARD_REVISION} CACHE INTERNAL "Active board revision (May differ from user selected)")
-  endif()
-endif()
-
 if(ACTIVE_BOARD_REVISION)
-  if(BOARD_REVISION AND NOT ("${ACTIVE_BOARD_REVISION}" STREQUAL "${BOARD_REVISION}"))
-    set(BOARD_MESSAGE "${BOARD_MESSAGE}, Revision: ${BOARD_REVISION} (Actual: ${ACTIVE_BOARD_REVISION})")
+  if(BOARD_REVISION)
+    set(BOARD_MESSAGE "${BOARD_MESSAGE}, Revision: ${BOARD_REVISION}")
+    if(NOT ("${ACTIVE_BOARD_REVISION}" STREQUAL "${BOARD_REVISION}"))
+      set(BOARD_MESSAGE "${BOARD_MESSAGE} (Active: ${ACTIVE_BOARD_REVISION})")
+    endif()
   else()
     set(BOARD_MESSAGE "${BOARD_MESSAGE}, Revision: ${ACTIVE_BOARD_REVISION}")
   endif()
+
+  set(BOARD_REVISION ${ACTIVE_BOARD_REVISION})
 endif()
 
 # Check that SHIELD has not changed.
