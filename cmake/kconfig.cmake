@@ -32,6 +32,9 @@ else()
 endif()
 
 set(BOARD_DEFCONFIG ${BOARD_DIR}/${BOARD}_defconfig)
+if(BOARD_REVISION AND EXISTS ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}_defconfig)
+  list(APPEND BOARD_DEFCONFIG ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}_defconfig)
+endif()
 set(DOTCONFIG                  ${PROJECT_BINARY_DIR}/.config)
 set(PARSED_KCONFIG_SOURCES_TXT ${PROJECT_BINARY_DIR}/kconfig/sources.txt)
 

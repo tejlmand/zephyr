@@ -270,6 +270,7 @@ if(ACTIVE_BOARD_REVISION)
   endif()
 
   set(BOARD_REVISION ${ACTIVE_BOARD_REVISION})
+  string(REPLACE "." "_" BOARD_REVISION_STRING ${BOARD_REVISION})
 endif()
 
 # Check that SHIELD has not changed.
@@ -409,7 +410,9 @@ if(DEFINED CONF_FILE)
       if(NOT IS_ABSOLUTE ${CONF_FILE_DIR})
         set(CONF_FILE_DIR ${APPLICATION_SOURCE_DIR}/${CONF_FILE_DIR})
       endif()
-      zephyr_file(CONF_FILES ${CONF_FILE_DIR}/boards KCONF CONF_FILE BUILD ${CMAKE_MATCH_1})
+      if(EXISTS ${CONF_FILE_DIR}/boards/${BOARD}_${CMAKE_MATCH_1}.conf)
+        list(APPEND CONF_FILE ${CONF_FILE_DIR}/boards/${BOARD}_${CMAKE_MATCH_1}.conf)
+      endif()
     endif()
   endif()
 elseif(CACHED_CONF_FILE)
