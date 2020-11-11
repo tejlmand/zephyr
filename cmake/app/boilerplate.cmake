@@ -164,6 +164,21 @@ add_custom_target(
 # Dummy add to generate files.
 zephyr_linker_sources(SECTIONS)
 
+# 'BOARD_ROOT' is a prioritized list of directories where boards may
+# be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
+zephyr_file(APPLICATION_ROOT BOARD_ROOT)
+list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
+
+# 'SOC_ROOT' is a prioritized list of directories where socs may be
+# found. It always includes ${ZEPHYR_BASE}/soc at the lowest priority.
+zephyr_file(APPLICATION_ROOT SOC_ROOT)
+list(APPEND SOC_ROOT ${ZEPHYR_BASE})
+
+# 'ARCH_ROOT' is a prioritized list of directories where archs may be
+# found. It always includes ${ZEPHYR_BASE} at the lowest priority.
+zephyr_file(APPLICATION_ROOT ARCH_ROOT)
+list(APPEND ARCH_ROOT ${ZEPHYR_BASE})
+
 # Check that BOARD has been provided, and that it has not changed.
 zephyr_check_cache(BOARD REQUIRED)
 
@@ -184,40 +199,6 @@ if(${BOARD}_DEPRECATED)
   message(WARNING "Deprecated BOARD=${BOARD_DEPRECATED} name specified, board automatically changed to: ${BOARD}.")
 endif()
 
-# Check that SHIELD has not changed.
-zephyr_check_cache(SHIELD)
-
-if(SHIELD)
-  set(BOARD_MESSAGE "${BOARD_MESSAGE}, Shield(s): ${SHIELD}")
-endif()
-
-message(STATUS "${BOARD_MESSAGE}")
-
-# 'BOARD_ROOT' is a prioritized list of directories where boards may
-# be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
-zephyr_file(APPLICATION_ROOT BOARD_ROOT)
-list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
-
-# 'SOC_ROOT' is a prioritized list of directories where socs may be
-# found. It always includes ${ZEPHYR_BASE}/soc at the lowest priority.
-zephyr_file(APPLICATION_ROOT SOC_ROOT)
-list(APPEND SOC_ROOT ${ZEPHYR_BASE})
-
-# 'ARCH_ROOT' is a prioritized list of directories where archs may be
-# found. It always includes ${ZEPHYR_BASE} at the lowest priority.
-zephyr_file(APPLICATION_ROOT ARCH_ROOT)
-list(APPEND ARCH_ROOT ${ZEPHYR_BASE})
-
-if(DEFINED SHIELD)
-  string(REPLACE " " ";" SHIELD_AS_LIST "${SHIELD}")
-endif()
-# SHIELD-NOTFOUND is a real CMake list, from which valid shields can be popped.
-# After processing all shields, only invalid shields will be left in this list.
-set(SHIELD-NOTFOUND ${SHIELD_AS_LIST})
-
-# Use BOARD to search for a '_defconfig' file.
-# e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig.
-# When found, use that path to infer the ARCH we are building for.
 foreach(root ${BOARD_ROOT})
   # NB: find_path will return immediately if the output variable is
   # already set
@@ -239,7 +220,86 @@ foreach(root ${BOARD_ROOT})
   if(BOARD_DIR AND NOT (${root} STREQUAL ${ZEPHYR_BASE}))
     set(USING_OUT_OF_TREE_BOARD 1)
   endif()
+endforeach()
 
+# Check that BOARD_REVISION has not changed.
+zephyr_check_cache(BOARD_REVISION)
+
+file(GLOB revision_candidates LIST_DIRECTORIES false RELATIVE ${BOARD_DIR}
+     ${BOARD_DIR}/${BOARD}_[0-9]*_defconfig
+)
+
+if(NOT BOARD_REVISIONS)
+  foreach(candidate ${revision_candidates})
+    if(${candidate} MATCHES "${BOARD}_((0|[1-9]+)(_[0-9]+)?(_[0-9]+)?)_defconfig")
+      string(REPLACE "_" "." FOUND_BOARD_REVISION ${CMAKE_MATCH_1})
+
+      # From CMake 3.18 it will be possible to directly append to the list and
+      # do a list(SORT <list> ORDER NATURAL) on the final list.
+      # But as long as Zephyr requires CMake 3.13 as minimum, the revision must
+      # be inserted manually.
+      set(index 0)
+      foreach(rev ${BOARD_REVISIONS})
+        if(${FOUND_BOARD_REVISION} VERSION_GREATER ${rev})
+          break()
+        endif()
+        math(EXPR index "${index} + 1")
+      endforeach()
+      list(INSERT BOARD_REVISIONS ${index} ${FOUND_BOARD_REVISION})
+    endif()
+  endforeach()
+  set(BOARD_REVISIONS ${BOARD_REVISIONS} CACHE INTERNAL "Board revisions")
+endif()
+
+if(BOARD_REVISION AND NOT BOARD_REVISIONS)
+  message(WARNING "Board revision ${BOARD_REVISION} specified for ${BOARD}, \
+          but board has no revision so revision will be ignored.")
+endif()
+
+if(BOARD_REVISIONS)
+  if(BOARD_REVISION AND ("${BOARD_REVISION}" IN_LIST BOARD_REVISIONS))
+    set(ACTIVE_BOARD_REVISION ${BOARD_REVISION} CACHE INTERNAL "Active board revision (May differ from user selected)")
+  elseif(BOARD_REVISION)
+    foreach(rev ${BOARD_REVISIONS})
+      if(${BOARD_REVISION} VERSION_GREATER ${rev})
+        set(ACTIVE_BOARD_REVISION ${rev} CACHE INTERNAL "Active board revision (May differ from user selected)")
+        break()
+      endif()
+    endforeach()
+  else()
+    list(GET BOARD_REVISIONS 0 BOARD_REVISION)
+    set(ACTIVE_BOARD_REVISION ${BOARD_REVISION} CACHE INTERNAL "Active board revision (May differ from user selected)")
+  endif()
+endif()
+
+if(ACTIVE_BOARD_REVISION)
+  if(BOARD_REVISION AND NOT ("${ACTIVE_BOARD_REVISION}" STREQUAL "${BOARD_REVISION}"))
+    set(BOARD_MESSAGE "${BOARD_MESSAGE}, Revision: ${BOARD_REVISION} (Actual: ${ACTIVE_BOARD_REVISION})")
+  else()
+    set(BOARD_MESSAGE "${BOARD_MESSAGE}, Revision: ${ACTIVE_BOARD_REVISION}")
+  endif()
+endif()
+
+# Check that SHIELD has not changed.
+zephyr_check_cache(SHIELD)
+
+if(SHIELD)
+  set(BOARD_MESSAGE "${BOARD_MESSAGE}, Shield(s): ${SHIELD}")
+endif()
+
+message(STATUS "${BOARD_MESSAGE}")
+
+if(DEFINED SHIELD)
+  string(REPLACE " " ";" SHIELD_AS_LIST "${SHIELD}")
+endif()
+# SHIELD-NOTFOUND is a real CMake list, from which valid shields can be popped.
+# After processing all shields, only invalid shields will be left in this list.
+set(SHIELD-NOTFOUND ${SHIELD_AS_LIST})
+
+# Use BOARD to search for a '_defconfig' file.
+# e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig.
+# When found, use that path to infer the ARCH we are building for.
+foreach(root ${BOARD_ROOT})
   set(shield_dir ${root}/boards/shields)
   # Match the .overlay files in the shield directories to make sure we are
   # finding shields, e.g. x_nucleo_iks01a1/x_nucleo_iks01a1.overlay
