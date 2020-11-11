@@ -226,12 +226,12 @@ endforeach()
 zephyr_check_cache(BOARD_REVISION)
 
 file(GLOB revision_candidates LIST_DIRECTORIES false RELATIVE ${BOARD_DIR}
-     ${BOARD_DIR}/${BOARD}_[0-9]*_defconfig
+     ${BOARD_DIR}/${BOARD}_[0-9]*.conf
 )
 
 if(NOT ACTIVE_BOARD_REVISION)
   foreach(candidate ${revision_candidates})
-    if(${candidate} MATCHES "${BOARD}_((0|[1-9]+)(_[0-9]+)?(_[0-9]+)?)_defconfig")
+    if(${candidate} MATCHES "${BOARD}_((0|[1-9]+)(_[0-9]+)?(_[0-9]+)?).conf")
       string(REPLACE "_" "." FOUND_BOARD_REVISION ${CMAKE_MATCH_1})
 
       if(BOARD_REVISION)
@@ -341,6 +341,26 @@ foreach(root ${BOARD_ROOT})
                   KCONF shield_conf_files
       )
 
+      # search for shield/boards/board_<revision>.overlay file
+      if(BOARD_REVISION AND
+         EXISTS ${shield_dir}/${s_dir}/boards/${BOARD}_${BOARD_REVISION_STRING}.overlay)
+        # add shield/board_<revision> overlay to the shield overlays list
+        list(APPEND
+          shield_dts_files
+          ${shield_dir}/${s_dir}/boards/${BOARD}_${BOARD_REVISION_STRING}.overlay
+          )
+      endif()
+
+      # search for shield/boards/shield/board_<revision>.overlay file
+      if(BOARD_REVISION AND
+         EXISTS ${shield_dir}/${s_dir}/boards/${s}/${BOARD}_${BOARD_REVISION_STRING}.overlay)
+        # add shield/board_<revision> overlay to the shield overlays list
+        list(APPEND
+          shield_dts_files
+          ${shield_dir}/${s_dir}/boards/${s}/${BOARD}_${BOARD_REVISION_STRING}.overlay
+          )
+      endif()
+
       # if shield config flag is on, add shield overlay to the shield overlays
       # list and dts_fixup file to the shield fixup file
       list(APPEND
@@ -352,6 +372,27 @@ foreach(root ${BOARD_ROOT})
         shield_dts_fixups
         ${shield_dir}/${s_dir}/dts_fixup.h
         )
+
+      # search for shield/boards/board_<revision>.conf file
+      if(BOARD_REVISION AND
+         EXISTS ${shield_dir}/${s_dir}/boards/${BOARD}_${BOARD_REVISION_STRING}.conf)
+        # add HW specific board_<revision>.conf to the shield config list
+        list(APPEND
+          shield_conf_files
+          ${shield_dir}/${s_dir}/boards/${BOARD}_${BOARD_REVISION_STRING}.conf
+          )
+      endif()
+
+      # search for shield/boards/shield/board_<revision>.conf file
+      if(BOARD_REVISION AND
+         EXISTS ${shield_dir}/${s_dir}/boards/${s}/${BOARD}_${BOARD_REVISION_STRING}.conf)
+        # add HW specific board_<revision>.conf to the shield config list
+        list(APPEND
+          shield_conf_files
+          ${shield_dir}/${s_dir}/boards/${s}/${BOARD}_${BOARD_REVISION_STRING}.conf
+          )
+      endif()
+
     endforeach()
   endif()
 endforeach()
@@ -407,11 +448,11 @@ if(DEFINED CONF_FILE)
     get_filename_component(CONF_FILE_NAME ${CONF_FILE} NAME)
     get_filename_component(CONF_FILE_DIR ${CONF_FILE} DIRECTORY)
     if(${CONF_FILE_NAME} MATCHES "prj_(.*).conf")
+      set(CONF_FILE_BUILD_TYPE _${CMAKE_MATCH_1})
+      set(CONF_FILE_INCLUDE_FRAGMENTS true)
+
       if(NOT IS_ABSOLUTE ${CONF_FILE_DIR})
         set(CONF_FILE_DIR ${APPLICATION_SOURCE_DIR}/${CONF_FILE_DIR})
-      endif()
-      if(EXISTS ${CONF_FILE_DIR}/boards/${BOARD}_${CMAKE_MATCH_1}.conf)
-        list(APPEND CONF_FILE ${CONF_FILE_DIR}/boards/${BOARD}_${CMAKE_MATCH_1}.conf)
       endif()
     endif()
   endif()
@@ -430,11 +471,24 @@ elseif(COMMAND set_conf_file)
 elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/prj_${BOARD}.conf)
   set(CONF_FILE ${APPLICATION_SOURCE_DIR}/prj_${BOARD}.conf)
 
-elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/boards/${BOARD}.conf)
-  set(CONF_FILE ${APPLICATION_SOURCE_DIR}/prj.conf ${APPLICATION_SOURCE_DIR}/boards/${BOARD}.conf)
-
 elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/prj.conf)
   set(CONF_FILE ${APPLICATION_SOURCE_DIR}/prj.conf)
+  set(CONF_FILE_INCLUDE_FRAGMENTS true)
+endif()
+
+if(CONF_FILE_INCLUDE_FRAGMENTS)
+  if(NOT CONF_FILE_DIR)
+     set(CONF_FILE_DIR ${APPLICATION_SOURCE_DIR})
+  endif()
+
+  if(EXISTS ${CONF_FILE_DIR}/boards/${BOARD}${CONF_FILE_BUILD_TYPE}.conf)
+    list(APPEND CONF_FILE ${CONF_FILE_DIR}/boards/${BOARD}${CONF_FILE_BUILD_TYPE}.conf)
+  endif()
+
+  if(BOARD_REVISION AND
+     EXISTS ${CONF_FILE_DIR}/boards/${BOARD}_${BOARD_REVISION_STRING}${CONF_FILE_BUILD_TYPE}.conf)
+    list(APPEND CONF_FILE ${CONF_FILE_DIR}/boards/${BOARD}_${BOARD_REVISION_STRING}${CONF_FILE_BUILD_TYPE}.conf)
+  endif()
 endif()
 
 set(CACHED_CONF_FILE ${CONF_FILE} CACHE STRING "If desired, you can build the application using\

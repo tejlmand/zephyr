@@ -32,9 +32,6 @@ else()
 endif()
 
 set(BOARD_DEFCONFIG ${BOARD_DIR}/${BOARD}_defconfig)
-if(BOARD_REVISION AND EXISTS ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}_defconfig)
-  list(APPEND BOARD_DEFCONFIG ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}_defconfig)
-endif()
 set(DOTCONFIG                  ${PROJECT_BINARY_DIR}/.config)
 set(PARSED_KCONFIG_SOURCES_TXT ${PROJECT_BINARY_DIR}/kconfig/sources.txt)
 
@@ -44,6 +41,10 @@ endif()
 
 if(OVERLAY_CONFIG)
   string(REPLACE " " ";" OVERLAY_CONFIG_AS_LIST "${OVERLAY_CONFIG}")
+endif()
+
+if(BOARD_REVISION AND EXISTS ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}.conf)
+  list(INSERT CONF_FILE_AS_LIST 0 ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}.conf)
 endif()
 
 # DTS_ROOT_BINDINGS is a semicolon separated list, this causes
