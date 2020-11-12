@@ -270,35 +270,6 @@ foreach(root ${BOARD_ROOT})
       list(GET shields_refs_list ${_idx} s_path)
       get_filename_component(s_dir ${s_path} DIRECTORY)
 
-      # search for shield/boards/board.overlay file
-      if(EXISTS ${shield_dir}/${s_dir}/boards/${BOARD}.overlay)
-        # add shield/board overlay to the shield overlays list
-        list(APPEND
-          shield_dts_files
-          ${shield_dir}/${s_dir}/boards/${BOARD}.overlay
-          )
-      endif()
-
-      # search for shield/boards/shield/board.overlay file
-      if(EXISTS ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.overlay)
-        # add shield/board overlay to the shield overlays list
-        list(APPEND
-          shield_dts_files
-          ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.overlay
-          )
-      endif()
-
-      # if shield config flag is on, add shield overlay to the shield overlays
-      # list and dts_fixup file to the shield fixup file
-      list(APPEND
-        shield_dts_files
-        ${shield_dir}/${s_path}
-        )
-      list(APPEND
-        shield_dts_fixups
-        ${shield_dir}/${s_dir}/dts_fixup.h
-        )
-
       # search for shield/shield.conf file
       if(EXISTS ${shield_dir}/${s_dir}/${s}.conf)
         # add shield.conf to the shield config list
@@ -308,23 +279,26 @@ foreach(root ${BOARD_ROOT})
           )
       endif()
 
-      # search for shield/boards/board.conf file
-      if(EXISTS ${shield_dir}/${s_dir}/boards/${BOARD}.conf)
-        # add HW specific board.conf to the shield config list
-        list(APPEND
-          shield_conf_files
-          ${shield_dir}/${s_dir}/boards/${BOARD}.conf
-          )
-      endif()
+      zephyr_file(CONF_FILES ${shield_dir}/${s_dir}/boards
+                  DTS   shield_dts_files
+                  KCONF shield_conf_files
+      )
+      zephyr_file(CONF_FILES ${shield_dir}/${s_dir}/boards/${s}
+                  DTS   shield_dts_files
+                  KCONF shield_conf_files
+      )
 
-      # search for shield/boards/shield/board.conf file
-      if(EXISTS ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.conf)
-        # add HW specific board.conf to the shield config list
-        list(APPEND
-          shield_conf_files
-          ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.conf
-          )
-      endif()
+      # if shield config flag is on, add shield overlay to the shield overlays
+      # list and dts_fixup file to the shield fixup file
+      list(APPEND
+        shield_dts_files
+        ${shield_dir}/${s_path}
+        )
+
+      list(APPEND
+        shield_dts_fixups
+        ${shield_dir}/${s_dir}/dts_fixup.h
+        )
     endforeach()
   endif()
 endforeach()
@@ -383,9 +357,7 @@ if(DEFINED CONF_FILE)
       if(NOT IS_ABSOLUTE ${CONF_FILE_DIR})
         set(CONF_FILE_DIR ${APPLICATION_SOURCE_DIR}/${CONF_FILE_DIR})
       endif()
-      if(EXISTS ${CONF_FILE_DIR}/boards/${BOARD}_${CMAKE_MATCH_1}.conf)
-        list(APPEND CONF_FILE ${CONF_FILE_DIR}/boards/${BOARD}_${CMAKE_MATCH_1}.conf)
-      endif()
+      zephyr_file(CONF_FILES ${CONF_FILE_DIR}/boards KCONF CONF_FILE BUILD ${CMAKE_MATCH_1})
     endif()
   endif()
 elseif(CACHED_CONF_FILE)
