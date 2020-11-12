@@ -341,26 +341,6 @@ foreach(root ${BOARD_ROOT})
                   KCONF shield_conf_files
       )
 
-      # search for shield/boards/board_<revision>.overlay file
-      if(BOARD_REVISION AND
-         EXISTS ${shield_dir}/${s_dir}/boards/${BOARD}_${BOARD_REVISION_STRING}.overlay)
-        # add shield/board_<revision> overlay to the shield overlays list
-        list(APPEND
-          shield_dts_files
-          ${shield_dir}/${s_dir}/boards/${BOARD}_${BOARD_REVISION_STRING}.overlay
-          )
-      endif()
-
-      # search for shield/boards/shield/board_<revision>.overlay file
-      if(BOARD_REVISION AND
-         EXISTS ${shield_dir}/${s_dir}/boards/${s}/${BOARD}_${BOARD_REVISION_STRING}.overlay)
-        # add shield/board_<revision> overlay to the shield overlays list
-        list(APPEND
-          shield_dts_files
-          ${shield_dir}/${s_dir}/boards/${s}/${BOARD}_${BOARD_REVISION_STRING}.overlay
-          )
-      endif()
-
       # if shield config flag is on, add shield overlay to the shield overlays
       # list and dts_fixup file to the shield fixup file
       list(APPEND
@@ -372,27 +352,6 @@ foreach(root ${BOARD_ROOT})
         shield_dts_fixups
         ${shield_dir}/${s_dir}/dts_fixup.h
         )
-
-      # search for shield/boards/board_<revision>.conf file
-      if(BOARD_REVISION AND
-         EXISTS ${shield_dir}/${s_dir}/boards/${BOARD}_${BOARD_REVISION_STRING}.conf)
-        # add HW specific board_<revision>.conf to the shield config list
-        list(APPEND
-          shield_conf_files
-          ${shield_dir}/${s_dir}/boards/${BOARD}_${BOARD_REVISION_STRING}.conf
-          )
-      endif()
-
-      # search for shield/boards/shield/board_<revision>.conf file
-      if(BOARD_REVISION AND
-         EXISTS ${shield_dir}/${s_dir}/boards/${s}/${BOARD}_${BOARD_REVISION_STRING}.conf)
-        # add HW specific board_<revision>.conf to the shield config list
-        list(APPEND
-          shield_conf_files
-          ${shield_dir}/${s_dir}/boards/${s}/${BOARD}_${BOARD_REVISION_STRING}.conf
-          )
-      endif()
-
     endforeach()
   endif()
 endforeach()
@@ -448,7 +407,7 @@ if(DEFINED CONF_FILE)
     get_filename_component(CONF_FILE_NAME ${CONF_FILE} NAME)
     get_filename_component(CONF_FILE_DIR ${CONF_FILE} DIRECTORY)
     if(${CONF_FILE_NAME} MATCHES "prj_(.*).conf")
-      set(CONF_FILE_BUILD_TYPE _${CMAKE_MATCH_1})
+      set(CONF_FILE_BUILD_TYPE ${CMAKE_MATCH_1})
       set(CONF_FILE_INCLUDE_FRAGMENTS true)
 
       if(NOT IS_ABSOLUTE ${CONF_FILE_DIR})
@@ -480,15 +439,7 @@ if(CONF_FILE_INCLUDE_FRAGMENTS)
   if(NOT CONF_FILE_DIR)
      set(CONF_FILE_DIR ${APPLICATION_SOURCE_DIR})
   endif()
-
-  if(EXISTS ${CONF_FILE_DIR}/boards/${BOARD}${CONF_FILE_BUILD_TYPE}.conf)
-    list(APPEND CONF_FILE ${CONF_FILE_DIR}/boards/${BOARD}${CONF_FILE_BUILD_TYPE}.conf)
-  endif()
-
-  if(BOARD_REVISION AND
-     EXISTS ${CONF_FILE_DIR}/boards/${BOARD}_${BOARD_REVISION_STRING}${CONF_FILE_BUILD_TYPE}.conf)
-    list(APPEND CONF_FILE ${CONF_FILE_DIR}/boards/${BOARD}_${BOARD_REVISION_STRING}${CONF_FILE_BUILD_TYPE}.conf)
-  endif()
+  zephyr_file(CONF_FILES ${CONF_FILE_DIR}/boards KCONF CONF_FILE BUILD ${CONF_FILE_BUILD_TYPE})
 endif()
 
 set(CACHED_CONF_FILE ${CONF_FILE} CACHE STRING "If desired, you can build the application using\
