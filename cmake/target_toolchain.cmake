@@ -21,7 +21,8 @@ set(CMAKE_SYSTEM_NAME Generic)
 #   CMAKE_SYSTEM_NAME-compiler-CMAKE_SYSTEM_PROCESSOR.cmake file,
 #   which can be used to modify settings like compiler flags etc. for
 #   the target
-set(CMAKE_SYSTEM_PROCESSOR ${ARCH})
+#set(CMAKE_SYSTEM_PROCESSOR ${ARCH})
+set(CMAKE_SYSTEM_PROCESSOR cortex-m4)
 
 # https://cmake.org/cmake/help/latest/variable/CMAKE_SYSTEM_VERSION.html:
 #   When the CMAKE_SYSTEM_NAME variable is set explicitly to enable cross

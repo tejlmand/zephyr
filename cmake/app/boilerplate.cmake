@@ -592,7 +592,7 @@ endif()
 include(${ZEPHYR_BASE}/cmake/target_toolchain.cmake)
 
 project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
-enable_language(C CXX ASM)
+enable_language(C ASM)
 # The setup / configuration of the toolchain itself and the configuration of
 # supported compilation flags are now split, as this allows to use the toolchain
 # for generic purposes, for example DTS, and then test the toolchain for

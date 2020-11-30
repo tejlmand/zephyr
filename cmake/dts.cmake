@@ -135,8 +135,30 @@ if(SUPPORTS_DTS)
   # more DTS source files -include'd into it to create the
   # intermediary file *.dts.pre.tmp. Also, generate a dependency file
   # so that changes to DT sources are detected.
+  print(DTS_ROOT_SYSTEM_INCLUDE_DIRS)
+  message("  execute_process(
+    COMMAND ${CMAKE_DTS_PREPROCESSOR}
+	--target=arm-arm-none-eabi
+    -x assembler-with-cpp
+    -nostdinc
+    ${DTS_ROOT_SYSTEM_INCLUDE_DIRS}
+    ${DTC_INCLUDE_FLAG_FOR_DTS}
+    ${NOSYSDEF_CFLAG}
+    -D__DTS__
+    ${DTS_EXTRA_CPPFLAGS}
+    -P
+    -E
+    -MD
+    -MF ${PROJECT_BINARY_DIR}/${BOARD}.dts.pre.d
+    -o  ${PROJECT_BINARY_DIR}/${BOARD}.dts.pre.tmp
+    ${ZEPHYR_BASE}/misc/empty_file.c
+    WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
+    RESULT_VARIABLE ret
+    )
+")
   execute_process(
     COMMAND ${CMAKE_DTS_PREPROCESSOR}
+	--target=arm-arm-none-eabi
     -x assembler-with-cpp
     -nostdinc
     ${DTS_ROOT_SYSTEM_INCLUDE_DIRS}
