@@ -1,0 +1,15 @@
+
+LR_IROM1 0x00000000 0x00100000  {    ; load region size_region
+  ER_IROM1 0x00000000 0x00100000  {  ; load address = execution address
+   *.a(*::.text._reset_section +First)
+;   *libarch__arm__core__aarch32__cortex_m.a(.text._reset_section, +First)
+;   reset.o(.text._reset_section, +First)
+   *.o(+RO)
+   *(InRoot$$Sections)
+   .ANY (+RO)
+   .ANY (+XO)
+  }
+  RW_IRAM1 0x20000000 0x00040000  {  ; RW data
+   .ANY (+RW +ZI)
+  }
+}
