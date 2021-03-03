@@ -162,4 +162,36 @@ config ROM_START_OFFSET
 
 endif # !TFM_BL2_FALSE
 
+choice TFM_EXTRA_CMAKE_FLAGS
+	prompt "TF-M Extra CMake build flags"
+	help
+	  This choice selects selects how additional CMake flags can be passed
+	  to the TF-M CMake configure stage and which are not covered
+	  by Zephyr controlled settings.
+
+config TFM_EXTRA_CMAKE_FLAGS_KCONFIG
+	bool "Kconfig"
+	help
+	  Additional CMake flags are provided through the Kconfig option
+	  TFM_EXTRA_CMAKE_FLAGS_KCONFIG_STRING.
+
+config TFM_EXTRA_CMAKE_FLAGS_CMAKE
+	bool "CMake"
+	help
+	  Additional CMake flags are provided through setting the CMAKE_FLAGS
+	  property on the CMake target `tfm_build_target`.
+	  The TF-M will will be configured with a build dependency to
+	  `tfm_build_target` and additional dependencies can thus be constructed
+	  using `add_dependencies(tfm_build_target <dependency>)`.
+
+endchoice
+
+config TFM_EXTRA_CMAKE_FLAGS_KCONFIG_STRING
+	string "TF-M Extra CMake flags"
+	depends on TFM_EXTRA_CMAKE_FLAGS_KCONFIG
+	help
+	  Additional CMake flags to be provided when building TF-M.
+	  Those are given as regular CMake arguments with space as space
+	  seperator, like "-DARG0=val0 -DARG1=val1".
+
 endif # BUILD_WITH_TFM
