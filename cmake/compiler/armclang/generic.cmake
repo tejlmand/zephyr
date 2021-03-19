@@ -12,7 +12,7 @@ set(CMAKE_SYSTEM_PROCESSOR cortex-m4)
 
 set(CMAKE_C_FLAGS "-mcpu=cortex-m4")
 set(CMAKE_CXX_FLAGS "-mcpu=cortex-m4")
-set(CMAKE_C_LINK_FLAGS "--cpu=cortex-m4")
+#set(CMAKE_C_LINK_FLAGS "--cpu=cortex-m4")
 set(CMAKE_ASM_LINK_FLAGS "--cpu=cortex-m4")
 set(CMAKE_C_COMPILER_TARGET   ${triple})
 set(CMAKE_ASM_COMPILER_TARGET ${triple})
