@@ -142,4 +142,8 @@ endforeach()
 
 
 
-message("${SCATTER_OUT}")
+if(OUT_FILE)
+  file(WRITE ${OUT_FILE} "${SCATTER_OUT}")
+else()
+  message("${SCATTER_OUT}")
+endif()

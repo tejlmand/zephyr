@@ -22,28 +22,37 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
 
   add_custom_command(
     OUTPUT ${linker_script_gen}
-    DEPENDS
-    ${LINKER_SCRIPT}
-    ${extra_dependencies}
-    # NB: 'linker_script_dep' will use a keyword that ends 'DEPENDS'
-    ${linker_script_dep}
-    COMMAND ${CMAKE_C_COMPILER}
-    --target=arm-arm-none-eabi
-    -x assembler-with-cpp
-    ${NOSYSDEF_CFLAG}
-    -MD -MF ${linker_script_gen}.dep -MT ${base_name}/${linker_script_gen}
-    -D_LINKER
-    -D_ASMLANGUAGE
-    ${current_includes}
-    ${current_defines}
-    ${linker_pass_define}
-    -E ${LINKER_SCRIPT}
-    -P # Prevent generation of debug `#line' directives.
-    -o ${linker_script_gen}
-    VERBATIM
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMAND_EXPAND_LISTS
+    COMMAND ${CMAKE_COMMAND}
+      -DMEMORY_REGIONS="$<TARGET_PROPERTY:linker_target,MEMORY_REGIONS>"
+      -DSECTIONS="$<TARGET_PROPERTY:linker_target,SECTIONS>"
+      -DSECTION_SETTINGS="$<TARGET_PROPERTY:linker_target,SECTION_SETTINGS>"
+      -DOUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${linker_script_gen}
+      -P ${ZEPHYR_BASE}/cmake/linker/template/scatter_script.cmake
   )
+#  add_custom_command(
+#    OUTPUT ${linker_script_gen}
+#    DEPENDS
+#    ${LINKER_SCRIPT}
+#    ${extra_dependencies}
+#    # NB: 'linker_script_dep' will use a keyword that ends 'DEPENDS'
+#    ${linker_script_dep}
+#    COMMAND ${CMAKE_C_COMPILER}
+#    --target=arm-arm-none-eabi
+#    -x assembler-with-cpp
+#    ${NOSYSDEF_CFLAG}
+#    -MD -MF ${linker_script_gen}.dep -MT ${base_name}/${linker_script_gen}
+#    -D_LINKER
+#    -D_ASMLANGUAGE
+#    ${current_includes}
+#    ${current_defines}
+#    ${linker_pass_define}
+#    -E ${LINKER_SCRIPT}
+#    -P # Prevent generation of debug `#line' directives.
+#    -o ${linker_script_gen}
+#    VERBATIM
+#    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+#    COMMAND_EXPAND_LISTS
+#  )
 endmacro()
 
 function(toolchain_ld_link_elf)
@@ -59,13 +68,13 @@ function(toolchain_ld_link_elf)
     ${TOOLCHAIN_LD_LINK_ELF_TARGET_ELF}
     ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_PRE_SCRIPT}
 #    ${TOPT}
-    ${TOOLCHAIN_LD_LINK_ELF_LINKER_SCRIPT}
+    --scatter=${TOOLCHAIN_LD_LINK_ELF_LINKER_SCRIPT}
     ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_POST_SCRIPT}
 
-    ${LINKERFLAGPREFIX},-Map=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
-    ${LINKERFLAGPREFIX},--whole-archive
+#    ${LINKERFLAGPREFIX},-Map=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
+#    ${LINKERFLAGPREFIX},--whole-archive
     ${ZEPHYR_LIBS_PROPERTY}
-    ${LINKERFLAGPREFIX},--no-whole-archive
+#    ${LINKERFLAGPREFIX},--no-whole-archive
     kernel
     $<TARGET_OBJECTS:${OFFSETS_LIB}>
     ${LIB_INCLUDE_DIR}
