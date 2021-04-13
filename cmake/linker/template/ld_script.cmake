@@ -1,4 +1,3 @@
-
 function(memory_content)
   cmake_parse_arguments(MC "" "CONTENT;NAME;START;SIZE;FLAGS" "" ${ARGN})
 
@@ -50,7 +49,17 @@ function(section_content)
   set(TEMP "${TEMP}\n  *(\".${SEC_NAME}.*\")")
 
   if(SECTION_${SEC_NAME}_SETTINGS)
-    cmake_parse_arguments(SETTINGS "KEEP" "INPUT" "" ${SECTION_${SEC_NAME}_SETTINGS})
+    cmake_parse_arguments(SETTINGS "KEEP" "INPUT;ALIGN;SYMBOL" "" ${SECTION_${SEC_NAME}_SETTINGS})
+    if(SETTINGS_ALIGN)
+      set(TEMP "${TEMP}\n  . = ALIGN(${SETTINGS_ALIGN});")
+    endif()
+
+    if(SETTINGS_SYMBOL)
+      set(TEMP "${TEMP}\n  ${SETTINGS_SYMBOL} = .;")
+    endif()
+
+
+
     if(SETTINGS_KEEP)
       set(TEMP "${TEMP}\n  KEEP(*(${SETTINGS_INPUT}));")
     else()
@@ -101,7 +110,6 @@ foreach(section ${SECTIONS})
     section_content(CONTENT OUT ${CMAKE_MATCH_1})
   endif()
 endforeach()
-
 
 
 message("${OUT}")

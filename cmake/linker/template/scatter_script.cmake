@@ -35,6 +35,8 @@ function(section_content)
 
     if(SEC_ADDRESS)
       set(TEMP "${TEMP} ${SEC_ADDRESS}")
+    else()
+      set(TEMP "${TEMP} +0")
     endif()
 
     if(SEC_SUBALIGN)
@@ -55,13 +57,33 @@ function(section_content)
     endif()
 
     if(SECTION_${SEC_NAME}_SETTINGS)
-      cmake_parse_arguments(SETTINGS "KEEP" "INPUT" "" ${SECTION_${SEC_NAME}_SETTINGS})
-      if(SETTINGS_KEEP)
+      cmake_parse_arguments(SETTINGS "" "ANY;INPUT;KEEP;FIRST;ALIGN;SYMBOL" "FLAGS" ${SECTION_${SEC_NAME}_SETTINGS})
+
+      if(SETTINGS_INPUT)
+        set(SETTINGS ${SETTINGS_INPUT})
+
+        if(SETTINGS_ALIGN)
+           set(SETTINGS "${SETTINGS}, OVERALIGN ${SETTINGS_ALIGN}")
+        endif()
+
+        #if(SETTINGS_KEEP)
         # armlink has --keep=<section_id>, but is there an scatter equivalant ?
-        set(TEMP "${TEMP}\n    *(${SETTINGS_INPUT})")
-      else()
-        # Should we add the FLAGS ?
-        set(TEMP "${TEMP}\n    *(${SETTINGS_INPUT})")
+        #endif()
+
+        if(SETTINGS_FIRST)
+           set(SETTINGS "${SETTINGS}, +First")
+        endif()
+
+        set(TEMP "${TEMP}\n    *.o(${SETTINGS})")
+      endif()
+
+      if(SETTINGS_ANY)
+        if(NOT SETTINGS_FLAGS)
+	  message(FATAL_ERROR ".ANY requires flags to be set.")
+	endif()
+	string(REPLACE ";" " " SETTINGS_FLAGS "${SETTINGS_FLAGS}")
+
+        set(TEMP "${TEMP}\n    .ANY (${SETTINGS_FLAGS})")
       endif()
     endif()
 
