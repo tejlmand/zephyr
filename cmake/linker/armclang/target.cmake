@@ -7,7 +7,7 @@ endmacro()
 
 function(toolchain_ld_force_undefined_symbols)
   foreach(symbol ${ARGN})
-    zephyr_link_libraries(${LINKERFLAGPREFIX},-u,${symbol})
+    zephyr_link_libraries(--undefined=${symbol})
   endforeach()
 endfunction()
 
@@ -77,16 +77,22 @@ function(toolchain_ld_link_elf)
 #    ${LINKERFLAGPREFIX},--no-whole-archive
     kernel
     $<TARGET_OBJECTS:${OFFSETS_LIB}>
-    ${LIB_INCLUDE_DIR}
-    -L${PROJECT_BINARY_DIR}
+  #  ${LIB_INCLUDE_DIR}
+  #  -L${PROJECT_BINARY_DIR}
     ${TOOLCHAIN_LIBS}
 
     ${TOOLCHAIN_LD_LINK_ELF_DEPENDENCIES}
   )
+
+  target_link_options(
+    ${TOOLCHAIN_LD_LINK_ELF_TARGET_ELF}
+    PUBLIC
+    $<TARGET_FILE:arch__arm__core__aarch32__cortex_m>\(vector_table.o\)
+  )
 endfunction(toolchain_ld_link_elf)
 
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_base.cmake)
-include(${ZEPHYR_BASE}/cmake/linker/ld/target_baremetal.cmake)
+#include(${ZEPHYR_BASE}/cmake/linker/ld/target_baremetal.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_cpp.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_relocation.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_configure.cmake)
