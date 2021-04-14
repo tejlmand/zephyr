@@ -155,7 +155,7 @@ endif()
 
 zephyr_linker_section_configure(
   SECTION rom_start
-  INPUT ".exc_vector_table*"
+  INPUT ".exc_vector_table.*"
   KEEP FIRST
   SYMBOL _vector_start
   ALIGN ${VECTOR_ALIGN}
