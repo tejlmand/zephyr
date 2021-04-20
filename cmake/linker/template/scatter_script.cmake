@@ -48,43 +48,55 @@ function(section_content)
 
     set(TEMP "${TEMP}\n  {")
 
-    string(TOUPPER ${REGION_${SEC_VMA}_FLAGS} FLAGS)
-    if(FLAGS)
+    string(TOUPPER ${REGION_${SEC_VMA}_FLAGS} VMA_FLAGS)
+    if("${SEC_TYPE}" STREQUAL NOLOAD)
+      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*)")
+      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*.*)")
+    elseif(VMA_FLAGS)
       # ToDo: Proper names as provided by armclang
-      set(TEMP "${TEMP}\n    *${SEC_NAME}* (${FLAGS})")
+#      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*, +${VMA_FLAGS})")
+#      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*.*, +${VMA_FLAGS})")
+      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*)")
+      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*.*)")
     else()
-      set(TEMP "${TEMP}\n    *${SEC_NAME}*")
+      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*)")
+      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*.*)")
     endif()
 
-    if(SECTION_${SEC_NAME}_SETTINGS)
-      cmake_parse_arguments(SETTINGS "" "ANY;INPUT;KEEP;FIRST;ALIGN;SYMBOL" "FLAGS" ${SECTION_${SEC_NAME}_SETTINGS})
 
-      if(SETTINGS_INPUT)
-        set(SETTINGS ${SETTINGS_INPUT})
 
-        if(SETTINGS_ALIGN)
-           set(SETTINGS "${SETTINGS}, OVERALIGN ${SETTINGS_ALIGN}")
+    if(SECTION_${SEC_NAME}_INDEX)
+      message("SECTION_${SEC_NAME}_INDEX: ${SECTION_${SEC_NAME}_INDEX}")
+      foreach(idx RANGE 0 ${SECTION_${SEC_NAME}_INDEX})
+        cmake_parse_arguments(SETTINGS "" "ANY;INPUT;KEEP;FIRST;ALIGN;SYMBOL" "FLAGS" ${SECTION_${SEC_NAME}_SETTINGS_${idx}})
+
+        if(SETTINGS_INPUT)
+          set(SETTINGS ${SETTINGS_INPUT})
+
+          if(SETTINGS_ALIGN)
+             set(SETTINGS "${SETTINGS}, OVERALIGN ${SETTINGS_ALIGN}")
+          endif()
+
+          #if(SETTINGS_KEEP)
+          # armlink has --keep=<section_id>, but is there an scatter equivalant ?
+          #endif()
+
+          if(SETTINGS_FIRST)
+             set(SETTINGS "${SETTINGS}, +First")
+          endif()
+
+          set(TEMP "${TEMP}\n    *.o(${SETTINGS})")
         endif()
 
-        #if(SETTINGS_KEEP)
-        # armlink has --keep=<section_id>, but is there an scatter equivalant ?
-        #endif()
+        if(SETTINGS_ANY)
+          if(NOT SETTINGS_FLAGS)
+            message(FATAL_ERROR ".ANY requires flags to be set.")
+          endif()
+          string(REPLACE ";" " " SETTINGS_FLAGS "${SETTINGS_FLAGS}")
 
-        if(SETTINGS_FIRST)
-           set(SETTINGS "${SETTINGS}, +First")
+          set(TEMP "${TEMP}\n    .ANY (${SETTINGS_FLAGS})")
         endif()
-
-        set(TEMP "${TEMP}\n    *.o(${SETTINGS})")
-      endif()
-
-      if(SETTINGS_ANY)
-        if(NOT SETTINGS_FLAGS)
-	  message(FATAL_ERROR ".ANY requires flags to be set.")
-	endif()
-	string(REPLACE ";" " " SETTINGS_FLAGS "${SETTINGS_FLAGS}")
-
-        set(TEMP "${TEMP}\n    .ANY (${SETTINGS_FLAGS})")
-      endif()
+      endforeach()
     endif()
 
     #  if(SEC_TYPE)
@@ -122,8 +134,12 @@ endforeach()
 foreach(settings ${SECTION_SETTINGS})
   if("${settings}" MATCHES "^{(.*)}$")
     cmake_parse_arguments(SETTINGS "" "SECTION" "" ${CMAKE_MATCH_1})
+    if(NOT SECTION_${SETTINGS_SECTION}_INDEX)
+      set(SECTION_${SETTINGS_SECTION}_INDEX 0)
+    endif()
 
-    set(SECTION_${SETTINGS_SECTION}_SETTINGS ${CMAKE_MATCH_1})
+    set(SECTION_${SETTINGS_SECTION}_SETTINGS_${SECTION_${SETTINGS_SECTION}_INDEX} ${CMAKE_MATCH_1})
+    math(EXPR SECTION_${SETTINGS_SECTION}_INDEX "${SECTION_${SETTINGS_SECTION}_INDEX} + 1")
   endif()
 endforeach()
 

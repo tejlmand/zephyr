@@ -91,7 +91,7 @@ function(zephyr_linker_memory)
 endfunction()
 
 function(zephyr_linker_section)
-  set(single_args "NAME;ADDRESS;TYPE;ALIGN;SUBALIGN;VMA;LMA")
+  set(single_args "NAME;ADDRESS;TYPE;ALIGN;SUBALIGN;VMA;LMA;FLAGS")
   cmake_parse_arguments(SECTION "" "${single_args}" "" ${ARGN})
 
   if(REGION_UNPARSED_ARGUMENTS)
@@ -129,12 +129,13 @@ endfunction()
 zephyr_linker_memory(NAME FLASH FLAGS ro START "0x0" SIZE 1M)
 zephyr_linker_memory(NAME RAM   FLAGS rw START "0x20000000" SIZE 1K)
 
-zephyr_linker_section(NAME rom_start    VMA FLASH)
-zephyr_linker_section(NAME text         VMA FLASH)
-zephyr_linker_section(NAME data         VMA RAM LMA FLASH)
-zephyr_linker_section(NAME extra        VMA RAM LMA FLASH SUBALIGN 8)
-zephyr_linker_section(NAME bss          VMA RAM TYPE NOLOAD)
-zephyr_linker_section(NAME k_timer_area VMA RAM SUBALIGN 4)
+zephyr_linker_section(NAME .rom_start    VMA FLASH)
+zephyr_linker_section(NAME .text         VMA FLASH)
+zephyr_linker_section(NAME .data         VMA RAM LMA FLASH)
+zephyr_linker_section(NAME .extra        VMA RAM LMA FLASH SUBALIGN 8)
+zephyr_linker_section(NAME .bss          VMA RAM LMA FLASH TYPE NOLOAD)
+#zephyr_linker_section(NAME .bss          VMA RAM LMA RAM TYPE NOLOAD)
+zephyr_linker_section(NAME .k_timer_area VMA RAM SUBALIGN 4)
 zephyr_linker_section_ifdef(CONFIG_DEBUG_THREAD_INFO NAME zephyr_dbg_info VMA FLASH)
 
 #zephyr_linker_section(NAME .ARM.exidx VMA RAM TYPE NOLOAD)
@@ -153,19 +154,23 @@ if(CONFIG_CPU_CORTEX_M_HAS_VTOR)
   endif()
 endif()
 
+#zephyr_linker_section_configure(SECTION rom_start INPUT ".exc_vector_table" KEEP FIRST)
 zephyr_linker_section_configure(
-  SECTION rom_start
-  INPUT ".exc_vector_table.*"
+  SECTION .rom_start
+  INPUT ".exc_vector_table*"
   KEEP FIRST
   SYMBOL _vector_start
   ALIGN ${VECTOR_ALIGN}
 )
 
+# Should this be GNU only ?
+# Same symbol is used in code as _IRQ_VECTOR_TABLE_SECTION_NAME, see sections.h
+zephyr_linker_section_configure(SECTION .rom_start INPUT ".gnu.linkonce.irq_vector_table*" KEEP)
+zephyr_linker_section_configure(SECTION .rom_start INPUT ".vectors" KEEP)
 
 # armlink specific flags
-zephyr_linker_section_configure(SECTION text ANY FLAGS "+RO" "+XO")
-zephyr_linker_section_configure(SECTION data ANY FLAGS "+RW" "+ZI")
-#KEEP(*(".exc_vector_table.*"))
+zephyr_linker_section_configure(SECTION .text ANY FLAGS "+RO" "+XO")
+zephyr_linker_section_configure(SECTION .data ANY FLAGS "+RW" "+ZI")
 
 #$<GENEX_EVAL:$<   $<JOIN:$<TARGET_PROPERTY:linker_target,MEMORY_REGIONS>,>
 #-I$<JOIN:$<TARGET_PROPERTY:INCLUDE_DIRECTORIES>, -I>

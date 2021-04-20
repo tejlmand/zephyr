@@ -43,10 +43,12 @@ function(section_content)
     set(TEMP "${TEMP} SUBALIGN(${SEC_SUBALIGN})")
   endif()
 
+  string(REPLACE "." "" SEC_NAME_CLEAN "${SEC_NAME}")
+
   set(TEMP "${TEMP}\n{")
-  set(TEMP "${TEMP}\n  __${SEC_NAME}_start = .;")
-  set(TEMP "${TEMP}\n  *(.${SEC_NAME})")
-  set(TEMP "${TEMP}\n  *(\".${SEC_NAME}.*\")")
+  set(TEMP "${TEMP}\n  __${SEC_NAME_CLEAN}_start = .;")
+  set(TEMP "${TEMP}\n  *(${SEC_NAME})")
+  set(TEMP "${TEMP}\n  *(\"${SEC_NAME}.*\")")
 
   if(SECTION_${SEC_NAME}_SETTINGS)
     cmake_parse_arguments(SETTINGS "KEEP" "INPUT;ALIGN;SYMBOL" "" ${SECTION_${SEC_NAME}_SETTINGS})
@@ -67,7 +69,7 @@ function(section_content)
     endif()
   endif()
 
-  set(TEMP "${TEMP}\n  __${SEC_NAME}_end = .;")
+  set(TEMP "${TEMP}\n  __${SEC_NAME_CLEAN}_end = .;")
 
   # ToDo: add patterns here.
   #       add symbols here.
