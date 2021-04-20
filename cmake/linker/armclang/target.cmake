@@ -2,6 +2,8 @@
 
 find_program(CMAKE_LINKER ${CROSS_COMPILE}armlink PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
+add_custom_target(armlink)
+
 macro(toolchain_ld_base)
 endmacro()
 
@@ -82,12 +84,14 @@ function(toolchain_ld_link_elf)
     ${TOOLCHAIN_LIBS}
 
     ${TOOLCHAIN_LD_LINK_ELF_DEPENDENCIES}
+    --map
   )
 
   target_link_options(
     ${TOOLCHAIN_LD_LINK_ELF_TARGET_ELF}
     PUBLIC
     $<TARGET_FILE:arch__arm__core__aarch32__cortex_m>\(vector_table.o\)
+#    --keep=$<JOIN:$<TARGET_PROPERTY:armlink,KEEP>, --keep=>
   )
 endfunction(toolchain_ld_link_elf)
 
