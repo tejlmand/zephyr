@@ -118,18 +118,57 @@ function(section_content)
 endfunction()
 
 
-# ToDo: Should we sort the memory load sections first ?
-#       For now, just assemue they are ordered when received.
 
 # Strategy:
 # - Find all
 #set(OUT "MEMORY\n{")
+
+
+# Sorting the memory sections in ascending order.
 foreach(region ${MEMORY_REGIONS})
+  if("${region}" MATCHES "^{(.*)}$")
+    cmake_parse_arguments(REGION "" "START" "" ${CMAKE_MATCH_1})
+    math(EXPR start_dec "${REGION_START}" OUTPUT_FORMAT DECIMAL)
+    set(region_${start_dec} ${region})
+    string(REPLACE ";" "\;" region_${start_dec} "${region_${start_dec}}")
+    list(APPEND region_sort ${start_dec})
+  endif()
+endforeach()
+
+list(SORT region_sort COMPARE NATURAL)
+set(MEMORY_REGIONS_SORTED)
+foreach(region_start ${region_sort})
+    message("${region_start}")
+    list(APPEND MEMORY_REGIONS_SORTED "${region_${region_start}}")
+endforeach()
+# sorting complete.
+
+
+foreach(region ${MEMORY_REGIONS_SORTED})
   if("${region}" MATCHES "^{(.*)}$")
     cmake_parse_arguments(REGION "" "NAME;FLAGS" "" ${CMAKE_MATCH_1})
     set(REGION_${REGION_NAME}_FLAGS ${REGION_FLAGS})
+    list(APPEND MEMORY_REGIONS_NAMES ${REGION_NAME})
   endif()
 endforeach()
+
+foreach(section ${SECTIONS})
+  if("${section}" MATCHES "^{(.*)}$")
+    cmake_parse_arguments(SEC "" "VMA;LMA" "" ${CMAKE_MATCH_1})
+    string(REPLACE ";" "\;" section "${section}")
+    if(NOT SEC_LMA)
+      list(APPEND SECTIONS_${SEC_VMA} "${section}")
+      message("++ SECTIONS_${SEC_VMA}")
+    else()
+      list(APPEND SECTIONS_${SEC_LMA}_${SEC_VMA} "${section}")
+      message("++ SECTIONS_${SEC_LMA}_${SEC_VMA}")
+    endif()
+  endif()
+endforeach()
+
+
+
+
 
 foreach(settings ${SECTION_SETTINGS})
   if("${settings}" MATCHES "^{(.*)}$")
@@ -143,14 +182,34 @@ foreach(settings ${SECTION_SETTINGS})
   endif()
 endforeach()
 
-foreach(region ${MEMORY_REGIONS})
+foreach(region ${MEMORY_REGIONS_SORTED})
   if("${region}" MATCHES "^{(.*)}$")
     cmake_parse_arguments(REGION "" "NAME;START;FLAGS" "" ${CMAKE_MATCH_1})
     set(OUT)
-    foreach(section ${SECTIONS})
-      if("${section}" MATCHES "^{(.*)}$")
+    message("== ${region}")
+    message("%% SECTIONS_${REGION_NAME} - ${SECTIONS_${REGION_NAME}}")
+    foreach(section ${SECTIONS_${REGION_NAME}})
+      string(REGEX MATCH "^{(.*)}$" ignore "${section}")
+      message("== ${CMAKE_MATCH_1}")
+      section_content(REGION_NAME ${REGION_NAME} REGION_FLAGS ${REGION_FLAGS} CONTENT OUT ${CMAKE_MATCH_1})
+      set(SECTIONS_${REGION_NAME})
+    endforeach()
+
+    foreach(section ${SECTIONS_${REGION_NAME}_${REGION_NAME}})
+      string(REGEX MATCH "^{(.*)}$" ignore "${section}")
+      message("== ${CMAKE_MATCH_1}")
+      section_content(REGION_NAME ${REGION_NAME} REGION_FLAGS ${REGION_FLAGS} CONTENT OUT ${CMAKE_MATCH_1})
+      set(SECTIONS_${REGION_NAME}_${REGION_NAME})
+    endforeach()
+
+    foreach(vma_region ${MEMORY_REGIONS_NAMES})
+      message("%% SECTIONS_${REGION_NAME}_${vma_region} - ${SECTIONS_${REGION_NAME}_${vma_region}}")
+      foreach(section ${SECTIONS_${REGION_NAME}_${vma_region}})
+        string(REGEX MATCH "^{(.*)}$" ignore "${section}")
+        message("== ${CMAKE_MATCH_1}")
         section_content(REGION_NAME ${REGION_NAME} REGION_FLAGS ${REGION_FLAGS} CONTENT OUT ${CMAKE_MATCH_1})
-      endif()
+        set(SECTIONS_${REGION_NAME}_${vma_region})
+      endforeach()
     endforeach()
 
     if(NOT "${OUT}" STREQUAL "")
