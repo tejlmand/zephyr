@@ -43,7 +43,7 @@ function(section_content)
     set(TEMP "${TEMP} SUBALIGN(${SEC_SUBALIGN})")
   endif()
 
-  string(REPLACE "." "" SEC_NAME_CLEAN "${SEC_NAME}")
+  string(REPLACE "." "_" SEC_NAME_CLEAN "${SEC_NAME}")
 
   set(TEMP "${TEMP}\n{")
   set(TEMP "${TEMP}\n  __${SEC_NAME_CLEAN}_start = .;")
@@ -73,7 +73,11 @@ function(section_content)
 
   # ToDo: add patterns here.
   #       add symbols here.
-  set(TEMP "${TEMP}\n} > ${SEC_VMA}")
+  set(TEMP "${TEMP}\n}")
+
+  if(SEC_VMA)
+    set(TEMP "${TEMP} > ${SEC_VMA}")
+  endif()
 
   if(SEC_LMA)
     set(TEMP "${TEMP} > ${SEC_LMA}")

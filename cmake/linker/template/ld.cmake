@@ -94,8 +94,8 @@ function(zephyr_linker_section)
   set(single_args "NAME;ADDRESS;TYPE;ALIGN;SUBALIGN;VMA;LMA;FLAGS")
   cmake_parse_arguments(SECTION "" "${single_args}" "" ${ARGN})
 
-  if(REGION_UNPARSED_ARGUMENTS)
-    message(FATAL_ERROR "zephyr_linker_section(${ARGV0} ...) given unknown arguments: ${SECTION_UNPARSED_ARGUMENTS}")
+  if(SECTION_UNPARSED_ARGUMENTS)
+    message(WARNING "zephyr_linker_section(${ARGV0} ...) given unknown arguments: ${SECTION_UNPARSED_ARGUMENTS}")
   endif()
 
   zephyr_linker_property_append("SECTION" "${single_args}")
@@ -108,11 +108,11 @@ endfunction()
 
 function(zephyr_linker_section_configure)
   set(options     "ANY;KEEP;FIRST")
-  set(single_args "SECTION;INPUT;SYMBOL;ALIGN")
+  set(single_args "SECTION;INPUT;SYMBOL;ALIGN;SORT")
   set(multi_args  "FLAGS")
   cmake_parse_arguments(SECTION "${options}" "${single_args}" "${multi_args}" ${ARGN})
 
-  if(REGION_UNPARSED_ARGUMENTS)
+  if(SECTION_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR "zephyr_linker_section_configure(${ARGV0} ...) given unknown arguments: ${SECTION_UNPARSED_ARGUMENTS}")
   endif()
 
@@ -129,8 +129,16 @@ endfunction()
 zephyr_linker_memory(NAME FLASH FLAGS ro START "0x0" SIZE 1M)
 zephyr_linker_memory(NAME RAM   FLAGS rw START "0x20000000" SIZE 1K)
 
+zephyr_linker_section(NAME  .rel.plt  HIDDEN)
+zephyr_linker_section(NAME  .rela.plt HIDDEN)
+zephyr_linker_section(NAME  .rel.dyn)
+zephyr_linker_section(NAME  .rela.dyn)
+
+
 zephyr_linker_section(NAME .rom_start    VMA FLASH)
 zephyr_linker_section(NAME .text         VMA FLASH)
+zephyr_linker_section(NAME init          VMA FLASH)
+zephyr_linker_section(NAME sw_isr_table  VMA FLASH SUBALIGN ${CONFIG_ARCH_SW_ISR_TABLE_ALIGN})
 zephyr_linker_section(NAME .data         VMA RAM LMA FLASH)
 zephyr_linker_section(NAME .extra        VMA RAM LMA FLASH SUBALIGN 8)
 zephyr_linker_section(NAME .bss          VMA RAM LMA FLASH TYPE NOLOAD)
@@ -141,8 +149,37 @@ zephyr_linker_section_ifdef(CONFIG_DEBUG_THREAD_INFO NAME zephyr_dbg_info VMA FL
 #zephyr_linker_section(NAME .ARM.exidx VMA RAM TYPE NOLOAD)
 #zephyr_linker_section_configure_ifdef(GNU SECTION .ARM.exidx INPUT ".ARM.exidx* gnu.linkonce.armexidx.*")
 
+zephyr_linker_section_configure(SECTION .rel.plt  INPUT ".rel.iplt")
+zephyr_linker_section_configure(SECTION .rela.plt INPUT ".rela.iplt")
 
 zephyr_linker_section_configure(SECTION zephyr_dbg_info INPUT ".dbg_thread_info" KEEP)
+zephyr_linker_section_configure(SECTION sw_isr_table INPUT    ".gnu.linkonce.sw_isr_table*")
+
+# Configure kernel init.
+zephyr_linker_section_configure(SECTION init INPUT ".init_PRE_KERNEL_1[0-9]*"
+  KEEP SORT NAME SYMBOL __init_PRE_KERNEL_1_start)
+zephyr_linker_section_configure(SECTION init INPUT ".init_PRE_KERNEL_1[1-9][0-9]*" KEEP SORT NAME)
+
+zephyr_linker_section_configure(SECTION init INPUT ".init_PRE_KERNEL_2[0-9]*"
+  KEEP SORT NAME SYMBOL __init_PRE_KERNEL_2_start)
+zephyr_linker_section_configure(SECTION init INPUT ".init_PRE_KERNEL_2[1-9][0-9]*" KEEP SORT NAME)
+
+zephyr_linker_section_configure(SECTION init INPUT ".init_POST_KERNEL_2[0-9]*"
+  KEEP SORT NAME SYMBOL __init_POST_KERNEL_start)
+zephyr_linker_section_configure(SECTION init INPUT ".init_POST_KERNEL_2[1-9][0-9]*" KEEP SORT NAME)
+
+zephyr_linker_section_configure(SECTION init INPUT ".init_APPLICATION[0-9]*"
+  KEEP SORT NAME SYMBOL __init_APPLICATION_start)
+zephyr_linker_section_configure(SECTION init INPUT ".init_APPLICATION[1-9][0-9]*" KEEP SORT NAME)
+
+zephyr_linker_section_configure(SECTION init INPUT ".init_SMP[0-9]*"
+  KEEP SORT NAME SYMBOL __init_SMP_start)
+zephyr_linker_section_configure(SECTION init INPUT ".init_SMP[1-9][0-9]*" KEEP SORT NAME)
+
+
+
+
+
 
 set(VECTOR_ALIGN 4)
 if(CONFIG_CPU_CORTEX_M_HAS_VTOR)
