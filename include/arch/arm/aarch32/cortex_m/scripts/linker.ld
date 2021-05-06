@@ -235,7 +235,7 @@ SECTIONS
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
-#include <snippets-rodata.ld>
+/** #include <snippets-rodata.ld> -- no snippets in arm hello world. **/
 
 #include <linker/kobject-rom.ld>
 

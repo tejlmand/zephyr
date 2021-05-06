@@ -26,7 +26,7 @@ function(memory_content)
 endfunction()
 
 function(section_content)
-  cmake_parse_arguments(SEC "" "REGION_NAME;REGION_FLAGS;REGION_ADDRESS;CONTENT;NAME;ADDRESS;TYPE;ALIGN;SUBALIGN;VMA;LMA" "" ${ARGN})
+  cmake_parse_arguments(SEC "" "REGION_NAME;REGION_FLAGS;REGION_ADDRESS;CONTENT;NAME;ADDRESS;TYPE;ALIGN;SUBALIGN;VMA;LMA;NOINPUT;NOINIT" "" ${ARGN})
 
   if("${SEC_REGION_NAME}" STREQUAL "${SEC_VMA}"
      AND NOT SEC_LMA
@@ -43,6 +43,12 @@ function(section_content)
       set(TEMP "${TEMP} +0")
     endif()
 
+    if(SEC_NOINIT)
+      # Currently we simply uses offset +0, but we must support offset defined
+      # externally.
+      set(TEMP "${TEMP} UNINIT")
+    endif()
+
     if(SEC_SUBALIGN)
       # Currently we simply uses offset +0, but we must support offset defined
       # externally.
@@ -50,38 +56,51 @@ function(section_content)
     endif()
 
 
-    set(TEMP "${TEMP}\n  {")
-
     string(TOUPPER ${REGION_${SEC_VMA}_FLAGS} VMA_FLAGS)
-    if("${SEC_TYPE}" STREQUAL NOLOAD)
-      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*)")
-      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*.*)")
-    elseif(VMA_FLAGS)
-      # ToDo: Proper names as provided by armclang
-#      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*, +${VMA_FLAGS})")
-#      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*.*, +${VMA_FLAGS})")
-      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*)")
-      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*.*)")
+    if(NOT SEC_NOINPUT)
+      set(TEMP "${TEMP}\n  {")
+
+      if("${SEC_TYPE}" STREQUAL NOLOAD)
+        set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*)")
+        set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*.*)")
+      elseif(VMA_FLAGS)
+        # ToDo: Proper names as provided by armclang
+  #      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*, +${VMA_FLAGS})")
+  #      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*.*, +${VMA_FLAGS})")
+        set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*)")
+        set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*.*)")
+      else()
+        set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*)")
+        set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*.*)")
+      endif()
     else()
-      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*)")
-      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*.*)")
+      set(empty TRUE)
     endif()
 
     foreach(group "" "_SORT")
-      message("processing <${group}>")
+      # message("processing <${group}>")
       set(INDEX_KEY    SECTION_${SEC_NAME}${group}_INDEX)
       set(SETTINGS_KEY SECTION_${SEC_NAME}_SETTINGS${group})
 
-      message("Index key: ${INDEX_KEY}=${${INDEX_KEY}}")
-      message("settings : ${SETTINGS_KEY}_0=${${SETTINGS_KEY}_0}")
+      # message("Index key: ${INDEX_KEY}=${${INDEX_KEY}}")
+      # message("settings : ${SETTINGS_KEY}_0=${${SETTINGS_KEY}_0}")
 
-      if(${INDEX_KEY})
+      if(DEFINED ${INDEX_KEY})
         foreach(idx RANGE 0 ${${INDEX_KEY}})
-          cmake_parse_arguments(SETTINGS "" "ANY;INPUT;KEEP;FIRST;ALIGN;SYMBOL;SORT" "FLAGS" ${${SETTINGS_KEY}_${idx}})
+          cmake_parse_arguments(SETTINGS "" "ANY;INPUT;KEEP;FIRST;ALIGN;SORT" "FLAGS;SYMBOLS" ${${SETTINGS_KEY}_${idx}})
 
           if(SETTINGS_SORT)
+	    if(empty)
+              set(TEMP "${TEMP} EMPTY 0x0\n  {")
+              set(empty FALSE)
+	    endif()
             set(TEMP "${TEMP}\n  }")
             set(TEMP "${TEMP}\n  ${SEC_NAME}_${idx} +0 SORTTYPE ${SORT_TYPE_${SETTINGS_SORT}}\n  {")
+	  endif()
+
+          if(empty)
+            set(TEMP "${TEMP}\n  {")
+            set(empty FALSE)
 	  endif()
 
           if(SETTINGS_INPUT)
@@ -116,7 +135,7 @@ function(section_content)
 
     if(SECTION_${SEC_NAME}_SORT_INDEX)
       set(TEMP "${TEMP}\n  }")
-      set(TEMP "${TEMP}\n  ${SEC_NAME}_end +0 EMPTY\n  {")
+      set(TEMP "${TEMP}\n  ${SEC_NAME}_end +0 EMPTY 0x0\n  {")
     endif()
 
 
@@ -195,7 +214,7 @@ foreach(settings ${SECTION_SETTINGS})
     if(SETTINGS_SORT)
       set(INDEX_KEY    SECTION_${SETTINGS_SECTION}_SORT_INDEX)
       set(SETTINGS_KEY SECTION_${SETTINGS_SECTION}_SETTINGS_SORT)
-      message("Adding to: SECTION_${SETTINGS_SECTION}_SETTINGS_SORT")
+      # message("Adding to: SECTION_${SETTINGS_SECTION}_SETTINGS_SORT")
     else()
       set(INDEX_KEY    SECTION_${SETTINGS_SECTION}_INDEX)
       set(SETTINGS_KEY SECTION_${SETTINGS_SECTION}_SETTINGS)
@@ -206,7 +225,7 @@ foreach(settings ${SECTION_SETTINGS})
     endif()
 
     set(${SETTINGS_KEY}_${${INDEX_KEY}} ${CMAKE_MATCH_1})
-    message("Adding to: ${SETTINGS_KEY}_${${INDEX_KEY}}=${CMAKE_MATCH_1}")
+    # message("Adding to: ${SETTINGS_KEY}_${${INDEX_KEY}}=${CMAKE_MATCH_1}")
     math(EXPR ${INDEX_KEY} "${${INDEX_KEY}} + 1")
   endif()
 endforeach()
