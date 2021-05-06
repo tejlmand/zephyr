@@ -203,8 +203,9 @@ set_ifndef(region_min_align 4)
 
 
 
-zephyr_linker_memory(NAME FLASH FLAGS ro START "0x0" SIZE 1M)
-zephyr_linker_memory(NAME RAM   FLAGS rw START "0x20000000" SIZE 1K)
+zephyr_linker_memory(NAME FLASH    FLAGS ro START "0x0" SIZE 1M)
+zephyr_linker_memory(NAME RAM      FLAGS rw START "0x20000000" SIZE 256K)
+zephyr_linker_memory(NAME IDT_LIST FLAGS rw START "0x20040000" SIZE 2K)
 
 #zephyr_region(NAME FLASH ALIGN ${region_min_align})
 #zephyr_region(NAME RAM ALIGN ${region_min_align})

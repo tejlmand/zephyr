@@ -24,6 +24,11 @@ zephyr_linker_sources_ifdef(CONFIG_GEN_ISR_TABLES
   ${ZEPHYR_BASE}/include/linker/intlist.ld
 )
 
+
+zephyr_linker_section(NAME .intList VMA IDT_LIST LMA IDT_LIST NOINPUT)
+zephyr_linker_section_configure(SECTION .intList KEEP INPUT ".irq_info")
+zephyr_linker_section_configure(SECTION .intList KEEP INPUT ".intList")
+
 zephyr_linker_sources_ifdef(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
   RAM_SECTIONS
   ramfunc.ld
