@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.17)
 
 set(SORT_TYPE_NAME Lexical)
 
@@ -26,12 +27,16 @@ function(memory_content)
 endfunction()
 
 function(section_content)
-  cmake_parse_arguments(SEC "" "REGION_NAME;REGION_FLAGS;REGION_ADDRESS;CONTENT;NAME;ADDRESS;TYPE;ALIGN;SUBALIGN;VMA;LMA;NOINPUT;NOINIT" "" ${ARGN})
+  cmake_parse_arguments(SEC "" "REGION_NAME;REGION_FLAGS;REGION_ADDRESS;CONTENT;NAME;ADDRESS;TYPE;ALIGN;SUBALIGN;VMA;LMA;NOINPUT;NOINIT" "PASS" ${ARGN})
 
   if("${SEC_REGION_NAME}" STREQUAL "${SEC_VMA}"
      AND NOT SEC_LMA
      OR  "${SEC_REGION_NAME}" STREQUAL "${SEC_LMA}"
   )
+    if(DEFINED SEC_PASS AND NOT "${PASS}" IN_LIST SEC_PASS)
+      # This section is not active in this pass, ignore.
+      return()
+    endif()
 
     # SEC_NAME is required, test for that.
     set(TEMP "  ${SEC_NAME}")

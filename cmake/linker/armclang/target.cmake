@@ -17,14 +17,16 @@ macro(toolchain_ld_baremetal)
 endmacro()
 
 macro(configure_linker_script linker_script_gen linker_pass_define)
-  set(extra_dependencies ${ARGN})
-  zephyr_get_include_directories_for_lang(C current_includes)
-  get_filename_component(base_name ${CMAKE_CURRENT_BINARY_DIR} NAME)
-  get_property(current_defines GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
+  if("${linker_pass_define}" STREQUAL "")
+    set(PASS 1)
+  elseif("${linker_pass_define}" STREQUAL "-DLINKER_PASS2")
+    set(PASS 2)
+  endif()
 
   add_custom_command(
     OUTPUT ${linker_script_gen}
     COMMAND ${CMAKE_COMMAND}
+      -DPASS=${PASS}
       -DMEMORY_REGIONS="$<TARGET_PROPERTY:linker_target,MEMORY_REGIONS>"
       -DSECTIONS="$<TARGET_PROPERTY:linker_target,SECTIONS>"
       -DSECTION_SETTINGS="$<TARGET_PROPERTY:linker_target,SECTION_SETTINGS>"
@@ -74,6 +76,7 @@ function(toolchain_ld_link_elf)
     ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_POST_SCRIPT}
 
 #    ${LINKERFLAGPREFIX},-Map=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
+    --map --list=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
 #    ${LINKERFLAGPREFIX},--whole-archive
     ${ZEPHYR_LIBS_PROPERTY}
 #    ${LINKERFLAGPREFIX},--no-whole-archive
@@ -84,7 +87,6 @@ function(toolchain_ld_link_elf)
     ${TOOLCHAIN_LIBS}
 
     ${TOOLCHAIN_LD_LINK_ELF_DEPENDENCIES}
-    --map
   )
 
   target_link_options(
