@@ -17,16 +17,15 @@ endif()
 
 # Handle Input and Output target types
 if(DEFINED OUTTARGET)
-  if(GAP_FILL)
-    set(obj_copy_gap_fill "--bincombined_padding=1,${GAP_FILL}")
-  endif()
-
   if(${OUTTARGET} STREQUAL "srec")
     set(obj_copy_target_output "--m32")
   elseif(${OUTTARGET} STREQUAL "ihex")
-    set(obj_copy_target_output "--i32")
+    set(obj_copy_target_output "--i32combined")
   elseif(${OUTTARGET} STREQUAL "binary")
     set(obj_copy_target_output "--bincombined")
+    if(GAP_FILL)
+      set(obj_copy_gap_fill "--bincombined_padding=1,${GAP_FILL}")
+    endif()
   endif()
 endif()
 
