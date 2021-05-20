@@ -140,3 +140,27 @@ int __weak arch_irq_connect_dynamic(unsigned int irq,
 }
 
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
+char z_arm_do_syscall[] = {0};
+char __bss_end[] = {0};
+char __bss_start[] = {0};
+char __kernel_ram_end[] = {0};
+char _image_ram_start[] = {0};
+char _ramfunc_ram_size[] = {0};
+char _ramfunc_ram_start[] = {0};
+
+#include <device.h>
+//const struct device __device_end[] = (const struct device[]) {0};
+const struct device __device_start[] = (const struct device[]) {0};
+char __init_APPLICATION_start[] = {0};
+char __init_POST_KERNEL_start[] = {0};
+char __init_PRE_KERNEL_1_start[] = {0};
+char __init_PRE_KERNEL_2_start[] = {0};
+char __init_end[] = {0};
+char __static_thread_data_list_end[] = {0};
+char __static_thread_data_list_start[] = {0};
+char __data_ram_end[] = {0};
+char __data_ram_start[] = {0};
+char __data_rom_start[] = {0};
+char _ramfunc_rom_start[] = {0};
+char _vector_start[] = {0};
+char _vector_end[] = {0};
