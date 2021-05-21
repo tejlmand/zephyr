@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_DEVICE_H_
 #define ZEPHYR_INCLUDE_DEVICE_H_
 
-#define __device_end Image$$device_end$$Base
+//#define __device_end Image$$device_end$$Base
 
 /**
  * @brief Device Driver APIs

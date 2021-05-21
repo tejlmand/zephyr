@@ -12,11 +12,13 @@ add_custom_target(scatter_target
     -DMEMORY_REGIONS="$<TARGET_PROPERTY:linker_target,MEMORY_REGIONS>"
     -DSECTIONS="$<TARGET_PROPERTY:linker_target,SECTIONS>"
     -DSECTION_SETTINGS="$<TARGET_PROPERTY:linker_target,SECTION_SETTINGS>"
+    -DSYMBOLS="$<TARGET_PROPERTY:linker_target,SYMBOLS>"
     -P ${CMAKE_CURRENT_LIST_DIR}/scatter_script.cmake
   COMMAND ${CMAKE_COMMAND}
     -DMEMORY_REGIONS="$<TARGET_PROPERTY:linker_target,MEMORY_REGIONS>"
     -DSECTIONS="$<TARGET_PROPERTY:linker_target,SECTIONS>"
     -DSECTION_SETTINGS="$<TARGET_PROPERTY:linker_target,SECTION_SETTINGS>"
+    -DSYMBOLS="$<TARGET_PROPERTY:linker_target,SYMBOLS>"
     -P ${CMAKE_CURRENT_LIST_DIR}/scatter_script.cmake
 )
 
@@ -90,6 +92,21 @@ function(zephyr_linker_memory)
   )
 endfunction()
 
+function(zephyr_linker_symbol)
+  set(single_args "SYMBOL;EXPR")
+  cmake_parse_arguments(SYMBOL "" "${single_args}" "" ${ARGN})
+
+  if(SECTION_UNPARSED_ARGUMENTS)
+    message(WARNING "zephyr_linker_symbol(${ARGV0} ...) given unknown arguments: ${SECTION_UNPARSED_ARGUMENTS}")
+  endif()
+  zephyr_linker_property_append("SYMBOL" "${single_args}")
+
+  string(REPLACE ";" "\;" SYMBOL "${SYMBOL}")
+  set_property(TARGET   linker_target
+               APPEND PROPERTY SYMBOLS "{${SYMBOL}}"
+  )
+endfunction()
+
 function(zephyr_linker_section)
   set(options "NOINPUT;NOINIT")
   set(single_args "NAME;ADDRESS;TYPE;ALIGN;SUBALIGN;VMA;LMA;FLAGS")
@@ -109,7 +126,6 @@ function(zephyr_linker_section)
                APPEND PROPERTY SECTIONS "{${SECTION}}"
   )
 endfunction()
-
 function(zephyr_linker_section_configure)
   set(options     "ANY;KEEP;FIRST")
   set(single_args "SECTION;INPUT;ALIGN;SORT;PRIO")
@@ -295,9 +311,9 @@ zephyr_linker_section(NAME .ramfunc VMA RAM LMA FLASH)
 # ToDo - handle if(CONFIG_USERSPACE)
 
 zephyr_linker_section(NAME .data VMA RAM LMA FLASH)
-zephyr_linker_section_configure(SECTION .data SYMBOLS __data_ram_start)
+#zephyr_linker_section_configure(SECTION .data SYMBOLS __data_ram_start)
 zephyr_linker_section_configure(SECTION .data INPUT ".kernel.*")
-zephyr_linker_section_configure(SECTION .data SYMBOLS __data_ram_end)
+#zephyr_linker_section_configure(SECTION .data SYMBOLS __data_ram_end)
 
 include(${CMAKE_CURRENT_LIST_DIR}/common-ram.cmake)
 #include(kobject.ld)
@@ -328,7 +344,9 @@ endif()
 #
 # __kernel_ram_end = RAM_ADDR + RAM_SIZE;
 # __kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
-
+#zephyr_linker_symbol(SYMBOL __kernel_ram_end  EXPR "${RAM_ADDR} + ${RAM_SIZE}")
+zephyr_linker_symbol(SYMBOL __kernel_ram_end  EXPR "(0x20000000 + 1024 * 256)")
+zephyr_linker_symbol(SYMBOL __kernel_ram_size EXPR "(%__kernel_ram_end% - %__bss_start%)")
 
 set(VECTOR_ALIGN 4)
 if(CONFIG_CPU_CORTEX_M_HAS_VTOR)
