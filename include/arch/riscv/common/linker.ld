@@ -216,7 +216,7 @@ SECTIONS
 	{
 		 . = ALIGN(4);
 		/* _image_ram_start = .; */
-		 __data_ram_start = .;
+		 __data_start = .;
 
 		 *(.data)
 		 *(".data.*")
@@ -230,7 +230,7 @@ SECTIONS
 
 	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	__data_rom_start = LOADADDR(_DATA_SECTION_NAME);
+	__data_load_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <linker/common-ram.ld>
 #include <linker/kobject-data.ld>
@@ -239,7 +239,7 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-ram-sections.ld>
-    __data_ram_end = .;
+    __data_end = .;
 
     MPU_MIN_SIZE_ALIGN
 
