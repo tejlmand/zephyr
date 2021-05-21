@@ -167,7 +167,14 @@ def main():
     devices = []
     handles = []
     # Leading _ are stripped from the stored constant key
-    want_constants = set(["__device_start",
+
+    ld = False
+    if ld:
+        device_start_symbol = "__device_start"
+    else:
+        device_start_symbol = "Image$$device$$Base"
+
+    want_constants = set([device_start_symbol,
                           "_DEVICE_STRUCT_SIZEOF",
                           "_DEVICE_STRUCT_HANDLES_OFFSET"])
     ld_constants = dict()
@@ -199,7 +206,7 @@ def main():
 
     devices = sorted(devices, key = lambda k: k.sym.entry.st_value)
 
-    device_start_addr = ld_constants["device_start"]
+    device_start_addr = ld_constants[device_start_symbol]
     device_size = 0
 
     assert len(devices) == len(handles), 'mismatch devices and handles'
