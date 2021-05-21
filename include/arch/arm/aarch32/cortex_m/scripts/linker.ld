@@ -208,10 +208,10 @@ SECTIONS
 #include <linker/kobject-rom.ld>
 
 	/*
-	 * For XIP images, in order to avoid the situation when __data_rom_start
+	 * For XIP images, in order to avoid the situation when __data_load_start
 	 * is 32-bit aligned, but the actual data is placed right after rodata
 	 * section, which may not end exactly at 32-bit border, pad rodata
-	 * section, so __data_rom_start points at data and it is 32-bit aligned.
+	 * section, so __data_load_start points at data and it is 32-bit aligned.
 	 *
 	 * On non-XIP images this may enlarge image size up to 3 bytes. This
 	 * generally is not an issue, since modern ROM and FLASH memory is
@@ -292,9 +292,13 @@ SECTIONS
 
 #endif  /* CONFIG_USERSPACE */
 
+    GROUP_START(DATA_REGION)
+
+    __data_region_start = .;
+
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
-	__data_ram_start = .;
+	__data_start = .;
 	*(.data)
 	*(".data.*")
 	*(".kernel.*")
@@ -307,17 +311,18 @@ SECTIONS
 #ifdef CONFIG_CODE_DATA_RELOCATION
 #include <linker_sram_data_relocate.ld>
 #endif
+	__data_end = .;
 
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-    __data_rom_start = LOADADDR(_DATA_SECTION_NAME);
+    __data_region_load_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <linker/common-ram.ld>
 #include <linker/kobject-data.ld>
 
 #include <linker/cplusplus-ram.ld>
 
-    __data_ram_end = .;
+    __data_region_end = .;
 
 #ifndef CONFIG_USERSPACE
    SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
