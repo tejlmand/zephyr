@@ -93,7 +93,7 @@ function(zephyr_linker_memory)
 endfunction()
 
 function(zephyr_linker_symbol)
-  set(single_args "SYMBOL;EXPR")
+  set(single_args "EXPR;SUBALIGN;SYMBOL")
   cmake_parse_arguments(SYMBOL "" "${single_args}" "" ${ARGN})
 
   if(SECTION_UNPARSED_ARGUMENTS)
@@ -128,8 +128,8 @@ function(zephyr_linker_section)
 endfunction()
 function(zephyr_linker_section_configure)
   set(options     "ANY;KEEP;FIRST")
-  set(single_args "SECTION;INPUT;ALIGN;SORT;PRIO")
-  set(multi_args  "FLAGS;SYMBOLS")
+  set(single_args "SECTION;;ALIGN;SORT;PRIO")
+  set(multi_args  "FLAGS;INPUT;SYMBOLS")
   cmake_parse_arguments(SECTION "${options}" "${single_args}" "${multi_args}" ${ARGN})
 
   if(SECTION_UNPARSED_ARGUMENTS)
@@ -258,7 +258,8 @@ endif()
 
 zephyr_linker_section(NAME .text         VMA FLASH)
 
-zephyr_linker_section(NAME .extra        VMA RAM LMA FLASH SUBALIGN 8)
+# ToDo: Find out again where section '.extra' originated before re-activating.
+#zephyr_linker_section(NAME .extra        VMA RAM LMA FLASH SUBALIGN 8)
 #zephyr_linker_section(NAME .bss          VMA RAM LMA RAM TYPE NOLOAD)
 #zephyr_linker_section_ifdef(CONFIG_DEBUG_THREAD_INFO NAME zephyr_dbg_info VMA FLASH)
 
@@ -277,11 +278,11 @@ zephyr_linker_section_configure(SECTION text INPUT ".vfp11_veneer")
 zephyr_linker_section_configure(SECTION text INPUT ".v4_bx")
 
 if(CONFIG_CPLUSPLUS)
-  zephyr_linker_section(NAME .ARM.extab VMA RAM LMA FLASH)
+  zephyr_linker_section(NAME .ARM.extab VMA FLASH)
   zephyr_linker_section_configure(SECTION .ARM.extab INPUT ".gnu.linkonce.armextab.*")
 endif()
 
-zephyr_linker_section(NAME .ARM.exidx VMA RAM LMA FLASH)
+zephyr_linker_section(NAME .ARM.exidx VMA FLASH)
 # Here the original linker would check for __GCC_LINKER_CMD__, need to check toolchain linker ?
 #if(__GCC_LINKER_CMD__)
   zephyr_linker_section_configure(SECTION .ARM.exidx INPUT ".gnu.linkonce.armexidx.*")
@@ -302,7 +303,7 @@ zephyr_linker_section_configure(SECTION .rodata ALIGN 4)
 # Symbol to add _image_ram_start = .;
 
 # This comes from ramfunc.ls, via snippets-ram-sections.ld
-zephyr_linker_section(NAME .ramfunc VMA RAM LMA FLASH)
+zephyr_linker_section(NAME .ramfunc VMA RAM LMA FLASH SUBALIGN 8)
 # MPU_ALIGN(_ramfunc_ram_size);
 # } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #_ramfunc_ram_size = _ramfunc_ram_end - _ramfunc_ram_start;
@@ -347,6 +348,7 @@ endif()
 #zephyr_linker_symbol(SYMBOL __kernel_ram_end  EXPR "${RAM_ADDR} + ${RAM_SIZE}")
 zephyr_linker_symbol(SYMBOL __kernel_ram_end  EXPR "(0x20000000 + 1024 * 256)")
 zephyr_linker_symbol(SYMBOL __kernel_ram_size EXPR "(%__kernel_ram_end% - %__bss_start%)")
+zephyr_linker_symbol(SYMBOL _image_ram_start  EXPR "(0x20000000)" SUBALIGN 32) # ToDo calculate 32 correctly
 
 set(VECTOR_ALIGN 4)
 if(CONFIG_CPU_CORTEX_M_HAS_VTOR)
@@ -363,17 +365,19 @@ endif()
 zephyr_linker_section_configure(
   SECTION .rom_start
   INPUT ".exc_vector_table*"
+        ".gnu.linkonce.irq_vector_table*"
+        ".vectors"
   KEEP FIRST
-  SYMBOLS _vector_start
+  SYMBOLS _vector_start _vector_end
   ALIGN ${VECTOR_ALIGN}
   PRIO 0
 )
 
 # Should this be GNU only ?
 # Same symbol is used in code as _IRQ_VECTOR_TABLE_SECTION_NAME, see sections.h
-zephyr_linker_section_configure(SECTION .rom_start INPUT ".gnu.linkonce.irq_vector_table*" KEEP PRIO 1)
-zephyr_linker_section_configure(SECTION .rom_start INPUT ".vectors" KEEP PRIO 2)
-zephyr_linker_section_configure(SECTION .rom_start SYMBOLS _vector_end PRIO 3)
+#zephyr_linker_section_configure(SECTION .rom_start INPUT ".gnu.linkonce.irq_vector_table*" KEEP PRIO 1)
+#zephyr_linker_section_configure(SECTION .rom_start INPUT ".vectors" KEEP PRIO 2)
+#zephyr_linker_section_configure(SECTION .rom_start SYMBOLS _vector_end PRIO 3)
 # To be moved to: ./arch/arm/core/aarch32/CMakeLists.txt or similar - end
 
 # armlink specific flags

@@ -144,7 +144,7 @@ char z_arm_do_syscall[] = {0};
 //char __bss_end[] = {0};
 //char __bss_start[] = {0};
 //char __kernel_ram_end[] = {0};
-char _image_ram_start[] = {0};
+//char _image_ram_start[] = {0};
 //char _ramfunc_ram_size[] = {0};
 //char _ramfunc_ram_start[] = {0};
 //
@@ -162,5 +162,5 @@ char _image_ram_start[] = {0};
 //char __data_ram_start[] = {0};
 //char __data_rom_start[] = {0};
 //char _ramfunc_rom_start[] = {0};
-char _vector_start[] = {0};
+//char _vector_start[] = {0};
 //char _vector_end[] = {0};

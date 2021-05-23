@@ -95,7 +95,7 @@ function(section_content)
 
       if(DEFINED ${INDEX_KEY})
         foreach(idx RANGE 0 ${${INDEX_KEY}})
-          cmake_parse_arguments(SETTINGS "" "ANY;INPUT;KEEP;FIRST;ALIGN;SORT" "FLAGS;SYMBOLS" ${${SETTINGS_KEY}_${idx}})
+          cmake_parse_arguments(SETTINGS "" "ANY;KEEP;FIRST;ALIGN;SORT" "FLAGS;INPUT;SYMBOLS" ${${SETTINGS_KEY}_${idx}})
 
           if(SETTINGS_SORT)
             if(empty)
@@ -115,6 +115,18 @@ function(section_content)
                 "RESOLVE ${symbol} AS Image$$${SEC_NAME_CLEAN}_${idx}$$${postfix}\n"
               )
             endforeach()
+          elseif(DEFINED SETTINGS_SYMBOLS AND ${INDEX_KEY} EQUAL 1 AND SEC_NOINPUT)
+            # Symbols translation here.
+            set(steering_postfixes Base Limit)
+            foreach(symbol ${SETTINGS_SYMBOLS})
+              list(POP_FRONT steering_postfixes postfix)
+              set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C
+                "Image$$${SEC_NAME_CLEAN}$$${postfix}"
+              )
+              set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+                "RESOLVE ${symbol} AS Image$$${SEC_NAME_CLEAN}$$${postfix}\n"
+              )
+            endforeach()
           elseif(DEFINED SETTINGS_SYMBOLS)
             message(WARNING "SYMBOL defined with: ${SETTINGS_INPUT}---${SETTINGS_SYMBOLS} at Section: ${SEC_NAME}")
           endif()
@@ -124,11 +136,12 @@ function(section_content)
             set(empty FALSE)
           endif()
 
-          if(SETTINGS_INPUT)
-            set(SETTINGS ${SETTINGS_INPUT})
+          #if(SETTINGS_INPUT)
+          foreach(setting ${SETTINGS_INPUT})
+            #set(SETTINGS ${SETTINGS_INPUT})
 
             if(SETTINGS_ALIGN)
-               set(SETTINGS "${SETTINGS}, OVERALIGN ${SETTINGS_ALIGN}")
+               set(SETTINGS "${setting}, OVERALIGN ${SETTINGS_ALIGN}")
             endif()
 
             #if(SETTINGS_KEEP)
@@ -136,11 +149,13 @@ function(section_content)
             #endif()
 
             if(SETTINGS_FIRST)
-               set(SETTINGS "${SETTINGS}, +First")
+               set(setting "${setting}, +First")
+               set(SETTINGS_FIRST "")
             endif()
 
-            set(TEMP "${TEMP}\n    *.o(${SETTINGS})")
-          endif()
+            set(TEMP "${TEMP}\n    *.o(${setting})")
+          #endif()
+          endforeach()
 
           if(SETTINGS_ANY)
             if(NOT SETTINGS_FLAGS)
@@ -301,7 +316,7 @@ foreach(region ${MEMORY_REGIONS_SORTED})
 
   foreach(symbol ${SYMBOLS})
     if("${symbol}" MATCHES "^{(.*)}$")
-      cmake_parse_arguments(SYM "" "SYMBOL;EXPR" "" ${CMAKE_MATCH_1})
+      cmake_parse_arguments(SYM "" "EXPR;SUBALIGN;SYMBOL" "" ${CMAKE_MATCH_1})
       string(REPLACE "\\" "" SYM_EXPR "${SYM_EXPR}")
       string(REGEX MATCHALL "%([^%]*)%" MATCH_RES ${SYM_EXPR})
       foreach(match ${MATCH_RES})
@@ -309,7 +324,11 @@ foreach(region ${MEMORY_REGIONS_SORTED})
         string(REPLACE "%${match}%" "ImageBase(${${match}})" SYM_EXPR ${SYM_EXPR})
       endforeach()
 
-      set(OUT "${OUT}\n  ${SYM_SYMBOL} ${SYM_EXPR} EMPTY 0x0\n  {\n  }\n")
+      if(DEFINED SYM_SUBALIGN)
+        set(alignment "ALIGN ${SYM_SUBALIGN}")
+      endif()
+
+      set(OUT "${OUT}\n  ${SYM_SYMBOL} ${SYM_EXPR} ${alignment} EMPTY 0x0\n  {\n  }\n")
       set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${SYM_SYMBOL}$$Base")
 
       set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
