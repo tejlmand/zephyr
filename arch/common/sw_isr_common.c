@@ -140,7 +140,7 @@ int __weak arch_irq_connect_dynamic(unsigned int irq,
 }
 
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
-char z_arm_do_syscall[] = {0};
+//char z_arm_do_syscall[] = {0};
 //char __bss_end[] = {0};
 //char __bss_start[] = {0};
 //char __kernel_ram_end[] = {0};
