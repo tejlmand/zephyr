@@ -748,7 +748,7 @@ if(CONFIG_GEN_ISR_TABLES)
             $<TARGET_PROPERTY:bintools,elfconvert_flag>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_intarget>${OUTPUT_FORMAT}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>binary
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_only>.intList
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_only>intList
             $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>$<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>isrList.bin
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
