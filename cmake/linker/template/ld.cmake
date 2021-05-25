@@ -220,10 +220,15 @@ set_ifndef(region_min_align 4)
 
 
 
+math(EXPR FLASH_ADDR "${CONFIG_FLASH_BASE_ADDRESS} + ${CONFIG_FLASH_LOAD_OFFSET}" OUTPUT_FORMAT HEXADECIMAL)
+math(EXPR FLASH_SIZE "${CONFIG_FLASH_SIZE} * 1024 - ${CONFIG_FLASH_LOAD_OFFSET}" OUTPUT_FORMAT HEXADECIMAL)
+set(RAM_ADDR ${CONFIG_SRAM_BASE_ADDRESS})
+math(EXPR RAM_SIZE "${CONFIG_SRAM_SIZE} * 1024" OUTPUT_FORMAT HEXADECIMAL)
+math(EXPR IDT_ADDR "${RAM_ADDR} + ${RAM_SIZE}" OUTPUT_FORMAT HEXADECIMAL)
 
-zephyr_linker_memory(NAME FLASH    FLAGS ro START "0x0" SIZE 1M)
-zephyr_linker_memory(NAME RAM      FLAGS rw START "0x20000000" SIZE 256K)
-zephyr_linker_memory(NAME IDT_LIST FLAGS rw START "0x20040000" SIZE 2K)
+zephyr_linker_memory(NAME FLASH    FLAGS ro START ${FLASH_ADDR} SIZE ${FLASH_SIZE})
+zephyr_linker_memory(NAME RAM      FLAGS rw START ${RAM_ADDR}   SIZE ${RAM_SIZE})
+zephyr_linker_memory(NAME IDT_LIST FLAGS rw START ${IDT_ADDR}   SIZE 2K)
 
 #zephyr_region(NAME FLASH ALIGN ${region_min_align})
 #zephyr_region(NAME RAM ALIGN ${region_min_align})
@@ -346,9 +351,9 @@ endif()
 # __kernel_ram_end = RAM_ADDR + RAM_SIZE;
 # __kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 #zephyr_linker_symbol(SYMBOL __kernel_ram_end  EXPR "${RAM_ADDR} + ${RAM_SIZE}")
-zephyr_linker_symbol(SYMBOL __kernel_ram_end  EXPR "(0x20000000 + 1024 * 256)")
+zephyr_linker_symbol(SYMBOL __kernel_ram_end  EXPR "(${RAM_ADDR} + ${RAM_SIZE})")
 zephyr_linker_symbol(SYMBOL __kernel_ram_size EXPR "(%__kernel_ram_end% - %__bss_start%)")
-zephyr_linker_symbol(SYMBOL _image_ram_start  EXPR "(0x20000000)" SUBALIGN 32) # ToDo calculate 32 correctly
+zephyr_linker_symbol(SYMBOL _image_ram_start  EXPR "(${RAM_ADDR})" SUBALIGN 32) # ToDo calculate 32 correctly
 
 set(VECTOR_ALIGN 4)
 if(CONFIG_CPU_CORTEX_M_HAS_VTOR)
