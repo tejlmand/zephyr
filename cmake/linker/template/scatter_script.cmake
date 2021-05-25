@@ -326,7 +326,7 @@ foreach(region ${MEMORY_REGIONS_SORTED})
 
   foreach(symbol ${SYMBOLS})
     if("${symbol}" MATCHES "^{(.*)}$")
-      cmake_parse_arguments(SYM "" "EXPR;SUBALIGN;SYMBOL" "" ${CMAKE_MATCH_1})
+      cmake_parse_arguments(SYM "" "EXPR;SIZE;SUBALIGN;SYMBOL" "" ${CMAKE_MATCH_1})
       string(REPLACE "\\" "" SYM_EXPR "${SYM_EXPR}")
       string(REGEX MATCHALL "%([^%]*)%" MATCH_RES ${SYM_EXPR})
       foreach(match ${MATCH_RES})
@@ -335,10 +335,14 @@ foreach(region ${MEMORY_REGIONS_SORTED})
       endforeach()
 
       if(DEFINED SYM_SUBALIGN)
-        set(alignment "ALIGN ${SYM_SUBALIGN}")
+        set(SYM_SUBALIGN "ALIGN ${SYM_SUBALIGN}")
       endif()
 
-      set(OUT "${OUT}\n  ${SYM_SYMBOL} ${SYM_EXPR} ${alignment} EMPTY 0x0\n  {\n  }\n")
+      if(NOT DEFINED SYM_SIZE)
+        set(SYM_SIZE "0x0")
+      endif()
+
+      set(OUT "${OUT}\n  ${SYM_SYMBOL} ${SYM_EXPR} ${SYM_SUBALIGN} EMPTY ${SYM_SIZE}\n  {\n  }\n")
       set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${SYM_SYMBOL}$$Base")
 
       set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
