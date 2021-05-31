@@ -26,7 +26,7 @@ extern volatile uintptr_t __stack_chk_guard;
 void z_data_copy(void)
 {
 	(void)memcpy(&__data_start, &__data_load_start,
-		 __data_end - __data_start);
+		 __k_condvar_area_end - __data_start);
 #ifdef CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
 	(void)memcpy(&__ramfunc_start, &__ramfunc_load_start,
 		 (uintptr_t) &__ramfunc_size);
