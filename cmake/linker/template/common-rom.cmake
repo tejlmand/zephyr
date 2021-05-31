@@ -2,25 +2,26 @@
 
 zephyr_linker_section(NAME init VMA FLASH)
 
-zephyr_linker_section_configure(SECTION init INPUT ".init_PRE_KERNEL_1[0-9]*"
+zephyr_linker_section_configure(SECTION init INPUT ".init_PRE_KERNEL_1?"
   KEEP SORT NAME SYMBOLS __init_PRE_KERNEL_1_start)
-zephyr_linker_section_configure(SECTION init INPUT ".init_PRE_KERNEL_1[1-9][0-9]*" KEEP SORT NAME)
+#zephyr_linker_section_configure(SECTION init INPUT ".init_PRE_KERNEL_1[1-9][0-9]" KEEP SORT NAME)
+zephyr_linker_section_configure(SECTION init INPUT ".init_PRE_KERNEL_1??" KEEP SORT NAME)
 
-zephyr_linker_section_configure(SECTION init INPUT ".init_PRE_KERNEL_2[0-9]*"
+zephyr_linker_section_configure(SECTION init INPUT ".init_PRE_KERNEL_2?"
   KEEP SORT NAME SYMBOLS __init_PRE_KERNEL_2_start)
-zephyr_linker_section_configure(SECTION init INPUT ".init_PRE_KERNEL_2[1-9][0-9]*" KEEP SORT NAME)
+zephyr_linker_section_configure(SECTION init INPUT ".init_PRE_KERNEL_2??" KEEP SORT NAME)
 
-zephyr_linker_section_configure(SECTION init INPUT ".init_POST_KERNEL_2[0-9]*"
+zephyr_linker_section_configure(SECTION init INPUT ".init_POST_KERNEL_2?"
   KEEP SORT NAME SYMBOLS __init_POST_KERNEL_start)
-zephyr_linker_section_configure(SECTION init INPUT ".init_POST_KERNEL_2[1-9][0-9]*" KEEP SORT NAME)
+zephyr_linker_section_configure(SECTION init INPUT ".init_POST_KERNEL_2??" KEEP SORT NAME)
 
-zephyr_linker_section_configure(SECTION init INPUT ".init_APPLICATION[0-9]*"
+zephyr_linker_section_configure(SECTION init INPUT ".init_APPLICATION?"
   KEEP SORT NAME SYMBOLS __init_APPLICATION_start)
-zephyr_linker_section_configure(SECTION init INPUT ".init_APPLICATION[1-9][0-9]*" KEEP SORT NAME)
+zephyr_linker_section_configure(SECTION init INPUT ".init_APPLICATION??" KEEP SORT NAME)
 
-zephyr_linker_section_configure(SECTION init INPUT ".init_SMP[0-9]*"
+zephyr_linker_section_configure(SECTION init INPUT ".init_SMP?"
   KEEP SORT NAME SYMBOLS __init_SMP_start)
-zephyr_linker_section_configure(SECTION init INPUT ".init_SMP[1-9][0-9]*" KEEP SORT NAME)
+zephyr_linker_section_configure(SECTION init INPUT ".init_SMP??" KEEP SORT NAME)
 
 
 if(CONFIG_GEN_SW_ISR_TABLE AND NOT CONFIG_DYNAMIC_INTERRUPTS)

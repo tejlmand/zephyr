@@ -197,13 +197,13 @@ function(zephyr_linker_section_obj_level)
 
   zephyr_linker_section_configure(
     SECTION ${OBJ_SECTION}
-    INPUT ".${OBJ_SECTION}_${OBJ_LEVEL}[0-9]*"
+    INPUT ".${OBJ_SECTION}_${OBJ_LEVEL}?"
     SYMBOLS __${OBJ_SECTION}_${OBJ_LEVEL}_start
     KEEP SORT NAME
   )
   zephyr_linker_section_configure(
     SECTION ${OBJ_SECTION}
-    INPUT ".${OBJ_SECTION}_${OBJ_LEVEL}[1-9][0-9]*"
+    INPUT ".${OBJ_SECTION}_${OBJ_LEVEL}??"
     KEEP SORT NAME
   )
 endfunction()
