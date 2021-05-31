@@ -187,21 +187,33 @@ function(section_content)
     # Symbols translation here.
     set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${SEC_NAME_CLEAN}$$Base")
     set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${SEC_NAME_CLEAN}$$Length")
-    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${SEC_NAME_CLEAN}$$Limit")
     set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Load$$${SEC_NAME_CLEAN}$$Base")
 
     set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
       "RESOLVE __${SEC_NAME_CLEAN}_start AS Image$$${SEC_NAME_CLEAN}$$Base\n"
-      "RESOLVE __${SEC_NAME_CLEAN}_end AS Image$$${SEC_NAME_CLEAN}$$Limit\n"
       "RESOLVE __${SEC_NAME_CLEAN}_size AS Image$$${SEC_NAME_CLEAN}$$Length\n"
       "RESOLVE __${SEC_NAME_CLEAN}_load_start AS Load$$${SEC_NAME_CLEAN}$$Base\n"
       "EXPORT  __${SEC_NAME_CLEAN}_start AS __${SEC_NAME_CLEAN}_start\n"
     )
 
     set(__${SEC_NAME_CLEAN}_start      "${SEC_NAME_CLEAN}" PARENT_SCOPE)
-    set(__${SEC_NAME_CLEAN}_end        "${SEC_NAME_CLEAN}" PARENT_SCOPE)
     set(__${SEC_NAME_CLEAN}_size       "${SEC_NAME_CLEAN}" PARENT_SCOPE)
     set(__${SEC_NAME_CLEAN}_load_start "${SEC_NAME_CLEAN}" PARENT_SCOPE)
+
+    if(DEFINED ${INDEX_KEY})
+      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${SEC_NAME_CLEAN}_end$$Limit")
+      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+        "RESOLVE __${SEC_NAME_CLEAN}_end AS Image$$${SEC_NAME_CLEAN}_end$$Limit\n"
+      )
+      set(__${SEC_NAME_CLEAN}_end        "${SEC_NAME_CLEAN}_end" PARENT_SCOPE)
+    else()
+      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${SEC_NAME_CLEAN}$$Limit")
+      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+        "RESOLVE __${SEC_NAME_CLEAN}_end AS Image$$${SEC_NAME_CLEAN}$$Limit\n"
+      )
+      set(__${SEC_NAME_CLEAN}_end        "${SEC_NAME_CLEAN}" PARENT_SCOPE)
+    endif()
+
 
     set(TEMP "${TEMP}\n  }")
 
