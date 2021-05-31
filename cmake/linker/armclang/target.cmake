@@ -87,38 +87,42 @@ function(toolchain_ld_link_elf)
     ${ARGN}                                                   # input args to parse
   )
 
+  foreach(lib ${ZEPHYR_LIBS_PROPERTY})
+    if(NOT ${lib} STREQUAL arch__arm__core__aarch32__cortex_m)
+    list(APPEND ZEPHYR_LIBS_OBJECTS $<TARGET_OBJECTS:${lib}>)
+    list(APPEND ZEPHYR_LIBS_OBJECTS $<TARGET_PROPERTY:${lib},LINK_LIBRARIES>)
+    endif()
+  endforeach()
+
   target_link_libraries(
     ${TOOLCHAIN_LD_LINK_ELF_TARGET_ELF}
     ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_PRE_SCRIPT}
 #    ${TOPT}
     --scatter=${TOOLCHAIN_LD_LINK_ELF_LINKER_SCRIPT}
     ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_POST_SCRIPT}
-
+    $<TARGET_OBJECTS:arch__arm__core__aarch32__cortex_m>
 #    ${LINKERFLAGPREFIX},-Map=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
     --map --list=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
 #    ${LINKERFLAGPREFIX},--whole-archive
-    ${ZEPHYR_LIBS_PROPERTY}
+    ${ZEPHYR_LIBS_OBJECTS}
 #    ${LINKERFLAGPREFIX},--no-whole-archive
     kernel
     $<TARGET_OBJECTS:${OFFSETS_LIB}>
     $<TARGET_OBJECTS:armlink_steering>
     --edit=${CMAKE_CURRENT_BINARY_DIR}/armlink_symbol_steering.steer
+    --library_type=microlib
+    --entry=__start
+    "--keep=\"*.o(.init_*)\""
+    "--keep=\"*.o(.device_*)\""
     # Resolving symbols using generated steering files will emit the warnings 6331 and 6332.
     # Steering files are used because we want to be able to use `__device_end` instead of `Image$$device$$Limit`.
     # Thus silence those two warnings.
-    --diag_suppress=6331,6332
+    --diag_suppress=6331,6332,6314
 #  ${LIB_INCLUDE_DIR}
   #  -L${PROJECT_BINARY_DIR}
-    ${TOOLCHAIN_LIBS}
+    ${TOOLCHAIN_LIBS_OBJECTS}
 
     ${TOOLCHAIN_LD_LINK_ELF_DEPENDENCIES}
-  )
-
-  target_link_options(
-    ${TOOLCHAIN_LD_LINK_ELF_TARGET_ELF}
-    PUBLIC
-    $<TARGET_FILE:arch__arm__core__aarch32__cortex_m>\(vector_table.o\)
-#    --keep=$<JOIN:$<TARGET_PROPERTY:armlink,KEEP>, --keep=>
   )
 endfunction(toolchain_ld_link_elf)
 
