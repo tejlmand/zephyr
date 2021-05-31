@@ -180,6 +180,7 @@ extern char __bss_end[];
 extern char __data_load_start[];
 extern char __data_start[];
 extern char __data_end[];
+extern char __k_condvar_area_end[];
 #endif /* CONFIG_XIP */
 
 #ifdef CONFIG_MMU
