@@ -325,7 +325,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/common-ram.cmake)
 #include(kobject.ld)
 
 if(NOT CONFIG_USERSPACE)
-  zephyr_linker_section(NAME .bss VMA RAM LMA FLASH TYPE NOLOAD)
+  zephyr_linker_section(NAME .bss VMA RAM LMA FLASH TYPE BSS)
 #  zephyr_linker_section(NAME .bss VMA RAM LMA RAM TYPE NOLOAD)
   # For performance, BSS section is assumed to be 4 byte aligned and
   # a multiple of 4 bytes
@@ -388,7 +388,8 @@ zephyr_linker_section_configure(
 
 # armlink specific flags
 zephyr_linker_section_configure(SECTION .text ANY FLAGS "+RO" "+XO")
-zephyr_linker_section_configure(SECTION .data ANY FLAGS "+RW" "+ZI")
+zephyr_linker_section_configure(SECTION .data ANY FLAGS "+RW")
+zephyr_linker_section_configure(SECTION .bss ANY FLAGS "+ZI")
 
 
 include(${CMAKE_CURRENT_LIST_DIR}/debug-sections.cmake)
