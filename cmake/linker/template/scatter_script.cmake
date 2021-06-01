@@ -104,6 +104,31 @@ function(section_content)
             endif()
             set(TEMP "${TEMP}\n  }")
             set(TEMP "${TEMP}\n  ${SEC_NAME_CLEAN}_${idx} +0 SORTTYPE ${SORT_TYPE_${SETTINGS_SORT}}\n  {")
+            # Symbols translation here.
+            set(steering_postfixes Base Limit)
+            foreach(symbol ${SETTINGS_SYMBOLS})
+              list(POP_FRONT steering_postfixes postfix)
+              set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C
+                "Image$$${SEC_NAME_CLEAN}_${idx}$$${postfix}"
+              )
+              set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+                "RESOLVE ${symbol} AS Image$$${SEC_NAME_CLEAN}_${idx}$$${postfix}\n"
+              )
+            endforeach()
+          elseif(DEFINED SETTINGS_SYMBOLS AND ${INDEX_KEY} EQUAL 1 AND SEC_NOINPUT)
+            # Symbols translation here.
+            set(steering_postfixes Base Limit)
+            foreach(symbol ${SETTINGS_SYMBOLS})
+              list(POP_FRONT steering_postfixes postfix)
+              set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C
+                "Image$$${SEC_NAME_CLEAN}$$${postfix}"
+              )
+              set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+                "RESOLVE ${symbol} AS Image$$${SEC_NAME_CLEAN}$$${postfix}\n"
+              )
+            endforeach()
+          elseif(DEFINED SETTINGS_SYMBOLS)
+            message(WARNING "SYMBOL defined with: ${SETTINGS_INPUT}---${SETTINGS_SYMBOLS} at Section: ${SEC_NAME}")
           endif()
 
           if(empty)
@@ -153,6 +178,45 @@ function(section_content)
     #  if(SEC_TYPE)
     #    set(TEMP "${TEMP} (${SEC_TYPE})")
     #  endif()
+
+
+    set(TEMP "${TEMP}")
+    # ToDo: add patterns here.
+
+    if("${SEC_TYPE}" STREQUAL BSS)
+      set(ZI "$$ZI")
+    endif()
+
+    # Symbols translation here.
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${SEC_NAME_CLEAN}${ZI}$$Base")
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${SEC_NAME_CLEAN}${ZI}$$Length")
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Load$$${SEC_NAME_CLEAN}${ZI}$$Base")
+
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+      "RESOLVE __${SEC_NAME_CLEAN}_start AS Image$$${SEC_NAME_CLEAN}${ZI}$$Base\n"
+      "RESOLVE __${SEC_NAME_CLEAN}_size AS Image$$${SEC_NAME_CLEAN}${ZI}$$Length\n"
+      "RESOLVE __${SEC_NAME_CLEAN}_load_start AS Load$$${SEC_NAME_CLEAN}${ZI}$$Base\n"
+      "EXPORT  __${SEC_NAME_CLEAN}_start AS __${SEC_NAME_CLEAN}_start\n"
+    )
+
+    set(__${SEC_NAME_CLEAN}_start      "${SEC_NAME_CLEAN}" PARENT_SCOPE)
+    set(__${SEC_NAME_CLEAN}_size       "${SEC_NAME_CLEAN}" PARENT_SCOPE)
+    set(__${SEC_NAME_CLEAN}_load_start "${SEC_NAME_CLEAN}" PARENT_SCOPE)
+
+    if(DEFINED ${INDEX_KEY})
+      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${SEC_NAME_CLEAN}_end$$Limit")
+      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+        "RESOLVE __${SEC_NAME_CLEAN}_end AS Image$$${SEC_NAME_CLEAN}_end$$Limit\n"
+      )
+      set(__${SEC_NAME_CLEAN}_end        "${SEC_NAME_CLEAN}_end" PARENT_SCOPE)
+    else()
+      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${SEC_NAME_CLEAN}${ZI}$$Limit")
+      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+        "RESOLVE __${SEC_NAME_CLEAN}_end AS Image$$${SEC_NAME_CLEAN}${ZI}$$Limit\n"
+      )
+      set(__${SEC_NAME_CLEAN}_end        "${SEC_NAME_CLEAN}" PARENT_SCOPE)
+    endif()
+
 
     set(TEMP "${TEMP}\n  }")
 
@@ -294,6 +358,12 @@ foreach(region ${MEMORY_REGIONS_SORTED})
       endif()
 
       set(OUT "${OUT}\n  ${SYM_SYMBOL} ${SYM_EXPR} ${SYM_SUBALIGN} EMPTY ${SYM_SIZE}\n  {\n  }\n")
+      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${SYM_SYMBOL}$$Base")
+
+      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+        "RESOLVE ${SYM_SYMBOL} AS Image$$${SYM_SYMBOL}$$Base\n"
+      )
+      set(${SYM_SYMBOL} "${SYM_SYMBOL}")
     endif()
   endforeach()
   set(SYMBOLS "")
@@ -323,6 +393,34 @@ endforeach()
 #    section_content(${CMAKE_MATCH_1})
 #  endif()
 #endforeach()
+
+if(DEFINED STEERING_C)
+  get_property(symbols_c GLOBAL PROPERTY SYMBOL_STEERING_C)
+  file(WRITE ${STEERING_C} "/* AUTO-GENERATED - Do not modify\n")
+  file(APPEND ${STEERING_C} " * AUTO-GENERATED - All changes will be lost\n")
+  file(APPEND ${STEERING_C} " */\n")
+  foreach(symbol ${symbols_c})
+    file(APPEND ${STEERING_C} "extern char ${symbol}[];\n")
+  endforeach()
+
+  file(APPEND ${STEERING_C} "\nint __armlink_symbol_steering(void) {\n")
+  file(APPEND ${STEERING_C} "\treturn\n")
+  foreach(symbol ${symbols_c})
+    file(APPEND ${STEERING_C} "\t\t${OPERAND} (int)${symbol}\n")
+    set(OPERAND "&")
+  endforeach()
+  file(APPEND ${STEERING_C} "\t;\n}\n")
+endif()
+
+if(DEFINED STEERING_FILE)
+  get_property(steering_content GLOBAL PROPERTY SYMBOL_STEERING_FILE)
+  file(WRITE ${STEERING_FILE}  "; AUTO-GENERATED - Do not modify\n")
+  file(APPEND ${STEERING_FILE} "; AUTO-GENERATED - All changes will be lost\n")
+  file(APPEND ${STEERING_FILE} ${steering_content})
+endif()
+
+
+
 
 if(OUT_FILE)
   file(WRITE ${OUT_FILE} "${SCATTER_OUT}")

@@ -26,22 +26,41 @@ macro(toolchain_ld_baremetal)
 endmacro()
 
 macro(configure_linker_script linker_script_gen linker_pass_define)
+  set(STEERING_FILE)
+  set(STEERING_C)
+  set(STEERING_FILE_ARG)
+  set(STEERING_C_ARG)
+
   if("${linker_pass_define}" STREQUAL "-DLINKER_ZEPHYR_PREBUILT")
     set(PASS 1)
   elseif("${linker_pass_define}" STREQUAL "-DLINKER_ZEPHYR_FINAL;-DLINKER_PASS2")
     set(PASS 2)
+    set(STEERING_FILE ${CMAKE_CURRENT_BINARY_DIR}/armlink_symbol_steering.steer)
+    set(STEERING_C ${CMAKE_CURRENT_BINARY_DIR}/armlink_symbol_steering.c)
+    set(STEERING_FILE_ARG "-DSTEERING_FILE=${STEERING_FILE}")
+    set(STEERING_C_ARG "-DSTEERING_C=${STEERING_C}")
   endif()
 
   add_custom_command(
     OUTPUT ${linker_script_gen}
+           ${STEERING_FILE}
+           ${STEERING_C}
     COMMAND ${CMAKE_COMMAND}
       -DPASS=${PASS}
       -DMEMORY_REGIONS="$<TARGET_PROPERTY:linker_target,MEMORY_REGIONS>"
       -DSECTIONS="$<TARGET_PROPERTY:linker_target,SECTIONS>"
       -DSECTION_SETTINGS="$<TARGET_PROPERTY:linker_target,SECTION_SETTINGS>"
+      -DSYMBOLS="$<TARGET_PROPERTY:linker_target,SYMBOLS>"
+      ${STEERING_FILE_ARG}
+      ${STEERING_C_ARG}
       -DOUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${linker_script_gen}
       -P ${ZEPHYR_BASE}/cmake/linker/template/scatter_script.cmake
   )
+
+  if("${PASS}" EQUAL 2)
+    add_library(armlink_steering OBJECT ${STEERING_C})
+    target_link_libraries(armlink_steering PRIVATE zephyr_interface)
+  endif()
 endmacro()
 
 function(toolchain_ld_link_elf)
@@ -74,6 +93,12 @@ function(toolchain_ld_link_elf)
     --entry=__start
     "--keep=\"*.o(.init_*)\""
     "--keep=\"*.o(.device_*)\""
+    $<TARGET_OBJECTS:armlink_steering>
+    --edit=${CMAKE_CURRENT_BINARY_DIR}/armlink_symbol_steering.steer
+    # Resolving symbols using generated steering files will emit the warnings 6331 and 6332.
+    # Steering files are used because we want to be able to use `__device_end` instead of `Image$$device$$Limit`.
+    # Thus silence those two warnings.
+    --diag_suppress=6331,6332
     ${TOOLCHAIN_LIBS_OBJECTS}
 
     ${TOOLCHAIN_LD_LINK_ELF_DEPENDENCIES}
