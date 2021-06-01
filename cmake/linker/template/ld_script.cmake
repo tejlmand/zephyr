@@ -28,6 +28,9 @@ function(memory_content)
 endfunction()
 
 function(section_content)
+  set(SEC_TYPE_NOLOAD NOLOAD)
+  set(SEC_TYPE_BSS    NOLOAD)
+
   cmake_parse_arguments(SEC "" "CONTENT;NAME;ADDRESS;TYPE;ALIGN;SUBALIGN;VMA;LMA;NOINPUT" "" ${ARGN})
 
   # SEC_NAME is required, test for that.
@@ -40,7 +43,7 @@ function(section_content)
   endif()
 
   if(SEC_TYPE)
-    set(TEMP "${TEMP} (${SEC_TYPE})")
+    set(TEMP "${TEMP} (${SEC_TYPE_${SEC_TYPE}})")
   endif()
 
   set(TEMP "${TEMP} :")
