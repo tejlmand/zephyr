@@ -1,9 +1,11 @@
 
 add_custom_target(linker_target
   COMMAND ${CMAKE_COMMAND}
+    -DFORMAT="$<TARGET_PROPERTY:linker_target,FORMAT>"
     -DMEMORY_REGIONS="$<TARGET_PROPERTY:linker_target,MEMORY_REGIONS>"
     -DSECTIONS="$<TARGET_PROPERTY:linker_target,SECTIONS>"
     -DSECTION_SETTINGS="$<TARGET_PROPERTY:linker_target,SECTION_SETTINGS>"
+    -DSYMBOLS="$<TARGET_PROPERTY:linker_target,SYMBOLS>"
     -P ${CMAKE_CURRENT_LIST_DIR}/ld_script.cmake
 )
 
@@ -75,6 +77,11 @@ function(pow2round n)
   set(${n} ${${n}} PARENT_SCOPE)
 endfunction()
 
+function(zephyr_linker_format FORMAT)
+  set_property(TARGET   linker_target
+               APPEND PROPERTY FORMAT ${FORMAT}
+  )
+endfunction()
 
 function(zephyr_linker_memory)
   set(single_args "NAME;FLAGS;START;SIZE")
@@ -127,7 +134,7 @@ function(zephyr_linker_section)
 endfunction()
 function(zephyr_linker_section_configure)
   set(options     "ANY;KEEP;FIRST")
-  set(single_args "SECTION;;ALIGN;SORT;PRIO")
+  set(single_args "SECTION;;ALIGN;SORT;PRIO;PASS")
   set(multi_args  "FLAGS;INPUT;SYMBOLS")
   cmake_parse_arguments(SECTION "${options}" "${single_args}" "${multi_args}" ${ARGN})
 
@@ -195,7 +202,7 @@ function(zephyr_linker_section_obj_level)
 
   zephyr_linker_section_configure(
     SECTION ${OBJ_SECTION}
-    INPUT ".${OBJ_SECTION}_${OBJ_LEVEL}?_"
+    INPUT ".z_${OBJ_SECTION}_${OBJ_LEVEL}?_"
     SYMBOLS __${OBJ_SECTION}_${OBJ_LEVEL}_start
     KEEP SORT NAME
   )
@@ -224,9 +231,13 @@ set(RAM_ADDR ${CONFIG_SRAM_BASE_ADDRESS})
 math(EXPR RAM_SIZE "${CONFIG_SRAM_SIZE} * 1024" OUTPUT_FORMAT HEXADECIMAL)
 math(EXPR IDT_ADDR "${RAM_ADDR} + ${RAM_SIZE}" OUTPUT_FORMAT HEXADECIMAL)
 
-zephyr_linker_memory(NAME FLASH    FLAGS ro START ${FLASH_ADDR} SIZE ${FLASH_SIZE})
-zephyr_linker_memory(NAME RAM      FLAGS rw START ${RAM_ADDR}   SIZE ${RAM_SIZE})
-zephyr_linker_memory(NAME IDT_LIST FLAGS rw START ${IDT_ADDR}   SIZE 2K)
+# ToDo: decide on the optimal location for this.
+# linker/ld/target.cmake based on arch, or directly in arch and scatter_script.cmake can ignore
+zephyr_linker_format("elf32-littlearm")
+
+zephyr_linker_memory(NAME FLASH    FLAGS rx START ${FLASH_ADDR} SIZE ${FLASH_SIZE})
+zephyr_linker_memory(NAME RAM      FLAGS wx START ${RAM_ADDR}   SIZE ${RAM_SIZE})
+zephyr_linker_memory(NAME IDT_LIST FLAGS wx START ${IDT_ADDR}   SIZE 2K)
 
 #zephyr_region(NAME FLASH ALIGN ${region_min_align})
 #zephyr_region(NAME RAM ALIGN ${region_min_align})
@@ -376,6 +387,11 @@ zephyr_linker_section_configure(
   ALIGN ${VECTOR_ALIGN}
   PRIO 0
 )
+
+
+zephyr_linker_section(NAME .ARM.attributes ADDRESS 0 NOINPUT)
+zephyr_linker_section_configure(SECTION .ARM.attributes INPUT ".ARM.attributes" KEEP)
+zephyr_linker_section_configure(SECTION .ARM.attributes INPUT ".gnu.attributes" KEEP)
 
 # Should this be GNU only ?
 # Same symbol is used in code as _IRQ_VECTOR_TABLE_SECTION_NAME, see sections.h

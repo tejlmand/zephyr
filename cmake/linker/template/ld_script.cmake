@@ -31,7 +31,12 @@ function(section_content)
   set(SEC_TYPE_NOLOAD NOLOAD)
   set(SEC_TYPE_BSS    NOLOAD)
 
-  cmake_parse_arguments(SEC "" "CONTENT;NAME;ADDRESS;TYPE;ALIGN;SUBALIGN;VMA;LMA;NOINPUT" "" ${ARGN})
+  cmake_parse_arguments(SEC "" "CONTENT;NAME;ADDRESS;TYPE;ALIGN;PASS;SUBALIGN;VMA;LMA;NOINPUT" "" ${ARGN})
+
+  if(DEFINED SEC_PASS AND NOT "${PASS}" IN_LIST SEC_PASS)
+    # This section is not active in this pass, ignore.
+    return()
+  endif()
 
   # SEC_NAME is required, test for that.
   #if(SEC_NAME)
@@ -97,10 +102,10 @@ function(section_content)
       endif()
 
       if(SETTINGS_KEEP AND SETTINGS_SORT)
-        set(TEMP "${TEMP}\n  KEEP(*(${SORT_TYPE_${SETTINGS_SORT}}((${SETTINGS_INPUT})));")
+        set(TEMP "${TEMP}\n  KEEP(*(${SORT_TYPE_${SETTINGS_SORT}}(${SETTINGS_INPUT})));")
       elseif(SETTINGS_SORT)
         message(WARNING "Not tested")
-        set(TEMP "${TEMP}\n  *(${SORT_TYPE_${SETTINGS_SORT}}((${SETTINGS_INPUT}));")
+        set(TEMP "${TEMP}\n  *(${SORT_TYPE_${SETTINGS_SORT}}(${SETTINGS_INPUT}));")
       elseif(SETTINGS_KEEP)
         set(TEMP "${TEMP}\n  KEEP(*(${SETTINGS_INPUT}));")
       else()
@@ -131,6 +136,9 @@ function(section_content)
   if(SEC_LMA)
     set(TEMP "${TEMP} > ${SEC_LMA}")
   endif()
+
+  set(TEMP "${TEMP}\n__${SEC_NAME_CLEAN}_size = __${SEC_NAME_CLEAN}_end - __${SEC_NAME_CLEAN}_start;")
+  set(TEMP "${TEMP}\n__${SEC_NAME_CLEAN}_load_start = LOADADDR(${SEC_NAME});")
 
   set(${SEC_CONTENT} "${${SEC_CONTENT}}\n${TEMP}\n" PARENT_SCOPE)
 endfunction()
@@ -163,8 +171,10 @@ function(section_discard)
   set(${SEC_CONTENT} "${${SEC_CONTENT}}\n${TEMP}\n" PARENT_SCOPE)
 endfunction()
 
+set(OUT "OUTPUT_FORMAT(\"${FORMAT}\")\n")
+set(OUT "${OUT}_region_min_align = 4;\n")
 
-set(OUT "MEMORY\n{")
+set(OUT "${OUT}MEMORY\n{")
 foreach(region ${MEMORY_REGIONS})
   if("${region}" MATCHES "^{(.*)}$")
     cmake_parse_arguments(REGION "" "NAME;START" "" ${CMAKE_MATCH_1})
@@ -175,9 +185,15 @@ foreach(region ${MEMORY_REGIONS})
 endforeach()
 set(OUT "${OUT}\n}\n")
 
+set(OUT "${OUT}\nSECTIONS {\n")
 foreach(settings ${SECTION_SETTINGS})
   if("${settings}" MATCHES "^{(.*)}$")
-    cmake_parse_arguments(SETTINGS "" "SECTION;PRIO" "" ${CMAKE_MATCH_1})
+    cmake_parse_arguments(SETTINGS "" "PASS;SECTION;PRIO" "" ${CMAKE_MATCH_1})
+
+    if(DEFINED SETTINGS_PASS AND NOT "${PASS}" IN_LIST SETTINGS_PASS)
+      # This section setting is not active in this pass, ignore.
+      continue()
+    endif()
 
     set(INDEX_KEY    SECTION_${SETTINGS_SECTION}_INDEX)
     set(INDEX_COUNT  SECTION_${SETTINGS_SECTION}_COUNT)
@@ -240,7 +256,7 @@ endforeach()
 
 foreach(region ${memory_regions})
   if(DEFINED REGION_${region}_START)
-    set(OUT "${OUT}\n . = ${REGION_${region}_START}\n")
+    set(OUT "${OUT}\n . = ${REGION_${region}_START};\n")
   endif()
 
   set(MEM_REGION MEM_REGION_${region})
@@ -294,14 +310,10 @@ if(DEFINED ${INDEX_COUNT})
 endif()
 
 section_discard(CONTENT OUT)
+set(OUT "${OUT}\n}\n")
 
-message("${OUT}")
-#
-#set(MEMORY
-#"MEMORY"
-#"{"
-#$
-#"}"
-#)
-#
-#
+if(OUT_FILE)
+  file(WRITE ${OUT_FILE} "${OUT}")
+else()
+  message("${OUT}")
+endif()

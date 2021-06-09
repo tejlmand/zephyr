@@ -280,7 +280,12 @@ endforeach()
 
 foreach(settings ${SECTION_SETTINGS})
   if("${settings}" MATCHES "^{(.*)}$")
-    cmake_parse_arguments(SETTINGS "" "SECTION;SORT" "" ${CMAKE_MATCH_1})
+    cmake_parse_arguments(SETTINGS "" "PASS;SECTION;SORT" "" ${CMAKE_MATCH_1})
+
+    if(DEFINED SETTINGS_PASS AND NOT "${PASS}" IN_LIST SETTINGS_PASS)
+      # This section setting is not active in this pass, ignore.
+      continue()
+    endif()
 
     if(SETTINGS_SORT)
       set(INDEX_KEY    SECTION_${SETTINGS_SECTION}_SORT_INDEX)

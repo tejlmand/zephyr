@@ -29,6 +29,28 @@ endif()
 macro(configure_linker_script linker_script_gen linker_pass_define)
   set(extra_dependencies ${ARGN})
 
+  if(ZEPHYR_LINKER_SCRIPT_GENERATOR)
+  if("${linker_pass_define}" STREQUAL "-DLINKER_ZEPHYR_PREBUILT")
+    set(PASS 1)
+  elseif("${linker_pass_define}" STREQUAL "-DLINKER_ZEPHYR_FINAL;-DLINKER_PASS2")
+    set(PASS 2)
+  endif()
+
+  add_custom_command(
+    OUTPUT ${linker_script_gen}
+           ${STEERING_FILE}
+           ${STEERING_C}
+    COMMAND ${CMAKE_COMMAND}
+      -DPASS=${PASS}
+      -DFORMAT="$<TARGET_PROPERTY:linker_target,FORMAT>"
+      -DMEMORY_REGIONS="$<TARGET_PROPERTY:linker_target,MEMORY_REGIONS>"
+      -DSECTIONS="$<TARGET_PROPERTY:linker_target,SECTIONS>"
+      -DSECTION_SETTINGS="$<TARGET_PROPERTY:linker_target,SECTION_SETTINGS>"
+      -DSYMBOLS="$<TARGET_PROPERTY:linker_target,SYMBOLS>"
+      -DOUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${linker_script_gen}
+      -P ${ZEPHYR_BASE}/cmake/linker/template/ld_script.cmake
+    )
+  else()
   # Different generators deal with depfiles differently.
   if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
     # Note that the IMPLICIT_DEPENDS option is currently supported only
@@ -72,6 +94,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     COMMAND_EXPAND_LISTS
   )
+  endif()
 endmacro()
 
 # Force symbols to be entered in the output file as undefined symbols
