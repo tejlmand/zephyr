@@ -2417,6 +2417,10 @@ endmacro()
 #
 # NAME <name>     : Name of the output section.
 # VMA <region>    : VMA Memory region where code / data is located runtime (VMA)
+# KVMA <region>   : Kernel VMA Memory region where code / data is located runtime (VMA)
+#                   When MMU is active and Kernel VM base and offset is different
+#                   from SRAM base and offset, then the region defined by KVMA will
+#                   be used as VMA.
 # LMA <region>    : Memory region where code / data is loaded (LMA)
 #                   If VMA is different from LMA, the code / data will be loaded
 #                   from LMA into VMA at bootup, this is usually the case for
@@ -2437,7 +2441,7 @@ endmacro()
 #
 function(zephyr_linker_section)
   set(options     "HIDDEN;NOINIT;NOINPUT")
-  set(single_args "ADDRESS;ALIGN;FLAGS;LMA;NAME;SUBALIGN;TYPE;VMA")
+  set(single_args "ADDRESS;ALIGN;FLAGS;KVMA;LMA;NAME;SUBALIGN;TYPE;VMA")
   set(multi_args  "PASS")
   cmake_parse_arguments(SECTION "${options}" "${single_args}" "${multi_args}" ${ARGN})
 
@@ -2446,6 +2450,23 @@ function(zephyr_linker_section)
                     "arguments: ${SECTION_UNPARSED_ARGUMENTS}"
     )
   endif()
+
+  if(DEFINED SECTION_KVMA)
+    # If KVMA is set and the Kernel virtual memory settings reqs are met, we
+    # substitute the VMA setting with the specified KVMA value.
+    if(CONFIG_MMU)
+      math(EXPR KERNEL_MEM_VM_OFFSET
+           "(${CONFIG_KERNEL_VM_BASE} + ${CONFIG_KERNEL_VM_OFFSET})\
+            - (${CONFIG_SRAM_BASE_ADDRESS} + ${CONFIG_SRAM_OFFSET})"
+      )
+
+      if(NOT (${KERNEL_MEM_VM_OFFSET} EQUAL 0))
+        set(SECTION_VMA ${SECTION_KVMA})
+        set(SECTION_KVMA)
+      endif()
+    endif()
+  endif()
+
   zephyr_linker_property_append("SECTION" "${single_args}")
   zephyr_linker_property_append("SECTION" "${options}")
   zephyr_linker_property_append("SECTION" "${multi_args}")
