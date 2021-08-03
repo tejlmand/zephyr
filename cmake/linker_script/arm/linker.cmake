@@ -9,10 +9,20 @@ set_ifndef(region_min_align CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)
 # If building without MPU support, use default 4-byte alignment.. if not set abve.
 set_ifndef(region_min_align 4)
 
-math(EXPR FLASH_ADDR "${CONFIG_FLASH_BASE_ADDRESS} + ${CONFIG_FLASH_LOAD_OFFSET}" OUTPUT_FORMAT HEXADECIMAL)
-math(EXPR FLASH_SIZE "${CONFIG_FLASH_SIZE} * 1024 - ${CONFIG_FLASH_LOAD_OFFSET}" OUTPUT_FORMAT HEXADECIMAL)
+# Note, the `+ 0` in formulas below avoids errors in cases where a Kconfig
+#       variable is undefined and thus expands to nothing.
+math(EXPR FLASH_ADDR
+     "${CONFIG_FLASH_BASE_ADDRESS} + ${CONFIG_FLASH_LOAD_OFFSET} + 0"
+     OUTPUT_FORMAT HEXADECIMAL
+)
+
+math(EXPR FLASH_SIZE
+     "(${CONFIG_FLASH_SIZE} + 0) * 1024 - (${CONFIG_FLASH_LOAD_OFFSET} + 0)"
+     OUTPUT_FORMAT HEXADECIMAL
+)
+
 set(RAM_ADDR ${CONFIG_SRAM_BASE_ADDRESS})
-math(EXPR RAM_SIZE "${CONFIG_SRAM_SIZE} * 1024" OUTPUT_FORMAT HEXADECIMAL)
+math(EXPR RAM_SIZE "(${CONFIG_SRAM_SIZE} + 0) * 1024" OUTPUT_FORMAT HEXADECIMAL)
 math(EXPR IDT_ADDR "${RAM_ADDR} + ${RAM_SIZE}" OUTPUT_FORMAT HEXADECIMAL)
 
 # ToDo: decide on the optimal location for this.
