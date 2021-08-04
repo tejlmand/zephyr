@@ -27,6 +27,66 @@ function(memory_content)
   set(${MC_CONTENT} "${${MC_CONTENT}}\n${TEMP}" PARENT_SCOPE)
 endfunction()
 
+function(region_content)
+  cmake_parse_arguments(REGION "" "CONTENT;REGION" "" ${ARGN})
+
+  if(DEFINED GROUP_${REGION_REGION}_MEMORY)
+    string(TOLOWER "__${REGION_REGION}_start" linker_symbol)
+    set(${REGION_CONTENT} "${${REGION_CONTENT}}\n ${linker_symbol} = .;\n")
+  endif()
+
+  foreach(group ${${REGION_REGION}_GROUPS})
+    region_content(CONTENT ${REGION_CONTENT} REGION ${group})
+  endforeach()
+
+  set(MEM_REGION MEM_REGION_${REGION_REGION})
+  set(INDEX_COUNT ${MEM_REGION}_COUNT)
+
+  if(DEFINED ${INDEX_COUNT})
+    foreach(idx RANGE 0 ${${INDEX_COUNT}})
+      section_content(CONTENT ${REGION_CONTENT} ${${MEM_REGION}_${idx}})
+    endforeach()
+  endif()
+
+  foreach(lregion ${memory_groups} ${memory_regions})
+    set(MEM_REGION MEM_REGION_${region}_${lregion})
+    set(INDEX_COUNT ${MEM_REGION}_COUNT)
+
+    if(DEFINED ${INDEX_COUNT})
+      foreach(idx RANGE 0 ${${INDEX_COUNT}})
+        section_content(CONTENT ${REGION_CONTENT} ${${MEM_REGION}_${idx}})
+      endforeach()
+    endif()
+  endforeach()
+
+  set(MEM_REGION MEM_REGION_NOLOAD_${region})
+  set(INDEX_COUNT ${MEM_REGION}_COUNT)
+
+  if(DEFINED ${INDEX_COUNT})
+    foreach(idx RANGE 0 ${${INDEX_COUNT}})
+      section_content(CONTENT ${REGION_CONTENT} ${${MEM_REGION}_${idx}})
+    endforeach()
+  endif()
+
+  foreach(lregion ${memory_groups} ${memory_regions})
+    set(MEM_REGION MEM_REGION_NOLOAD_${region}_${lregion})
+    set(INDEX_COUNT ${MEM_REGION}_COUNT)
+
+    if(DEFINED ${INDEX_COUNT})
+      foreach(idx RANGE 0 ${${INDEX_COUNT}})
+        section_content(CONTENT ${REGION_CONTENT} ${${MEM_REGION}_${idx}})
+      endforeach()
+    endif()
+  endforeach()
+
+  if(DEFINED GROUP_${REGION_REGION}_MEMORY)
+    string(TOLOWER "__${REGION_REGION}_end" linker_symbol)
+    set(${REGION_CONTENT} "${${REGION_CONTENT}}\n ${linker_symbol} = .;\n")
+  endif()
+
+  set(${REGION_CONTENT} ${${REGION_CONTENT}} PARENT_SCOPE)
+endfunction()
+
 function(section_content)
   set(SEC_TYPE_NOLOAD NOLOAD)
   set(SEC_TYPE_BSS    NOLOAD)
@@ -175,17 +235,6 @@ function(section_discard)
   set(${SEC_CONTENT} "${${SEC_CONTENT}}\n${TEMP}\n" PARENT_SCOPE)
 endfunction()
 
-foreach(group ${GROUPS})
-  if("${group}" MATCHES "^{(.*)}$")
-    cmake_parse_arguments(GROUP "" "NAME;MEMORY" "" ${CMAKE_MATCH_1})
-    list(APPEND ${GROUP_MEMORY}_GROUPS ${GROUP_NAME})
-    list(APPEND memory_groups ${GROUP_NAME})
-    set(GROUP_${GROUP_NAME}_MEMORY ${GROUP_MEMORY})
-#    memory_content(CONTENT OUT ${CMAKE_MATCH_1})
-#    list(APPEND memory_regions ${REGION_NAME})
-  endif()
-endforeach()
-
 set(OUT "OUTPUT_FORMAT(\"${FORMAT}\")\n")
 
 set(OUT "${OUT}MEMORY\n{")
@@ -198,6 +247,24 @@ foreach(region ${MEMORY_REGIONS})
   endif()
 endforeach()
 set(OUT "${OUT}\n}\n")
+
+foreach(group ${GROUPS})
+  if("${group}" MATCHES "^{(.*)}$")
+    cmake_parse_arguments(GROUP "" "NAME;MEMORY" "" ${CMAKE_MATCH_1})
+    list(APPEND ${GROUP_MEMORY}_GROUPS ${GROUP_NAME})
+    list(APPEND memory_groups ${GROUP_NAME})
+
+    set(GROUP_${GROUP_NAME}_MEMORY ${GROUP_MEMORY})
+    set(memory_name ${GROUP_MEMORY})
+    while(NOT (${memory_name} IN_LIST memory_regions))
+      if(NOT DEFINED GROUP_${memory_name}_MEMORY)
+        message(FATAL_ERROR "Memory region or group '${memory_name}' not found.")
+      endif()
+      set(GROUP_${GROUP_NAME}_MEMORY ${GROUP_${memory_name}_MEMORY})
+      set(memory_name ${GROUP_${memory_name}_MEMORY})
+    endwhile()
+  endif()
+endforeach()
 
 set(OUT "${OUT}\nSECTIONS {\n")
 foreach(settings ${SECTION_SETTINGS})
@@ -262,65 +329,12 @@ foreach(section ${SECTIONS})
 endforeach()
 
 
-
-
 foreach(region ${memory_regions})
   if(DEFINED REGION_${region}_START)
     set(OUT "${OUT}\n . = ${REGION_${region}_START};\n")
   endif()
 
-  foreach(group ${${region}_GROUPS} ${region})
-    set(MEM_REGION MEM_REGION_${group})
-    set(INDEX_COUNT ${MEM_REGION}_COUNT)
-
-    if(DEFINED GROUP_${group}_MEMORY)
-      string(TOLOWER "__${group}_start" linker_symbol)
-      set(OUT "${OUT}\n ${linker_symbol} = .;\n")
-    endif()
-
-    if(DEFINED ${INDEX_COUNT})
-      foreach(idx RANGE 0 ${${INDEX_COUNT}})
-        section_content(CONTENT OUT ${${MEM_REGION}_${idx}})
-      endforeach()
-    endif()
-
-    foreach(lregion ${memory_groups} ${memory_regions})
-      set(MEM_REGION MEM_REGION_${region}_${lregion})
-      set(INDEX_COUNT ${MEM_REGION}_COUNT)
-
-      if(DEFINED ${INDEX_COUNT})
-        foreach(idx RANGE 0 ${${INDEX_COUNT}})
-          section_content(CONTENT OUT ${${MEM_REGION}_${idx}})
-        endforeach()
-      endif()
-    endforeach()
-
-    set(MEM_REGION MEM_REGION_NOLOAD_${region})
-    set(INDEX_COUNT ${MEM_REGION}_COUNT)
-
-    if(DEFINED ${INDEX_COUNT})
-      foreach(idx RANGE 0 ${${INDEX_COUNT}})
-        section_content(CONTENT OUT ${${MEM_REGION}_${idx}})
-      endforeach()
-    endif()
-
-    foreach(lregion ${memory_groups} ${memory_regions})
-      set(MEM_REGION MEM_REGION_NOLOAD_${region}_${lregion})
-      set(INDEX_COUNT ${MEM_REGION}_COUNT)
-
-      if(DEFINED ${INDEX_COUNT})
-        foreach(idx RANGE 0 ${${INDEX_COUNT}})
-          section_content(CONTENT OUT ${${MEM_REGION}_${idx}})
-        endforeach()
-      endif()
-    endforeach()
-
-    if(DEFINED GROUP_${group}_MEMORY)
-      string(TOLOWER "__${group}_end" linker_symbol)
-      set(OUT "${OUT}\n ${linker_symbol} = .;\n")
-    endif()
-
-  endforeach()
+  region_content(CONTENT OUT REGION ${region})
 endforeach()
 
 set(MEM_REGION MEM_REGION)
