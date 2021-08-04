@@ -2390,6 +2390,47 @@ macro(zephyr_linker_memory_ifdef feature_toggle)
 endmacro()
 
 # Usage:
+#   zephyr_linker_group(NAME <name> MEMORY <region>)
+#
+# Zephyr linker group.
+# This function specifies a group inside a specific memory region.
+#
+# The group ensures that all section inside the group are located together inside
+# the specified group.
+#
+# This also allows for section placement inside a given group without the section
+# itself needing the precise knowledge regarding the exact memory region this
+# section will be placed in, as that will be determined by the group setup.
+#
+# Each group will define the following linker symbols:
+# __<name>_start      : Start address of the group
+# __<name>_end        : End address of the group
+# __<name>_size       : Size of the group
+#
+# Note: <name> will be converted to lower casing for linker symbols definitions.
+#
+# NAME <name>    : Name of the group.
+# MEMORY <region>: Memory region where all sections inside the group shall be
+#                  placed.
+function(zephyr_linker_group)
+  set(single_args "NAME;MEMORY")
+  cmake_parse_arguments(GROUP "" "${single_args}" "" ${ARGN})
+
+  if(MEMORY_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR "zephyr_linker_group(${ARGV0} ...) given unknown "
+                        "arguments: ${GROUP_UNPARSED_ARGUMENTS}"
+    )
+  endif()
+
+  zephyr_linker_property_append("GROUP" "${single_args}")
+
+  string(REPLACE ";" "\;" GROUP "${GROUP}")
+  set_property(TARGET linker
+               APPEND PROPERTY GROUPS "{${GROUP}}"
+  )
+endfunction()
+
+# Usage:
 #   zephyr_linker_section(NAME <name> [VMA <region>] [LMA <region>]
 #                         [ADDRESS <address>] [ALIGN <alignment>]
 #                         SUBALIGN [alignment] [FLAGS <flags>]
@@ -2415,18 +2456,18 @@ endmacro()
 # The location of the output section can be controlled using LMA, VMA, and
 # address parameters
 #
-# NAME <name>     : Name of the output section.
-# VMA <region>    : VMA Memory region where code / data is located runtime (VMA)
-# KVMA <region>   : Kernel VMA Memory region where code / data is located runtime (VMA)
-#                   When MMU is active and Kernel VM base and offset is different
-#                   from SRAM base and offset, then the region defined by KVMA will
-#                   be used as VMA.
-# LMA <region>    : Memory region where code / data is loaded (LMA)
-#                   If VMA is different from LMA, the code / data will be loaded
-#                   from LMA into VMA at bootup, this is usually the case for
-#                   global or static variables that are loaded in rom and copied
-#                   to ram at boot time.
-# ADDRESS <address>: Specific address to use for this section.
+# NAME <name>         : Name of the output section.
+# VMA <region|group>  : VMA Memory region or group where code / data is located runtime (VMA)
+# KVMA <region|group> : Kernel VMA Memory region or group where code / data is located runtime (VMA)
+#                       When MMU is active and Kernel VM base and offset is different
+#                       from SRAM base and offset, then the region defined by KVMA will
+#                       be used as VMA.
+# LMA <region|group>  : Memory region or group where code / data is loaded (LMA)
+#                       If VMA is different from LMA, the code / data will be loaded
+#                       from LMA into VMA at bootup, this is usually the case for
+#                       global or static variables that are loaded in rom and copied
+#                       to ram at boot time.
+# ADDRESS <address>   : Specific address to use for this section.
 # ALIGN <alignment>   : Align the execution address with alignment.
 # SUBALIGN <alignment>: Align input sections with alignment value.
 # FLAGS <flags>       : TBD
