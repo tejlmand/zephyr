@@ -40,6 +40,7 @@ else()
 endif()
 
 zephyr_linker_group(NAME RAM_REGION MEMORY RAM)
+zephyr_linker_group(NAME TEXT_REGION MEMORY ROM_REGION)
 #zephyr_region(NAME FLASH ALIGN ${region_min_align})
 #zephyr_region(NAME RAM ALIGN ${region_min_align})
 
@@ -67,7 +68,7 @@ else()
   zephyr_linker_section(NAME .rom_start VMA ROM_REGION NOINPUT)
 endif()
 
-zephyr_linker_section(NAME .text         VMA ROM_REGION)
+zephyr_linker_section(NAME .text         VMA TEXT_REGION)
 
 # ToDo: Find out again where section '.extra' originated before re-activating.
 #zephyr_linker_section(NAME .extra        VMA RAM LMA ROM_REGION SUBALIGN 8)
