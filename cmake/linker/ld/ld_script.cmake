@@ -368,6 +368,27 @@ endif()
 section_discard(CONTENT OUT)
 set(OUT "${OUT}\n}\n")
 
+
+foreach(symbol ${SYMBOLS})
+  if("${symbol}" MATCHES "^{(.*)}$")
+    cmake_parse_arguments(SYM "" "EXPR;SIZE;SUBALIGN;SYMBOL" "" ${CMAKE_MATCH_1})
+    string(REPLACE "\\" "" SYM_EXPR "${SYM_EXPR}")
+    string(REGEX MATCHALL "%([^%]*)%" MATCH_RES ${SYM_EXPR})
+    foreach(match ${MATCH_RES})
+      string(REPLACE "%" "" match ${match})
+      string(REPLACE "%${match}%" "${match}" SYM_EXPR ${SYM_EXPR})
+    endforeach()
+
+    set(OUT "${OUT}\n${SYM_SYMBOL} = ${SYM_EXPR};\n")
+  endif()
+endforeach()
+
+
+
+
+
+
+
 if(OUT_FILE)
   file(WRITE ${OUT_FILE} "${OUT}")
 else()
