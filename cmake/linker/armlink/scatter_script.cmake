@@ -2,238 +2,735 @@ cmake_minimum_required(VERSION 3.17)
 
 set(SORT_TYPE_NAME Lexical)
 
+#
+# Create functions - start
+#
 
-function(memory_content)
-  cmake_parse_arguments(MC "" "CONTENT;NAME;START;SIZE;FLAGS" "" ${ARGN})
+function(create_region)
+  cmake_parse_arguments(OBJECT "" "NAME;OBJECT;SIZE;START;FLAGS" "" ${ARGN})
 
-  set(TEMP)
-  if(MC_NAME)
-    set(TEMP "${TEMP} ${MC_NAME}")
+  if(DEFINED OBJECT_SIZE)
+    if(${OBJECT_SIZE} MATCHES "^([0-9]*)[kK]$")
+      math(EXPR OBJECT_SIZE "1024 * ${CMAKE_MATCH_1}" OUTPUT_FORMAT HEXADECIMAL)
+    elseif(${OBJECT_SIZE} MATCHES "^([0-9]*)[mM]$")
+      math(EXPR OBJECT_SIZE "1024 * 1024 * ${CMAKE_MATCH_1}" OUTPUT_FORMAT HEXADECIMAL)
+    elseif(NOT (${OBJECT_SIZE} MATCHES "^([0-9]*)$" OR ${OBJECT_SIZE} MATCHES "^0x([0-9a-fA-F]*)$"))
+      # ToDo: Handle hex sizes
+      message(FATAL_ERROR "SIZE format is onknown.")
+    endif()
   endif()
 
-  if(MC_FLAGS)
-    set(TEMP "${TEMP} (${MC_FLAGS})")
-  endif()
+  set_property(GLOBAL PROPERTY REGION_${OBJECT_NAME}          TRUE)
+  set_property(GLOBAL PROPERTY REGION_${OBJECT_NAME}_OBJ_TYPE REGION)
+  set_property(GLOBAL PROPERTY REGION_${OBJECT_NAME}_NAME     ${OBJECT_NAME})
+  set_property(GLOBAL PROPERTY REGION_${OBJECT_NAME}_ADDRESS  ${OBJECT_START})
+  set_property(GLOBAL PROPERTY REGION_${OBJECT_NAME}_FLAGS    ${OBJECT_FLAGS})
+  set_property(GLOBAL PROPERTY REGION_${OBJECT_NAME}_SIZE     ${OBJECT_SIZE})
 
-  if(MC_START)
-    set(TEMP "${TEMP} : ORIGIN = (${MC_START})")
-  endif()
-
-  if(MC_SIZE)
-    set(TEMP "${TEMP}, LENGTH = (${MC_SIZE})")
-  endif()
-
-  set(${MC_CONTENT} "${${MC_CONTENT}}\n${TEMP}" PARENT_SCOPE)
+  set(${OBJECT_OBJECT} REGION_${OBJECT_NAME} PARENT_SCOPE)
 endfunction()
 
-function(section_content)
-  cmake_parse_arguments(SEC "" "REGION_NAME;REGION_FLAGS;REGION_ADDRESS;CONTENT;NAME;ADDRESS;TYPE;ALIGN;SUBALIGN;VMA;LMA;NOINPUT;NOINIT" "PASS" ${ARGN})
+function(get_parent)
+  cmake_parse_arguments(GET_PARENT "" "OBJECT;PARENT;TYPE" "" ${ARGN})
 
-  if("${SEC_REGION_NAME}" STREQUAL "${SEC_VMA}"
-     AND NOT SEC_LMA
-     OR  "${SEC_REGION_NAME}" STREQUAL "${SEC_LMA}"
-  )
-    if(DEFINED SEC_PASS AND NOT "${PASS}" IN_LIST SEC_PASS)
-      # This section is not active in this pass, ignore.
-      return()
+  get_property(type GLOBAL PROPERTY ${GET_PARENT_OBJECT}_OBJ_TYPE)
+  if(${type} STREQUAL ${GET_PARENT_TYPE})
+    # Already the right type, so just set and return.
+    set(${GET_PARENT_PARENT} ${GET_PARENT_OBJECT} PARENT_SCOPE)
+    return()
+  endif()
+
+  get_property(parent GLOBAL PROPERTY ${GET_PARENT_OBJECT}_PARENT)
+  get_property(type   GLOBAL PROPERTY ${parent}_OBJ_TYPE)
+  while(NOT ${type} STREQUAL ${GET_PARENT_TYPE})
+    get_property(parent GLOBAL PROPERTY ${parent}_PARENT)
+    get_property(type   GLOBAL PROPERTY ${parent}_OBJ_TYPE)
+  endwhile()
+
+  set(${GET_PARENT_PARENT} ${parent} PARENT_SCOPE)
+endfunction()
+
+function(create_group)
+  cmake_parse_arguments(OBJECT "" "GROUP;LMA;NAME;OBJECT;VMA" "" ${ARGN})
+
+  set_property(GLOBAL PROPERTY GROUP_${OBJECT_NAME}          TRUE)
+  set_property(GLOBAL PROPERTY GROUP_${OBJECT_NAME}_OBJ_TYPE GROUP)
+  set_property(GLOBAL PROPERTY GROUP_${OBJECT_NAME}_NAME     ${OBJECT_NAME})
+
+  if(DEFINED OBJECT_GROUP)
+    find_object(OBJECT parent NAME ${OBJECT_GROUP})
+  else()
+    if(DEFINED OBJECT_VMA)
+      find_object(OBJECT obj NAME ${OBJECT_VMA})
+      get_parent(OBJECT ${obj} PARENT parent TYPE REGION)
+
+      get_property(vma GLOBAL PROPERTY ${parent}_NAME)
+      set_property(GLOBAL PROPERTY GROUP_${OBJECT_NAME}_VMA ${vma})
     endif()
 
-    # SEC_NAME is required, test for that.
-    string(REGEX REPLACE "^[\.]" "" SEC_NAME_CLEAN "${SEC_NAME}")
-    string(REPLACE "." "_" SEC_NAME_CLEAN "${SEC_NAME_CLEAN}")
-#    set(SEC_NAME ${SEC_NAME_CLEAN})
-    set(TEMP "  ${SEC_NAME_CLEAN}")
-    if(SEC_ADDRESS)
-      set(TEMP "${TEMP} ${SEC_ADDRESS}")
-    elseif(SEC_REGION_ADDRESS)
-      set(TEMP "${TEMP} ${SEC_REGION_ADDRESS}")
-    else()
-      set(TEMP "${TEMP} +0")
+    if(DEFINED OBJECT_LMA)
+      find_object(OBJECT obj NAME ${OBJECT_LMA})
+      get_parent(OBJECT ${obj} PARENT parent TYPE REGION)
+
+      get_property(lma GLOBAL PROPERTY ${parent}_NAME)
+      set_property(GLOBAL PROPERTY GROUP_${OBJECT_NAME}_LMA ${lma})
     endif()
+  endif()
 
-    if(SEC_NOINIT)
-      # Currently we simply uses offset +0, but we must support offset defined
-      # externally.
-      set(TEMP "${TEMP} UNINIT")
-    endif()
+  get_property(GROUP_FLAGS_INHERITED GLOBAL PROPERTY ${parent}_FLAGS)
+  set_property(GLOBAL PROPERTY GROUP_${OBJECT_NAME}_FLAGS  ${GROUP_FLAGS_INHERITED})
+  set_property(GLOBAL PROPERTY GROUP_${OBJECT_NAME}_PARENT ${parent})
 
-    if(SEC_SUBALIGN)
-      # Currently we simply uses offset +0, but we must support offset defined
-      # externally.
-      set(TEMP "${TEMP} ALIGN ${SEC_SUBALIGN}")
-    endif()
+  add_group(OBJECT ${parent} GROUP GROUP_${OBJECT_NAME})
 
+  set(${OBJECT_OBJECT} GROUP_${OBJECT_NAME} PARENT_SCOPE)
+endfunction()
 
-    string(TOUPPER ${REGION_${SEC_VMA}_FLAGS} VMA_FLAGS)
-    if(NOT SEC_NOINPUT)
-      set(TEMP "${TEMP}\n  {")
+function(create_section)
+  set(single_args "NAME;ADDRESS;TYPE;ALIGN;SUBALIGN;VMA;LMA;NOINPUT;NOINIT;GROUP")
+  set(multi_args  "PASS")
 
-      if("${SEC_TYPE}" STREQUAL NOLOAD)
-        set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*)")
-        set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*.*)")
-      elseif(VMA_FLAGS)
-        # ToDo: Proper names as provided by armclang
-  #      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*, +${VMA_FLAGS})")
-  #      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*.*, +${VMA_FLAGS})")
-        set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*)")
-        set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*.*)")
-      else()
-        set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*)")
-        set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*.*)")
+  cmake_parse_arguments(SECTION "" "${single_args}" "${multi_args}" ${ARGN})
+
+  if(DEFINED SECTION_PASS AND NOT "${PASS}" IN_LIST SECTION_PASS)
+    # This section is not active in this pass, ignore.
+    return()
+  endif()
+
+  set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME} TRUE)
+  set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_OBJ_TYPE SECTION)
+  set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_NAME     ${SECTION_NAME})
+  set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_ADDRESS  ${SECTION_ADDRESS})
+  set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_TYPE     ${SECTION_TYPE})
+  set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_ALIGN    ${SECTION_ALIGN})
+  set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_SUBALIGN ${SECTION_SUBALIGN})
+  set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_NOINPUT  ${SECTION_NOINPUT})
+  set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_NOINIT   ${SECTION_NOINIT})
+
+  string(REGEX REPLACE "^[\.]" "" name_clean "${SECTION_NAME}")
+  string(REPLACE "." "_" name_clean "${name_clean}")
+  set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_NAME_CLEAN ${name_clean})
+
+  set_property(GLOBAL PROPERTY SYMBOL_TABLE___${name_clean}_start      ${name_clean})
+  set_property(GLOBAL PROPERTY SYMBOL_TABLE___${name_clean}_size       ${name_clean})
+  set_property(GLOBAL PROPERTY SYMBOL_TABLE___${name_clean}_load_start ${name_clean})
+  set_property(GLOBAL PROPERTY SYMBOL_TABLE___${name_clean}_end        ${name_clean})
+
+  set(INDEX 0)
+  set(settings_single "ALIGN;ANY;FIRST;KEEP;PASS;SECTION;SORT")
+  set(settings_multi  "FLAGS;INPUT;SYMBOLS")
+  foreach(settings ${SECTION_SETTINGS})
+    if("${settings}" MATCHES "^{(.*)}$")
+      cmake_parse_arguments(SETTINGS "" "${settings_single}" "${settings_multi}" ${CMAKE_MATCH_1})
+
+      if(NOT ("${SETTINGS_SECTION}" STREQUAL "${SECTION_NAME}"))
+        continue()
       endif()
-    else()
-      set(empty TRUE)
+
+      if(DEFINED SETTINGS_PASS AND NOT "${PASS}" IN_LIST SETTINGS_PASS)
+        # This section setting is not active in this pass, ignore.
+        continue()
+      endif()
+
+      foreach(setting ${settings_single} ${settings_multi})
+        set_property(GLOBAL PROPERTY
+	  SECTION_${SECTION_NAME}_SETTING_${INDEX}_${setting}
+	  ${SETTINGS_${setting}}
+        )
+	if(DEFINED SETTINGS_SORT)
+          set_property(GLOBAL PROPERTY SYMBOL_TABLE___${name_clean}_end ${name_clean}_end)
+        endif()
+      endforeach()
+
+      math(EXPR INDEX "${INDEX} + 1")
+    endif()
+  endforeach()
+
+  set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_SETTINGS_INDEX ${INDEX})
+
+  if(DEFINED SECTION_GROUP)
+    find_object(OBJECT parent NAME ${SECTION_GROUP})
+  else()
+    if(DEFINED SECTION_VMA)
+      find_object(OBJECT object NAME ${SECTION_VMA})
+      get_parent(OBJECT ${object} PARENT parent TYPE REGION)
+
+      get_property(vma GLOBAL PROPERTY ${parent}_NAME)
+      set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_VMA ${vma})
+      set(SECTION_VMA ${vma})
     endif()
 
-    foreach(group "" "_SORT")
-      # message("processing <${group}>")
-      set(INDEX_KEY    SECTION_${SEC_NAME}${group}_INDEX)
-      set(SETTINGS_KEY SECTION_${SEC_NAME}_SETTINGS${group})
+    if(DEFINED SECTION_LMA)
+      find_object(OBJECT object NAME ${SECTION_LMA})
+      get_parent(OBJECT ${object} PARENT parent TYPE REGION)
 
-      # message("Index key: ${INDEX_KEY}=${${INDEX_KEY}}")
-      # message("settings : ${SETTINGS_KEY}_0=${${SETTINGS_KEY}_0}")
+      get_property(lma GLOBAL PROPERTY ${parent}_NAME)
+      set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_LMA ${lma})
+      set(SECTION_LMA ${lma})
+    endif()
+  endif()
 
-      if(DEFINED ${INDEX_KEY})
-        foreach(idx RANGE 0 ${${INDEX_KEY}})
-          cmake_parse_arguments(SETTINGS "" "ANY;KEEP;FIRST;ALIGN;SORT" "FLAGS;INPUT;SYMBOLS" ${${SETTINGS_KEY}_${idx}})
+  set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_PARENT ${parent})
+  add_section(OBJECT ${parent} SECTION ${SECTION_NAME} ADDRESS ${SECTION_ADDRESS} VMA ${SECTION_VMA})
+endfunction()
 
-          if(SETTINGS_SORT)
-            if(empty)
-              set(TEMP "${TEMP} EMPTY 0x0\n  {")
-              set(empty FALSE)
-            endif()
-            set(TEMP "${TEMP}\n  }")
-            set(TEMP "${TEMP}\n  ${SEC_NAME_CLEAN}_${idx} +0 SORTTYPE ${SORT_TYPE_${SETTINGS_SORT}}\n  {")
-            # Symbols translation here.
-            set(steering_postfixes Base Limit)
-            foreach(symbol ${SETTINGS_SYMBOLS})
-              list(POP_FRONT steering_postfixes postfix)
-              set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C
-                "Image$$${SEC_NAME_CLEAN}_${idx}$$${postfix}"
-              )
-              set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
-                "RESOLVE ${symbol} AS Image$$${SEC_NAME_CLEAN}_${idx}$$${postfix}\n"
-              )
-            endforeach()
-          elseif(DEFINED SETTINGS_SYMBOLS AND ${INDEX_KEY} EQUAL 1 AND SEC_NOINPUT)
-            # Symbols translation here.
-            set(steering_postfixes Base Limit)
-            foreach(symbol ${SETTINGS_SYMBOLS})
-              list(POP_FRONT steering_postfixes postfix)
-              set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C
-                "Image$$${SEC_NAME_CLEAN}$$${postfix}"
-              )
-              set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
-                "RESOLVE ${symbol} AS Image$$${SEC_NAME_CLEAN}$$${postfix}\n"
-              )
-            endforeach()
-          elseif(DEFINED SETTINGS_SYMBOLS)
-            message(WARNING "SYMBOL defined with: ${SETTINGS_INPUT}---${SETTINGS_SYMBOLS} at Section: ${SEC_NAME}")
-          endif()
+function(create_symbol)
+  cmake_parse_arguments(SYM "" "OBJECT;EXPR;SIZE;SUBALIGN;SYMBOL" "" ${ARGN})
 
-          if(empty)
-            set(TEMP "${TEMP}\n  {")
-            set(empty FALSE)
-          endif()
+  set_property(GLOBAL PROPERTY SYMBOL_${SYM_SYMBOL} TRUE)
+  set_property(GLOBAL PROPERTY SYMBOL_${SYM_SYMBOL}_OBJ_TYPE SYMBOL)
+  set_property(GLOBAL PROPERTY SYMBOL_${SYM_SYMBOL}_NAME     ${SYM_SYMBOL})
+  set_property(GLOBAL PROPERTY SYMBOL_${SYM_SYMBOL}_EXPR     ${SYM_EXPR})
+  set_property(GLOBAL PROPERTY SYMBOL_${SYM_SYMBOL}_SIZE     ${SYM_SIZE})
+  set_property(GLOBAL PROPERTY SYMBOL_${SYM_SYMBOL}_SYMBOL   ${SYM_SYMBOL})
 
-          #if(SETTINGS_INPUT)
-          foreach(setting ${SETTINGS_INPUT})
-            #set(SETTINGS ${SETTINGS_INPUT})
+  set_property(GLOBAL PROPERTY SYMBOL_TABLE_${SYM_SYMBOL} ${SYM_SYMBOL})
 
-            if(SETTINGS_ALIGN)
-               set(SETTINGS "${setting}, OVERALIGN ${SETTINGS_ALIGN}")
-            endif()
+  add_symbol(OBJECT ${SYM_OBJECT} SYMBOL SYMBOL_${SYM_SYMBOL})
+endfunction()
 
-            #if(SETTINGS_KEEP)
-            # armlink has --keep=<section_id>, but is there an scatter equivalant ?
-            #endif()
+#
+# Create functions - end
+#
 
-            if(SETTINGS_FIRST)
-               set(setting "${setting}, +First")
-               set(SETTINGS_FIRST "")
-            endif()
+#
+# Add functions - start
+#
+function(add_group)
+  cmake_parse_arguments(ADD_GROUP "" "OBJECT;GROUP" "" ${ARGN})
 
-            set(TEMP "${TEMP}\n    *.o(${setting})")
-          #endif()
-          endforeach()
+  # Section can be fixed address or not, VMA == LMA, .
+  #
+  get_property(exists GLOBAL PROPERTY ${ADD_GROUP_OBJECT})
+  if(NOT exists)
+    message(FATAL_ERROR
+      "Adding group ${ADD_GROUP_GROUP} to none-existing object: "
+      "${ADD_GROUP_OBJECT}"
+    )
+  endif()
 
-          if(SETTINGS_ANY)
-            if(NOT SETTINGS_FLAGS)
-              message(FATAL_ERROR ".ANY requires flags to be set.")
-            endif()
-            string(REPLACE ";" " " SETTINGS_FLAGS "${SETTINGS_FLAGS}")
+  get_property(vma GLOBAL PROPERTY ${ADD_GROUP_GROUP}_VMA)
+  get_property(object_name GLOBAL PROPERTY ${ADD_GROUP_OBJECT}_NAME)
 
-            set(TEMP "${TEMP}\n    .ANY (${SETTINGS_FLAGS})")
-          endif()
+  if((NOT DEFINED vma) OR ("${vma}" STREQUAL ${object_name}))
+    set_property(GLOBAL APPEND PROPERTY ${ADD_GROUP_OBJECT}_GROUPS ${ADD_GROUP_GROUP})
+  else()
+    set_property(GLOBAL APPEND PROPERTY ${ADD_GROUP_OBJECT}_${vma}_GROUPS ${ADD_GROUP_GROUP})
+  endif()
+endfunction()
+
+function(add_section)
+  cmake_parse_arguments(ADD_SECTION "" "OBJECT;SECTION;ADDRESS;VMA" "" ${ARGN})
+
+  # Section can be fixed address or not, VMA == LMA, .
+  #
+  if(DEFINED ADD_SECTION_OBJECT)
+    get_property(type GLOBAL PROPERTY ${ADD_SECTION_OBJECT}_OBJ_TYPE)
+    get_property(object_name GLOBAL PROPERTY ${ADD_SECTION_OBJECT}_NAME)
+
+    if(NOT DEFINED type)
+      message(FATAL_ERROR
+              "Adding section ${ADD_SECTION_SECTION} to "
+              "none-existing object: ${ADD_SECTION_OBJECT}"
+      )
+    endif()
+  else()
+    set(ADD_SECTION_OBJECT RELOCATEABLE)
+  endif()
+
+  if("${ADD_SECTION_VMA}" STREQUAL "${object_name}" AND DEFINED ADD_SECTION_ADDRESS)
+    set_property(GLOBAL APPEND PROPERTY
+      ${ADD_SECTION_OBJECT}_SECTIONS_FIXED
+      SECTION_${ADD_SECTION_SECTION}
+    )
+  elseif(NOT DEFINED ADD_SECTION_VMA AND DEFINED SECTION_ADDRESS)
+    set_property(GLOBAL APPEND PROPERTY
+      ${ADD_SECTION_OBJECT}_SECTIONS_FIXED
+      SECTION_${ADD_SECTION_SECTION}
+    )
+  elseif("${ADD_SECTION_VMA}" STREQUAL "${object_name}")
+    set_property(GLOBAL APPEND PROPERTY
+      ${ADD_SECTION_OBJECT}_SECTIONS
+      SECTION_${ADD_SECTION_SECTION}
+    )
+  elseif(NOT DEFINED ADD_SECTION_VMA)
+    set_property(GLOBAL APPEND PROPERTY
+      ${ADD_SECTION_OBJECT}_SECTIONS
+      SECTION_${ADD_SECTION_SECTION}
+    )
+  elseif(DEFINED SECTION_ADDRESS)
+    set_property(GLOBAL APPEND PROPERTY
+      ${ADD_SECTION_OBJECT}_${ADD_SECTION_VMA}_SECTIONS_FIXED
+      SECTION_${ADD_SECTION_SECTION}
+    )
+  else()
+    set_property(GLOBAL APPEND PROPERTY
+      ${ADD_SECTION_OBJECT}_${ADD_SECTION_VMA}_SECTIONS
+      SECTION_${ADD_SECTION_SECTION}
+    )
+  endif()
+endfunction()
+
+#
+# Add functions - end
+#
+
+#
+# Retrieval functions - start
+#
+function(find_object)
+  cmake_parse_arguments(FIND "" "OBJECT;NAME" "" ${ARGN})
+
+  get_property(REGION  GLOBAL PROPERTY REGION_${FIND_NAME})
+  get_property(GROUP   GLOBAL PROPERTY GROUP_${FIND_NAME})
+  get_property(SECTION GLOBAL PROPERTY SECTION_${FIND_NAME})
+
+  if(REGION)
+    set(${FIND_OBJECT} REGION_${FIND_NAME} PARENT_SCOPE)
+  elseif(GROUP)
+    set(${FIND_OBJECT} GROUP_${FIND_NAME} PARENT_SCOPE)
+  elseif(SECTION)
+    set(${FIND_OBJECT} SECTION_${FIND_NAME} PARENT_SCOPE)
+  else()
+    message(WARNING "No object with name ${FIND_NAME} could be found.")
+  endif()
+endfunction()
+
+function(get_objects)
+  cmake_parse_arguments(GET "" "LIST;OBJECT;TYPE" "" ${ARGN})
+
+  get_property(type GLOBAL PROPERTY ${GET_OBJECT}_OBJ_TYPE)
+
+  if(${type} STREQUAL SECTION)
+    # A section doesn't have sub-items.
+    return()
+  endif()
+
+  if(NOT (${GET_TYPE} STREQUAL SECTION))
+    message(WARNING "Only retrieval of SECTION objects is supported.")
+    return()
+  endif()
+
+  set(out)
+
+  get_property(sections GLOBAL PROPERTY ${GET_OBJECT}_SECTIONS_FIXED)
+  list(APPEND out ${sections})
+
+  get_property(groups GLOBAL PROPERTY ${GET_OBJECT}_GROUPS)
+  foreach(group ${groups})
+    get_objects(LIST sections OBJECT ${group} TYPE ${GET_TYPE})
+    list(APPEND out ${sections})
+  endforeach()
+
+  get_property(sections GLOBAL PROPERTY ${GET_OBJECT}_SECTIONS)
+  list(APPEND out ${sections})
+
+  list(REMOVE_ITEM REGIONS ${GET_OBJECT})
+  foreach(region ${REGIONS})
+    get_property(vma GLOBAL PROPERTY ${region}_NAME)
+
+    get_property(sections GLOBAL PROPERTY ${GET_OBJECT}_${vma}_SECTIONS_FIXED)
+    list(APPEND out ${sections})
+
+    get_property(groups GLOBAL PROPERTY ${GET_OBJECT}_${vma}_GROUPS)
+    foreach(group ${groups})
+      get_objects(LIST sections OBJECT ${group} TYPE ${GET_TYPE})
+      list(APPEND out ${sections})
+    endforeach()
+
+    get_property(sections GLOBAL PROPERTY ${GET_OBJECT}_${vma}_SECTIONS)
+    list(APPEND out ${sections})
+  endforeach()
+
+  set(${GET_LIST} ${out} PARENT_SCOPE)
+endfunction()
+
+#
+# Retrieval functions - end
+#
+
+
+# This function post process the region for easier use.
+#
+# Tasks:
+# - Apply missing settings, such as initial address for first section in a region.
+# - Symbol names on sections
+# - Ordered list of all sections for easier retrival on printing and configuration.
+function(process_region)
+  cmake_parse_arguments(REGION "" "OBJECT" "" ${ARGN})
+
+  set(sections)
+  get_objects(LIST sections OBJECT ${REGION_OBJECT} TYPE SECTION)
+  set_property(GLOBAL PROPERTY ${REGION_OBJECT}_SECTION_LIST_ORDERED ${sections})
+
+  list(LENGTH sections section_count)
+  if(section_count GREATER 0)
+    list(GET sections 0 section)
+    get_property(address GLOBAL PROPERTY ${section}_ADDRESS)
+    if(NOT DEFINED address)
+      get_parent(OBJECT ${REGION_OBJECT} PARENT parent TYPE REGION)
+      get_property(address GLOBAL PROPERTY ${parent}_ADDRESS)
+      set_property(GLOBAL PROPERTY ${section}_ADDRESS ${address})
+    endif()
+  endif()
+
+  list(REMOVE_ITEM REGIONS ${REGION_OBJECT})
+  foreach(region ${REGIONS})
+    get_property(vma GLOBAL PROPERTY ${region}_NAME)
+    set(sections_${vma})
+    get_property(sections GLOBAL PROPERTY ${REGION_OBJECT}_${vma}_SECTIONS_FIXED)
+    list(APPEND sections_${vma} ${sections})
+
+    get_property(groups GLOBAL PROPERTY ${REGION_OBJECT}_${vma}_GROUPS)
+    foreach(group ${groups})
+      get_objects(LIST sections OBJECT ${group} TYPE SECTION)
+      list(APPEND sections_${vma} ${sections})
+    endforeach()
+
+    get_property(sections GLOBAL PROPERTY ${REGION_OBJECT}_${vma}_SECTIONS)
+    list(APPEND sections_${vma} ${sections})
+
+    list(LENGTH sections_${vma} section_count)
+    if(section_count GREATER 0)
+      list(GET sections_${vma} 0 section)
+      get_property(address GLOBAL PROPERTY ${section}_ADDRESS)
+      if(NOT DEFINED address)
+        get_property(address GLOBAL PROPERTY ${region}_ADDRESS)
+        set_property(GLOBAL PROPERTY ${section}_ADDRESS ${address})
+      endif()
+    endif()
+  endforeach()
+
+  get_property(symbols GLOBAL PROPERTY ${REGION_OBJECT}_SYMBOLS)
+  foreach(symbol ${symbols})
+    get_property(name GLOBAL PROPERTY ${STRING_SYMBOL}_SYMBOL)
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${name}$$Base")
+
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+      "RESOLVE ${name} AS Image$$${name}$$Base\n"
+    )
+  endforeach()
+
+  get_property(sections GLOBAL PROPERTY ${REGION_OBJECT}_SECTION_LIST_ORDERED)
+  foreach(section ${sections})
+
+    get_property(name_clean GLOBAL PROPERTY ${section}_NAME_CLEAN)
+    get_property(length GLOBAL PROPERTY ${section}_SETTINGS_INDEX)
+    foreach(idx RANGE 0 ${length})
+      set(steering_postfixes Base Limit)
+      get_property(symbols GLOBAL PROPERTY ${section}_SETTING_${idx}_SYMBOLS)
+      get_property(sort    GLOBAL PROPERTY ${section}_SETTING_${idx}_SORT)
+      get_property(noinput GLOBAL PROPERTY ${section}_SETTING_${idx}_NOINPUT)
+      if(sort)
+        foreach(symbol ${symbols})
+          list(POP_FRONT steering_postfixes postfix)
+          set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C
+            "Image$$${name_clean}_${idx}$$${postfix}"
+          )
+          set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+            "RESOLVE ${symbol} AS Image$$${name_clean}_${idx}$$${postfix}\n"
+          )
+        endforeach()
+      elseif(DEFINED symbols AND ${length} EQUAL 1 AND noinput)
+        set(steering_postfixes Base Limit)
+        foreach(symbol ${symbols})
+          list(POP_FRONT steering_postfixes postfix)
+          set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C
+            "Image$$${name_clean}$$${postfix}"
+          )
+          set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+            "RESOLVE ${symbol} AS Image$$${name_clean}$$${postfix}\n"
+          )
         endforeach()
       endif()
     endforeach()
 
-    if(SECTION_${SEC_NAME}_SORT_INDEX)
-      set(TEMP "${TEMP}\n  }")
-      set(TEMP "${TEMP}\n  ${SEC_NAME_CLEAN}_end +0 EMPTY 0x0\n  {")
-    endif()
-
-
-    #  if(SEC_TYPE)
-    #    set(TEMP "${TEMP} (${SEC_TYPE})")
-    #  endif()
-
-
-    set(TEMP "${TEMP}")
-    # ToDo: add patterns here.
-
-    if("${SEC_TYPE}" STREQUAL BSS)
-      set(ZI "$$ZI")
-    endif()
-
     # Symbols translation here.
-    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${SEC_NAME_CLEAN}${ZI}$$Base")
-    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${SEC_NAME_CLEAN}${ZI}$$Length")
-    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Load$$${SEC_NAME_CLEAN}${ZI}$$Base")
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${name_clean}${ZI}$$Base")
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${name_clean}${ZI}$$Length")
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Load$$${name_clean}${ZI}$$Base")
 
     set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
-      "RESOLVE __${SEC_NAME_CLEAN}_start AS Image$$${SEC_NAME_CLEAN}${ZI}$$Base\n"
-      "RESOLVE __${SEC_NAME_CLEAN}_size AS Image$$${SEC_NAME_CLEAN}${ZI}$$Length\n"
-      "RESOLVE __${SEC_NAME_CLEAN}_load_start AS Load$$${SEC_NAME_CLEAN}${ZI}$$Base\n"
-      "EXPORT  __${SEC_NAME_CLEAN}_start AS __${SEC_NAME_CLEAN}_start\n"
+      "RESOLVE __${name_clean}_start AS Image$$${name_clean}${ZI}$$Base\n"
+      "RESOLVE __${name_clean}_size AS Image$$${name_clean}${ZI}$$Length\n"
+      "RESOLVE __${name_clean}_load_start AS Load$$${name_clean}${ZI}$$Base\n"
+      "EXPORT  __${name_clean}_start AS __${name_clean}_start\n"
     )
 
-    set(__${SEC_NAME_CLEAN}_start      "${SEC_NAME_CLEAN}" PARENT_SCOPE)
-    set(__${SEC_NAME_CLEAN}_size       "${SEC_NAME_CLEAN}" PARENT_SCOPE)
-    set(__${SEC_NAME_CLEAN}_load_start "${SEC_NAME_CLEAN}" PARENT_SCOPE)
-
-    if(DEFINED ${INDEX_KEY})
-      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${SEC_NAME_CLEAN}_end$$Limit")
+    if("${length}" GREATER 0)
+      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${name_clean}_end$$Limit")
       set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
-        "RESOLVE __${SEC_NAME_CLEAN}_end AS Image$$${SEC_NAME_CLEAN}_end$$Limit\n"
+        "RESOLVE __${name_clean}_end AS Image$$${name_clean}_end$$Limit\n"
       )
-      set(__${SEC_NAME_CLEAN}_end        "${SEC_NAME_CLEAN}_end" PARENT_SCOPE)
     else()
-      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${SEC_NAME_CLEAN}${ZI}$$Limit")
+      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${name_clean}${ZI}$$Limit")
       set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
-        "RESOLVE __${SEC_NAME_CLEAN}_end AS Image$$${SEC_NAME_CLEAN}${ZI}$$Limit\n"
+        "RESOLVE __${name_clean}_end AS Image$$${name_clean}${ZI}$$Limit\n"
       )
-      set(__${SEC_NAME_CLEAN}_end        "${SEC_NAME_CLEAN}" PARENT_SCOPE)
     endif()
 
+  endforeach()
 
-    set(TEMP "${TEMP}\n  }")
+endfunction()
 
-    #  if(SEC_LMA)
-    #    set(TEMP "${TEMP} > ${SEC_LMA}")
-    #  endif()
+#
+# String functions - start
+#
 
-    set(${SEC_CONTENT} "${${SEC_CONTENT}}\n${TEMP}\n" PARENT_SCOPE)
+function(group_to_string)
+  cmake_parse_arguments(STRING "" "OBJECT;STRING" "" ${ARGN})
+
+  get_property(type GLOBAL PROPERTY ${STRING_OBJECT}_OBJ_TYPE)
+  if(${type} STREQUAL REGION)
+    get_property(name GLOBAL PROPERTY ${STRING_OBJECT}_NAME)
+    get_property(address GLOBAL PROPERTY ${STRING_OBJECT}_ADDRESS)
+    get_property(size GLOBAL PROPERTY ${STRING_OBJECT}_SIZE)
+    set(${STRING_STRING} "${${STRING_STRING}}\n${name} ${address} ${size}\n{\n")
   endif()
+
+  get_property(sections GLOBAL PROPERTY ${STRING_OBJECT}_SECTIONS_FIXED)
+  foreach(section ${sections})
+    to_string(OBJECT ${section} STRING ${STRING_STRING})
+  endforeach()
+
+  get_property(groups GLOBAL PROPERTY ${STRING_OBJECT}_GROUPS)
+  foreach(group ${groups})
+    to_string(OBJECT ${group} STRING ${STRING_STRING})
+  endforeach()
+
+  get_property(sections GLOBAL PROPERTY ${STRING_OBJECT}_SECTIONS)
+  foreach(section ${sections})
+    to_string(OBJECT ${section} STRING ${STRING_STRING})
+  endforeach()
+
+  list(REMOVE_ITEM REGIONS ${STRING_OBJECT})
+  foreach(region ${REGIONS})
+    get_property(vma GLOBAL PROPERTY ${region}_NAME)
+    get_property(sections GLOBAL PROPERTY ${STRING_OBJECT}_${vma}_SECTIONS_FIXED)
+    foreach(section ${sections})
+      to_string(OBJECT ${section} STRING ${STRING_STRING})
+    endforeach()
+
+    get_property(groups GLOBAL PROPERTY ${STRING_OBJECT}_${vma}_GROUPS)
+    foreach(group ${groups})
+      to_string(OBJECT ${group} STRING ${STRING_STRING})
+    endforeach()
+
+    get_property(sections GLOBAL PROPERTY ${STRING_OBJECT}_${vma}_SECTIONS)
+    foreach(section ${sections})
+      to_string(OBJECT ${section} STRING ${STRING_STRING})
+    endforeach()
+  endforeach()
+
+  get_property(symbols GLOBAL PROPERTY ${STRING_OBJECT}_SYMBOLS)
+  foreach(symbol ${symbols})
+    to_string(OBJECT ${symbol} STRING ${STRING_STRING})
+  endforeach()
+
+  if(${type} STREQUAL REGION)
+    set(${STRING_STRING} "${${STRING_STRING}}\n}\n")
+  endif()
+  set(${STRING_STRING} ${${STRING_STRING}} PARENT_SCOPE)
 endfunction()
 
 
+function(section_to_string)
+  cmake_parse_arguments(STRING "" "SECTION;STRING" "" ${ARGN})
 
-# Strategy:
-# - Find all
-#set(OUT "MEMORY\n{")
+  get_property(name     GLOBAL PROPERTY ${STRING_SECTION}_NAME)
+  get_property(address  GLOBAL PROPERTY ${STRING_SECTION}_ADDRESS)
+  get_property(type     GLOBAL PROPERTY ${STRING_SECTION}_TYPE)
+  get_property(align    GLOBAL PROPERTY ${STRING_SECTION}_ALIGN)
+  get_property(subalign GLOBAL PROPERTY ${STRING_SECTION}_SUBALIGN)
+  get_property(vma      GLOBAL PROPERTY ${STRING_SECTION}_VMA)
+  get_property(lma      GLOBAL PROPERTY ${STRING_SECTION}_LMA)
+  get_property(noinput  GLOBAL PROPERTY ${STRING_SECTION}_NOINPUT)
+  get_property(noinit   GLOBAL PROPERTY ${STRING_SECTION}_NOINIT)
 
+  string(REGEX REPLACE "^[\.]" "" name_clean "${name}")
+  string(REPLACE "." "_" name_clean "${name_clean}")
+
+  set(TEMP "  ${name_clean}")
+  if(DEFINED address)
+    set(TEMP "${TEMP} ${address}")
+  else()
+    set(TEMP "${TEMP} +0")
+  endif()
+
+  if(noinit)
+    # Currently we simply uses offset +0, but we must support offset defined
+    # externally.
+    set(TEMP "${TEMP} UNINIT")
+  endif()
+
+  if(subalign)
+    # Currently we simply uses offset +0, but we must support offset defined
+    # externally.
+    set(TEMP "${TEMP} ALIGN ${subalign}")
+  endif()
+
+  if(NOT noinput)
+    set(TEMP "${TEMP}\n  {")
+
+    if("${type}" STREQUAL NOLOAD)
+      set(TEMP "${TEMP}\n    *.o(${name}*)")
+      set(TEMP "${TEMP}\n    *.o(${name}*.*)")
+    elseif(VMA_FLAGS)
+      # ToDo: Proper names as provided by armclang
+#      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*, +${VMA_FLAGS})")
+#      set(TEMP "${TEMP}\n    *.o(${SEC_NAME}*.*, +${VMA_FLAGS})")
+      set(TEMP "${TEMP}\n    *.o(${name}*)")
+      set(TEMP "${TEMP}\n    *.o(${name}*.*)")
+    else()
+      set(TEMP "${TEMP}\n    *.o(${name}*)")
+      set(TEMP "${TEMP}\n    *.o(${name}*.*)")
+    endif()
+  else()
+    set(empty TRUE)
+  endif()
+
+  get_property(length GLOBAL PROPERTY ${STRING_SECTION}_SETTINGS_INDEX)
+  foreach(idx RANGE 0 ${length})
+    get_property(align    GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_ALIGN)
+    get_property(any      GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_ANY)
+    get_property(first    GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_FIRST)
+    get_property(keep     GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_KEEP)
+    get_property(sort     GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_SORT)
+    get_property(flags    GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_FLAGS)
+    get_property(input    GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_INPUT)
+
+    if(sort)
+      set(section_close TRUE)
+      if(empty)
+        set(TEMP "${TEMP} EMPTY 0x0\n  {")
+        set(empty FALSE)
+      endif()
+      set(TEMP "${TEMP}\n  }")
+      set(TEMP "${TEMP}\n  ${name_clean}_${idx} +0 SORTTYPE ${SORT_TYPE_${sort}}\n  {")
+    endif()
+
+    if(empty)
+      set(TEMP "${TEMP}\n  {")
+      set(empty FALSE)
+    endif()
+
+    foreach(setting ${input})
+      #set(SETTINGS ${SETTINGS_INPUT})
+
+#      # ToDo: The code below had en error in original implementation, causing
+#      #       settings not to be applied
+#      #       Verify behaviour and activate if working as intended.
+#      if(align)
+#        set(setting "${setting}, OVERALIGN ${align}")
+#      endif()
+
+      #if(SETTINGS_KEEP)
+      # armlink has --keep=<section_id>, but is there an scatter equivalant ?
+      #endif()
+
+      if(first)
+        set(setting "${setting}, +First")
+        set(first "")
+      endif()
+
+      set(TEMP "${TEMP}\n    *.o(${setting})")
+    endforeach()
+
+    if(any)
+      if(NOT flags)
+        message(FATAL_ERROR ".ANY requires flags to be set.")
+      endif()
+      string(REPLACE ";" " " flags "${flags}")
+
+      set(TEMP "${TEMP}\n    .ANY (${flags})")
+    endif()
+  endforeach()
+
+  if(section_close)
+    set(section_close)
+    set(TEMP "${TEMP}\n  }")
+    set(TEMP "${TEMP}\n  ${name_clean}_end +0 EMPTY 0x0\n  {")
+  endif()
+
+  set(TEMP "${TEMP}")
+  # ToDo: add patterns here.
+
+  if("${type}" STREQUAL BSS)
+    set(ZI "$$ZI")
+  endif()
+
+  set(TEMP "${TEMP}\n  }")
+
+  set(${STRING_STRING} "${${STRING_STRING}}\n${TEMP}\n" PARENT_SCOPE)
+endfunction()
+
+function(symbol_to_string)
+  cmake_parse_arguments(STRING "" "SYMBOL;STRING" "" ${ARGN})
+
+  get_property(name     GLOBAL PROPERTY ${STRING_SYMBOL}_NAME)
+  get_property(expr     GLOBAL PROPERTY ${STRING_SYMBOL}_EXPR)
+  get_property(size     GLOBAL PROPERTY ${STRING_SYMBOL}_SIZE)
+  get_property(symbol   GLOBAL PROPERTY ${STRING_SYMBOL}_SYMBOL)
+  get_property(subalign GLOBAL PROPERTY ${STRING_SYMBOL}_SUBALIGN)
+
+  string(REPLACE "\\" "" expr "${expr}")
+  string(REGEX MATCHALL "%([^%]*)%" match_res ${expr})
+
+  foreach(match ${match_res})
+    string(REPLACE "%" "" match ${match})
+    get_property(symbol_val GLOBAL PROPERTY SYMBOL_TABLE_${match})
+    string(REPLACE "%${match}%" "ImageBase(${symbol_val})" expr ${expr})
+  endforeach()
+
+  if(DEFINED subalign)
+    set(subalign "ALIGN ${subalign}")
+  endif()
+
+  if(NOT DEFINED size)
+    set(size "0x0")
+  endif()
+
+  set(${STRING_STRING}
+    "${${STRING_STRING}}\n  ${symbol} ${expr} ${subalign} EMPTY ${size}\n  {\n  }\n"
+    PARENT_SCOPE
+  )
+endfunction()
+
+function(to_string)
+  cmake_parse_arguments(STRING "" "OBJECT;STRING" "" ${ARGN})
+
+  get_property(type GLOBAL PROPERTY ${STRING_OBJECT}_OBJ_TYPE)
+
+  if(("${type}" STREQUAL REGION) OR ("${type}" STREQUAL GROUP))
+    group_to_string(OBJECT ${STRING_OBJECT} STRING ${STRING_STRING})
+  elseif("${type}" STREQUAL SECTION)
+    section_to_string(SECTION ${STRING_OBJECT} STRING ${STRING_STRING})
+  elseif("${type}" STREQUAL SYMBOL)
+    symbol_to_string(SYMBOL ${STRING_OBJECT} STRING ${STRING_STRING})
+  endif()
+
+  set(${STRING_STRING} ${${STRING_STRING}} PARENT_SCOPE)
+endfunction()
+
+function(add_symbol)
+  cmake_parse_arguments(ADD_SYMBOL "" "OBJECT;SYMBOL" "" ${ARGN})
+
+  # Section can be fixed address or not, VMA == LMA, .
+  #
+  get_property(exists GLOBAL PROPERTY ${ADD_SYMBOL_OBJECT})
+  if(NOT exists)
+    message(FATAL_ERROR
+      "Adding symbol ${ADD_SYMBOL_SYMBOL} to none-existing object: "
+      "${ADD_SYMBOL_OBJECT}"
+    )
+  endif()
+
+  set_property(GLOBAL APPEND PROPERTY ${ADD_SYMBOL_OBJECT}_SYMBOLS ${ADD_SYMBOL_SYMBOL})
+endfunction()
+
+#
+# String functions - end
+#
 
 # Sorting the memory sections in ascending order.
 foreach(region ${MEMORY_REGIONS})
@@ -249,159 +746,54 @@ endforeach()
 list(SORT region_sort COMPARE NATURAL)
 set(MEMORY_REGIONS_SORTED)
 foreach(region_start ${region_sort})
-    list(APPEND MEMORY_REGIONS_SORTED "${region_${region_start}}")
+  list(APPEND MEMORY_REGIONS_SORTED "${region_${region_start}}")
 endforeach()
 # sorting complete.
 
-
 foreach(region ${MEMORY_REGIONS_SORTED})
-  string(REGEX MATCH "^{(.*)}$" ignore "${region}")
-  cmake_parse_arguments(REGION "" "NAME;START;FLAGS" "" ${CMAKE_MATCH_1})
-  set(REGION_${REGION_NAME}_START ${REGION_START})
-  set(REGION_${REGION_NAME}_FLAGS ${REGION_FLAGS})
-  list(APPEND MEMORY_REGIONS_NAMES ${REGION_NAME})
+  if("${region}" MATCHES "^{(.*)}$")
+    create_region(OBJECT new_region ${CMAKE_MATCH_1})
+
+    list(APPEND REGIONS ${new_region})
+  endif()
+endforeach()
+
+foreach(group ${GROUPS})
+  if("${group}" MATCHES "^{(.*)}$")
+    create_group(OBJECT new_group ${CMAKE_MATCH_1})
+  endif()
 endforeach()
 
 foreach(section ${SECTIONS})
   if("${section}" MATCHES "^{(.*)}$")
-    cmake_parse_arguments(SEC "" "VMA;LMA" "" ${CMAKE_MATCH_1})
-    string(REPLACE ";" "\;" section "${section}")
-    if(NOT SEC_LMA)
-      list(APPEND SECTIONS_${SEC_VMA} "${section}")
-    else()
-      list(APPEND SECTIONS_${SEC_LMA}_${SEC_VMA} "${section}")
-    endif()
+    create_section(${CMAKE_MATCH_1})
   endif()
 endforeach()
 
+foreach(region ${REGIONS})
+  process_region(OBJECT ${region})
+endforeach()
 
-
-
-
-foreach(settings ${SECTION_SETTINGS})
-  if("${settings}" MATCHES "^{(.*)}$")
-    cmake_parse_arguments(SETTINGS "" "PASS;SECTION;SORT" "" ${CMAKE_MATCH_1})
-
-    if(DEFINED SETTINGS_PASS AND NOT "${PASS}" IN_LIST SETTINGS_PASS)
-      # This section setting is not active in this pass, ignore.
-      continue()
-    endif()
-
-    if(SETTINGS_SORT)
-      set(INDEX_KEY    SECTION_${SETTINGS_SECTION}_SORT_INDEX)
-      set(SETTINGS_KEY SECTION_${SETTINGS_SECTION}_SETTINGS_SORT)
-      # message("Adding to: SECTION_${SETTINGS_SECTION}_SETTINGS_SORT")
-    else()
-      set(INDEX_KEY    SECTION_${SETTINGS_SECTION}_INDEX)
-      set(SETTINGS_KEY SECTION_${SETTINGS_SECTION}_SETTINGS)
-    endif()
-
-    if(NOT ${INDEX_KEY})
-      set(${INDEX_KEY} 0)
-    endif()
-
-    set(${SETTINGS_KEY}_${${INDEX_KEY}} ${CMAKE_MATCH_1})
-    # message("Adding to: ${SETTINGS_KEY}_${${INDEX_KEY}}=${CMAKE_MATCH_1}")
-    math(EXPR ${INDEX_KEY} "${${INDEX_KEY}} + 1")
+list(GET REGIONS 0 symbol_region)
+message("idx0: ${symbol_region} in ${REGIONS}")
+foreach(symbol ${SYMBOLS})
+  if("${symbol}" MATCHES "^{(.*)}$")
+    create_symbol(OBJECT ${symbol_region} ${CMAKE_MATCH_1})
   endif()
 endforeach()
 
-foreach(region ${MEMORY_REGIONS_SORTED})
-  string(REGEX MATCH "^{(.*)}$" ignore "${region}")
-  cmake_parse_arguments(REGION "" "NAME;START;FLAGS;SIZE" "" ${CMAKE_MATCH_1})
-  if(DEFINED REGION_SIZE)
-    if(${REGION_SIZE} MATCHES "^([0-9]*)[kK]$")
-      math(EXPR REGION_SIZE "1024 * ${CMAKE_MATCH_1}" OUTPUT_FORMAT HEXADECIMAL)
-    elseif(${REGION_SIZE} MATCHES "^([0-9]*)[mM]$")
-      math(EXPR REGION_SIZE "1024 * 1024 * ${CMAKE_MATCH_1}" OUTPUT_FORMAT HEXADECIMAL)
-    elseif(NOT (${REGION_SIZE} MATCHES "^([0-9]*)$" OR ${REGION_SIZE} MATCHES "^0x([0-9a-fA-F]*)$"))
-      # ToDo: Handle hex sizes
-      message(FATAL_ERROR "SIZE format is onknown.")
-    endif()
-  endif()
-  set(OUT)
-  set(ADDRESS ${REGION_START})
-  foreach(section ${SECTIONS_${REGION_NAME}})
-    string(REGEX MATCH "^{(.*)}$" ignore "${section}")
-    section_content(REGION_NAME ${REGION_NAME} REGION_FLAGS ${REGION_FLAGS} REGION_ADDRESS ${ADDRESS} CONTENT OUT ${CMAKE_MATCH_1})
-    set(SECTIONS_${REGION_NAME})
-    set(ADDRESS "+0")
-  endforeach()
-
-  foreach(section ${SECTIONS_${REGION_NAME}_${REGION_NAME}})
-    string(REGEX MATCH "^{(.*)}$" ignore "${section}")
-    section_content(REGION_NAME ${REGION_NAME} REGION_FLAGS ${REGION_FLAGS} CONTENT OUT ${CMAKE_MATCH_1})
-    set(SECTIONS_${REGION_NAME}_${REGION_NAME})
-  endforeach()
-
-  foreach(vma_region ${MEMORY_REGIONS_NAMES})
-    set(ADDRESS ${REGION_${vma_region}_START})
-    foreach(section ${SECTIONS_${REGION_NAME}_${vma_region}})
-      string(REGEX MATCH "^{(.*)}$" ignore "${section}")
-      section_content(REGION_NAME ${REGION_NAME} REGION_FLAGS ${REGION_FLAGS} REGION_ADDRESS ${ADDRESS} CONTENT OUT ${CMAKE_MATCH_1})
-      set(ADDRESS "+0")
-      set(SECTIONS_${REGION_NAME}_${vma_region})
-    endforeach()
-  endforeach()
-
-  foreach(symbol ${SYMBOLS})
-    if("${symbol}" MATCHES "^{(.*)}$")
-      cmake_parse_arguments(SYM "" "EXPR;SIZE;SUBALIGN;SYMBOL" "" ${CMAKE_MATCH_1})
-      string(REPLACE "\\" "" SYM_EXPR "${SYM_EXPR}")
-      string(REGEX MATCHALL "%([^%]*)%" MATCH_RES ${SYM_EXPR})
-      foreach(match ${MATCH_RES})
-        string(REPLACE "%" "" match ${match})
-        string(REPLACE "%${match}%" "ImageBase(${${match}})" SYM_EXPR ${SYM_EXPR})
-      endforeach()
-
-      if(DEFINED SYM_SUBALIGN)
-        set(SYM_SUBALIGN "ALIGN ${SYM_SUBALIGN}")
-      endif()
-
-      if(NOT DEFINED SYM_SIZE)
-        set(SYM_SIZE "0x0")
-      endif()
-
-      set(OUT "${OUT}\n  ${SYM_SYMBOL} ${SYM_EXPR} ${SYM_SUBALIGN} EMPTY ${SYM_SIZE}\n  {\n  }\n")
-      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${SYM_SYMBOL}$$Base")
-
-      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
-        "RESOLVE ${SYM_SYMBOL} AS Image$$${SYM_SYMBOL}$$Base\n"
-      )
-      set(${SYM_SYMBOL} "${SYM_SYMBOL}")
-    endif()
-  endforeach()
-  set(SYMBOLS "")
-
-  if(NOT "${OUT}" STREQUAL "")
-    set(SCATTER_OUT "${SCATTER_OUT}\n${REGION_NAME} ${REGION_START} ${REGION_SIZE}\n{")
-    set(SCATTER_OUT "${SCATTER_OUT}\n${OUT}\n}")
-  endif()
+set(OUT)
+foreach(region ${REGIONS})
+  to_string(OBJECT ${region} STRING OUT)
 endforeach()
 
-
-
-#
-#
-#
-#    memory_content(CONTENT OUT ${CMAKE_MATCH_1})
-#  endif()
-#endforeach()
-#set(OUT "${OUT}\n}\n")
-#
-#
-#foreach(section ${SECTIONS})
-##  message("${section}")
-#  if("${section}" MATCHES "^{(.*)}$")
-#    message("${section}")
-#    set(FLASH)
-#    section_content(${CMAKE_MATCH_1})
-#  endif()
-#endforeach()
+if(OUT_FILE)
+  file(WRITE ${OUT_FILE} "${OUT}")
+endif()
 
 if(DEFINED STEERING_C)
   get_property(symbols_c GLOBAL PROPERTY SYMBOL_STEERING_C)
-  file(WRITE ${STEERING_C} "/* AUTO-GENERATED - Do not modify\n")
+  file(WRITE ${STEERING_C}  "/* AUTO-GENERATED - Do not modify\n")
   file(APPEND ${STEERING_C} " * AUTO-GENERATED - All changes will be lost\n")
   file(APPEND ${STEERING_C} " */\n")
   foreach(symbol ${symbols_c})
@@ -422,13 +814,4 @@ if(DEFINED STEERING_FILE)
   file(WRITE ${STEERING_FILE}  "; AUTO-GENERATED - Do not modify\n")
   file(APPEND ${STEERING_FILE} "; AUTO-GENERATED - All changes will be lost\n")
   file(APPEND ${STEERING_FILE} ${steering_content})
-endif()
-
-
-
-
-if(OUT_FILE)
-  file(WRITE ${OUT_FILE} "${SCATTER_OUT}")
-else()
-  message("${SCATTER_OUT}")
 endif()
