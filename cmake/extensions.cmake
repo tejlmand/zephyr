@@ -2390,10 +2390,11 @@ macro(zephyr_linker_memory_ifdef feature_toggle)
 endmacro()
 
 # Usage:
-#   zephyr_linker_group(NAME <name> MEMORY <region>)
+#   zephyr_linker_group(NAME <name> [VMA <region>] [LMA <region>])
+#   zephyr_linker_group(NAME <name> GROUP <group>)
 #
 # Zephyr linker group.
-# This function specifies a group inside a specific memory region.
+# This function specifies a group inside a memory region or another group.
 #
 # The group ensures that all section inside the group are located together inside
 # the specified group.
@@ -2410,15 +2411,68 @@ endmacro()
 # Note: <name> will be converted to lower casing for linker symbols definitions.
 #
 # NAME <name>    : Name of the group.
-# MEMORY <region>: Memory region where all sections inside the group shall be
-#                  placed.
+# VMA <region|group>  : VMA Memory region or group to be used for this group.
+#                       If a group is used then the VMA region of that group will be used.
+# LMA <region|group>  : Memory region or group to be used for this group.
+# GROUP <group>       : Place the new group inside the existing group <group>
+#
+# Note: VMA and LMA are mutual exclusive with GROUP
+#
+# Example:
+#
+#   zephyr_linker_group(NAME groupA LMA memA)
+#   zephyr_linker_group(NAME groupB LMA groupA)
+#
+# will create two groups in same memory region as groupB will inherit the LMA
+# from groupA:
+#
+# +-----------------+
+# | memory region A |
+# |                 |
+# | +-------------+ |
+# | | groupA      | |
+# | +-------------+ |
+# |                 |
+# | +-------------+ |
+# | | groupB      | |
+# | +-------------+ |
+# |                 |
+# +-----------------+
+#
+# whereas
+#   zephyr_linker_group(NAME groupA LMA memA)
+#   zephyr_linker_group(NAME groupB GROUP groupA)
+#
+# will create groupB inside groupA:
+#
+# +---------------------+
+# | memory region A     |
+# |                     |
+# | +-----------------+ |
+# | | groupA          | |
+# | |                 | |
+# | | +-------------+ | |
+# | | | groupB      | | |
+# | | +-------------+ | |
+# | |                 | |
+# | +-----------------+ |
+# |                     |
+# +---------------------+
 function(zephyr_linker_group)
-  set(single_args "NAME;MEMORY")
+  set(single_args "NAME;GROUP;KVMA;LMA;VMA")
   cmake_parse_arguments(GROUP "" "${single_args}" "" ${ARGN})
 
-  if(MEMORY_UNPARSED_ARGUMENTS)
+  if(GROUP_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR "zephyr_linker_group(${ARGV0} ...) given unknown "
                         "arguments: ${GROUP_UNPARSED_ARGUMENTS}"
+    )
+  endif()
+
+  if(DEFINED GROUP_GROUP
+     AND (DEFINED GROUP_KVMA OR DEFINED GROUP_VMA OR DEFINED GROUP_LMA)
+  )
+    message(FATAL_ERROR "zephyr_linker_group(GROUP ...) cannot be used with "
+                        "VMA or LMA"
     )
   endif()
 
@@ -2458,15 +2512,25 @@ endfunction()
 #
 # NAME <name>         : Name of the output section.
 # VMA <region|group>  : VMA Memory region or group where code / data is located runtime (VMA)
+#                       If <group> is used here it means the section will use the
+#                       same VMA memory region as <group> but will not be placed
+#                       inside the group itself, see also GROUP argument.
 # KVMA <region|group> : Kernel VMA Memory region or group where code / data is located runtime (VMA)
 #                       When MMU is active and Kernel VM base and offset is different
 #                       from SRAM base and offset, then the region defined by KVMA will
 #                       be used as VMA.
+#                       If <group> is used here it means the section will use the
+#                       same VMA memory region as <group> but will not be placed
+#                       inside the group itself, see also GROUP argument.
 # LMA <region|group>  : Memory region or group where code / data is loaded (LMA)
 #                       If VMA is different from LMA, the code / data will be loaded
 #                       from LMA into VMA at bootup, this is usually the case for
 #                       global or static variables that are loaded in rom and copied
 #                       to ram at boot time.
+#                       If <group> is used here it means the section will use the
+#                       same LMA memory region as <group> but will not be placed
+#                       inside the group itself, see also GROUP argument.
+# GROUP <group>       : Place this section inside the group <group>
 # ADDRESS <address>   : Specific address to use for this section.
 # ALIGN <alignment>   : Align the execution address with alignment.
 # SUBALIGN <alignment>: Align input sections with alignment value.
@@ -2482,7 +2546,7 @@ endfunction()
 #
 function(zephyr_linker_section)
   set(options     "HIDDEN;NOINIT;NOINPUT")
-  set(single_args "ADDRESS;ALIGN;FLAGS;KVMA;LMA;NAME;SUBALIGN;TYPE;VMA")
+  set(single_args "ADDRESS;ALIGN;FLAGS;GROUP;KVMA;LMA;NAME;SUBALIGN;TYPE;VMA")
   set(multi_args  "PASS")
   cmake_parse_arguments(SECTION "${options}" "${single_args}" "${multi_args}" ${ARGN})
 
