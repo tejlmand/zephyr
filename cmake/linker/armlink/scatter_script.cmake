@@ -403,7 +403,7 @@ function(process_region)
 
   get_property(symbols GLOBAL PROPERTY ${REGION_OBJECT}_SYMBOLS)
   foreach(symbol ${symbols})
-    get_property(name GLOBAL PROPERTY ${STRING_SYMBOL}_SYMBOL)
+    get_property(name GLOBAL PROPERTY ${symbol}_NAME)
     set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${name}$$Base")
 
     set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
@@ -415,12 +415,13 @@ function(process_region)
   foreach(section ${sections})
 
     get_property(name_clean GLOBAL PROPERTY ${section}_NAME_CLEAN)
-    get_property(length GLOBAL PROPERTY ${section}_SETTINGS_INDEX)
+    get_property(noinput    GLOBAL PROPERTY ${section}_NOINPUT)
+    get_property(length     GLOBAL PROPERTY ${section}_SETTINGS_INDEX)
+    get_property(type       GLOBAL PROPERTY ${section}_TYPE)
     foreach(idx RANGE 0 ${length})
       set(steering_postfixes Base Limit)
       get_property(symbols GLOBAL PROPERTY ${section}_SETTING_${idx}_SYMBOLS)
       get_property(sort    GLOBAL PROPERTY ${section}_SETTING_${idx}_SORT)
-      get_property(noinput GLOBAL PROPERTY ${section}_SETTING_${idx}_NOINPUT)
       if(sort)
         foreach(symbol ${symbols})
           list(POP_FRONT steering_postfixes postfix)
@@ -445,6 +446,10 @@ function(process_region)
       endif()
     endforeach()
 
+    if("${type}" STREQUAL BSS)
+      set(ZI "$$ZI")
+    endif()
+
     # Symbols translation here.
     set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${name_clean}${ZI}$$Base")
     set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${name_clean}${ZI}$$Length")
@@ -457,17 +462,12 @@ function(process_region)
       "EXPORT  __${name_clean}_start AS __${name_clean}_start\n"
     )
 
-    if("${length}" GREATER 0)
-      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${name_clean}_end$$Limit")
-      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
-        "RESOLVE __${name_clean}_end AS Image$$${name_clean}_end$$Limit\n"
+    get_property(symbol_val GLOBAL PROPERTY SYMBOL_TABLE___${name_clean}_end)
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${symbol_val}${ZI}$$Limit")
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+        "RESOLVE __${name_clean}_end AS Image$$${symbol_val}${ZI}$$Limit\n"
       )
-    else()
-      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${name_clean}${ZI}$$Limit")
-      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
-        "RESOLVE __${name_clean}_end AS Image$$${name_clean}${ZI}$$Limit\n"
-      )
-    endif()
+    set(ZI)
 
   endforeach()
 
@@ -770,16 +770,16 @@ foreach(section ${SECTIONS})
   endif()
 endforeach()
 
-foreach(region ${REGIONS})
-  process_region(OBJECT ${region})
-endforeach()
-
 list(GET REGIONS 0 symbol_region)
 message("idx0: ${symbol_region} in ${REGIONS}")
 foreach(symbol ${SYMBOLS})
   if("${symbol}" MATCHES "^{(.*)}$")
     create_symbol(OBJECT ${symbol_region} ${CMAKE_MATCH_1})
   endif()
+endforeach()
+
+foreach(region ${REGIONS})
+  process_region(OBJECT ${region})
 endforeach()
 
 set(OUT)
