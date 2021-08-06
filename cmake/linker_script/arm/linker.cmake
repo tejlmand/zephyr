@@ -34,13 +34,13 @@ zephyr_linker_memory(NAME RAM      FLAGS wx START ${RAM_ADDR}   SIZE ${RAM_SIZE}
 zephyr_linker_memory(NAME IDT_LIST FLAGS wx START ${IDT_ADDR}   SIZE 2K)
 
 if(CONFIG_XIP)
-  zephyr_linker_group(NAME ROM_REGION MEMORY FLASH)
+  zephyr_linker_group(NAME ROM_REGION LMA FLASH)
 else()
-  zephyr_linker_group(NAME ROM_REGION MEMORY RAM)
+  zephyr_linker_group(NAME ROM_REGION LMA RAM)
 endif()
 
-zephyr_linker_group(NAME RAM_REGION MEMORY RAM)
-zephyr_linker_group(NAME TEXT_REGION MEMORY ROM_REGION)
+zephyr_linker_group(NAME RAM_REGION VMA RAM LMA ROM_REGION)
+zephyr_linker_group(NAME TEXT_REGION GROUP ROM_REGION)
 #zephyr_region(NAME FLASH ALIGN ${region_min_align})
 #zephyr_region(NAME RAM ALIGN ${region_min_align})
 
@@ -63,12 +63,12 @@ zephyr_linker_section_configure(SECTION /DISCARD/ INPUT ".igot")
 if(DEFINED CONFIG_ROM_START_OFFSET
    AND (DEFINED CONFIG_ARM OR DEFINED CONFIG_X86 OR DEFINED CONFIG_SOC_OPENISA_RV32M1_RISCV32)
 )
-  zephyr_linker_section(NAME .rom_start ADDRESS ${CONFIG_ROM_START_OFFSET} VMA ROM_REGION NOINPUT)
+  zephyr_linker_section(NAME .rom_start ADDRESS ${CONFIG_ROM_START_OFFSET} GROUP ROM_REGION NOINPUT)
 else()
-  zephyr_linker_section(NAME .rom_start VMA ROM_REGION NOINPUT)
+  zephyr_linker_section(NAME .rom_start GROUP ROM_REGION NOINPUT)
 endif()
 
-zephyr_linker_section(NAME .text         VMA TEXT_REGION)
+zephyr_linker_section(NAME .text         GROUP TEXT_REGION)
 
 # ToDo: Find out again where section '.extra' originated before re-activating.
 #zephyr_linker_section(NAME .extra        VMA RAM LMA ROM_REGION SUBALIGN 8)
@@ -90,11 +90,11 @@ zephyr_linker_section_configure(SECTION text INPUT ".vfp11_veneer")
 zephyr_linker_section_configure(SECTION text INPUT ".v4_bx")
 
 if(CONFIG_CPLUSPLUS)
-  zephyr_linker_section(NAME .ARM.extab VMA ROM_REGION)
+  zephyr_linker_section(NAME .ARM.extab GROUP ROM_REGION)
   zephyr_linker_section_configure(SECTION .ARM.extab INPUT ".gnu.linkonce.armextab.*")
 endif()
 
-zephyr_linker_section(NAME .ARM.exidx VMA ROM_REGION)
+zephyr_linker_section(NAME .ARM.exidx GROUP ROM_REGION)
 # Here the original linker would check for __GCC_LINKER_CMD__, need to check toolchain linker ?
 #if(__GCC_LINKER_CMD__)
   zephyr_linker_section_configure(SECTION .ARM.exidx INPUT ".gnu.linkonce.armexidx.*")
@@ -104,7 +104,7 @@ zephyr_linker_section(NAME .ARM.exidx VMA ROM_REGION)
 include(${COMMON_ZEPHYR_LINKER_DIR}/common-rom.cmake)
 include(${COMMON_ZEPHYR_LINKER_DIR}/thread-local-storage.cmake)
 
-zephyr_linker_section(NAME .rodata LMA ROM_REGION)
+zephyr_linker_section(NAME .rodata GROUP ROM_REGION)
 zephyr_linker_section_configure(SECTION .rodata INPUT ".gnu.linkonce.r.*")
 if(CONFIG_USERSPACE AND CONFIG_XIP)
   zephyr_linker_section_configure(SECTION .rodata INPUT ".kobject_data.rodata*")
@@ -115,7 +115,7 @@ zephyr_linker_section_configure(SECTION .rodata ALIGN 4)
 # Symbol to add _image_ram_start = .;
 
 # This comes from ramfunc.ls, via snippets-ram-sections.ld
-zephyr_linker_section(NAME .ramfunc VMA RAM LMA ROM_REGION SUBALIGN 8)
+zephyr_linker_section(NAME .ramfunc GROUP RAM_REGION SUBALIGN 8)
 # MPU_ALIGN(_ramfunc_ram_size);
 # } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #_ramfunc_ram_size = _ramfunc_ram_end - _ramfunc_ram_start;
@@ -123,7 +123,7 @@ zephyr_linker_section(NAME .ramfunc VMA RAM LMA ROM_REGION SUBALIGN 8)
 
 # ToDo - handle if(CONFIG_USERSPACE)
 
-zephyr_linker_section(NAME .data VMA RAM LMA ROM_REGION)
+zephyr_linker_section(NAME .data GROUP RAM_REGION)
 #zephyr_linker_section_configure(SECTION .data SYMBOLS __data_ram_start)
 zephyr_linker_section_configure(SECTION .data INPUT ".kernel.*")
 #zephyr_linker_section_configure(SECTION .data SYMBOLS __data_ram_end)
@@ -132,7 +132,7 @@ include(${COMMON_ZEPHYR_LINKER_DIR}/common-ram.cmake)
 #include(kobject.ld)
 
 if(NOT CONFIG_USERSPACE)
-  zephyr_linker_section(NAME .bss VMA RAM LMA RAM TYPE BSS)
+  zephyr_linker_section(NAME .bss VMA RAM LMA FLASH TYPE BSS)
 #  zephyr_linker_section(NAME .bss VMA RAM LMA RAM TYPE NOLOAD)
   # For performance, BSS section is assumed to be 4 byte aligned and
   # a multiple of 4 bytes
@@ -158,6 +158,7 @@ endif()
 # __kernel_ram_end = RAM_ADDR + RAM_SIZE;
 # __kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 #zephyr_linker_symbol(SYMBOL __kernel_ram_end  EXPR "${RAM_ADDR} + ${RAM_SIZE}")
+zephyr_linker_symbol(SYMBOL __kernel_ram_start EXPR "(%__bss_start%)")
 zephyr_linker_symbol(SYMBOL __kernel_ram_end  EXPR "(${RAM_ADDR} + ${RAM_SIZE})")
 zephyr_linker_symbol(SYMBOL __kernel_ram_size EXPR "(%__kernel_ram_end% - %__bss_start%)")
 zephyr_linker_symbol(SYMBOL _image_ram_start  EXPR "(${RAM_ADDR})" SUBALIGN 32) # ToDo calculate 32 correctly
