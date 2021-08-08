@@ -306,41 +306,68 @@ function(get_objects)
     return()
   endif()
 
-  if(NOT (${GET_TYPE} STREQUAL SECTION))
-    message(WARNING "Only retrieval of SECTION objects is supported.")
+  if(NOT (${GET_TYPE} STREQUAL SECTION
+     OR   ${GET_TYPE} STREQUAL GROUP)
+  )
+    message(WARNING "Only retrieval of SECTION GROUP objects are supported.")
     return()
   endif()
 
   set(out)
 
-  get_property(sections GLOBAL PROPERTY ${GET_OBJECT}_SECTIONS_FIXED)
-  list(APPEND out ${sections})
-
-  get_property(groups GLOBAL PROPERTY ${GET_OBJECT}_GROUPS)
-  foreach(group ${groups})
-    get_objects(LIST sections OBJECT ${group} TYPE ${GET_TYPE})
-    list(APPEND out ${sections})
-  endforeach()
-
-  get_property(sections GLOBAL PROPERTY ${GET_OBJECT}_SECTIONS)
-  list(APPEND out ${sections})
-
-  list(REMOVE_ITEM REGIONS ${GET_OBJECT})
-  foreach(region ${REGIONS})
-    get_property(vma GLOBAL PROPERTY ${region}_NAME)
-
-    get_property(sections GLOBAL PROPERTY ${GET_OBJECT}_${vma}_SECTIONS_FIXED)
+  if(${GET_TYPE} STREQUAL SECTION)
+    get_property(sections GLOBAL PROPERTY ${GET_OBJECT}_SECTIONS_FIXED)
     list(APPEND out ${sections})
 
-    get_property(groups GLOBAL PROPERTY ${GET_OBJECT}_${vma}_GROUPS)
+    get_property(groups GLOBAL PROPERTY ${GET_OBJECT}_GROUPS)
     foreach(group ${groups})
       get_objects(LIST sections OBJECT ${group} TYPE ${GET_TYPE})
       list(APPEND out ${sections})
     endforeach()
 
-    get_property(sections GLOBAL PROPERTY ${GET_OBJECT}_${vma}_SECTIONS)
+    get_property(sections GLOBAL PROPERTY ${GET_OBJECT}_SECTIONS)
     list(APPEND out ${sections})
-  endforeach()
+
+    list(REMOVE_ITEM REGIONS ${GET_OBJECT})
+    foreach(region ${REGIONS})
+      get_property(vma GLOBAL PROPERTY ${region}_NAME)
+
+      get_property(sections GLOBAL PROPERTY ${GET_OBJECT}_${vma}_SECTIONS_FIXED)
+      list(APPEND out ${sections})
+
+      get_property(groups GLOBAL PROPERTY ${GET_OBJECT}_${vma}_GROUPS)
+      foreach(group ${groups})
+        get_objects(LIST sections OBJECT ${group} TYPE ${GET_TYPE})
+        list(APPEND out ${sections})
+      endforeach()
+
+      get_property(sections GLOBAL PROPERTY ${GET_OBJECT}_${vma}_SECTIONS)
+      list(APPEND out ${sections})
+    endforeach()
+  endif()
+
+  if(${GET_TYPE} STREQUAL GROUP)
+    get_property(groups GLOBAL PROPERTY ${GET_OBJECT}_GROUPS)
+    list(APPEND out ${groups})
+
+    foreach(group ${groups})
+      get_objects(LIST subgroups OBJECT ${group} TYPE ${GET_TYPE})
+      list(APPEND out ${subgroups})
+    endforeach()
+
+    list(REMOVE_ITEM REGIONS ${GET_OBJECT})
+    foreach(region ${REGIONS})
+      get_property(vma GLOBAL PROPERTY ${region}_NAME)
+
+      get_property(groups GLOBAL PROPERTY ${GET_OBJECT}_${vma}_GROUPS)
+      list(APPEND out ${groups})
+
+      foreach(group ${groups})
+        get_objects(LIST subgroups OBJECT ${group} TYPE ${GET_TYPE})
+        list(APPEND out ${subgroups})
+      endforeach()
+    endforeach()
+  endif()
 
   set(${GET_LIST} ${out} PARENT_SCOPE)
 endfunction()
@@ -362,6 +389,10 @@ function(process_region)
   set(sections)
   get_objects(LIST sections OBJECT ${REGION_OBJECT} TYPE SECTION)
   set_property(GLOBAL PROPERTY ${REGION_OBJECT}_SECTION_LIST_ORDERED ${sections})
+
+  set(groups)
+  get_objects(LIST groups OBJECT ${REGION_OBJECT} TYPE GROUP)
+  set_property(GLOBAL PROPERTY ${REGION_OBJECT}_GROUP_LIST_ORDERED ${groups})
 
   list(LENGTH sections section_count)
   if(section_count GREATER 0)
@@ -471,6 +502,30 @@ function(process_region)
 
   endforeach()
 
+  get_property(groups GLOBAL PROPERTY ${REGION_OBJECT}_GROUP_LIST_ORDERED)
+  foreach(group ${groups})
+    get_property(name GLOBAL PROPERTY ${group}_NAME)
+    string(TOLOWER ${name} name)
+
+    get_objects(LIST sections OBJECT ${group} TYPE SECTION)
+    list(GET sections 0 section)
+    get_property(first_section_name GLOBAL PROPERTY ${section}_NAME_CLEAN)
+    list(POP_BACK sections section)
+    get_property(last_section_name GLOBAL PROPERTY ${section}_NAME_CLEAN)
+
+    # Symbols translation here.
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${first_section_name}$$Base")
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${last_section_name}$$Limit")
+
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+      "RESOLVE __${name}_start AS Image$$${first_section_name}$$Base\n"
+      "EXPORT  __${name}_start AS __${name}_start\n"
+    )
+
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+        "RESOLVE __${name}_end AS Image$$${last_section_name}$$Limit\n"
+      )
+  endforeach()
 endfunction()
 
 #
@@ -598,13 +653,13 @@ function(section_to_string)
     get_property(sort     GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_SORT)
     get_property(flags    GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_FLAGS)
     get_property(input    GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_INPUT)
-
     if(sort)
       set(section_close TRUE)
       if(empty)
         set(TEMP "${TEMP} EMPTY 0x0\n  {")
         set(empty FALSE)
       endif()
+      set(last_index ${idx})
       set(TEMP "${TEMP}\n  }")
       set(TEMP "${TEMP}\n  ${name_clean}_${idx} +0 SORTTYPE ${SORT_TYPE_${sort}}\n  {")
     endif()
@@ -649,7 +704,11 @@ function(section_to_string)
   if(section_close)
     set(section_close)
     set(TEMP "${TEMP}\n  }")
+    # ToDo: ALIGN_END implementation.
+    # Group symbols time: 20210807, 14:15-15:30
     set(TEMP "${TEMP}\n  ${name_clean}_end +0 EMPTY 0x0\n  {")
+#    set(TEMP "${TEMP}\n  ${name_clean}_end AlignExpr(ImageLimit(${name_clean}_${last_index}), 16) FIXED EMPTY 0x0\n  {")
+    set(last_index)
   endif()
 
   set(TEMP "${TEMP}")
