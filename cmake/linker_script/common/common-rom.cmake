@@ -170,7 +170,7 @@ zephyr_linker_section_configure(SECTION font_entry INPUT "._cfb_font.*" KEEP SOR
 zephyr_iterable_section(NAME tracing_backend KVMA RAM_REGION GROUP ROM_REGION SUBALIGN 4)
 
 zephyr_linker_section(NAME zephyr_dbg_info KVMA RAM_REGION GROUP ROM_REGION NOINPUT)
-zephyr_linker_section_configure(SECTION font_entry INPUT ".zephyr_dbg_info" KEEP)
+zephyr_linker_section_configure(SECTION zephyr_dbg_info INPUT ".zephyr_dbg_info" KEEP)
 # GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 zephyr_linker_section(NAME device_handles KVMA RAM_REGION GROUP ROM_REGION NOINPUT)
