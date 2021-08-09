@@ -279,8 +279,8 @@ static void test_write_kernro(void)
 	/* Try to write to kernel RO. */
 	const char *const ptr = (const char *const)&_k_neg_eagain;
 
-	zassert_true(ptr < _image_rodata_end &&
-		     ptr >= _image_rodata_start,
+	zassert_true(ptr < __rodata_region_end &&
+		     ptr >= __rodata_region_start,
 		     "_k_neg_eagain is not in rodata");
 	set_fault(K_ERR_CPU_EXCEPTION);
 
