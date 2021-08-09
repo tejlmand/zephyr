@@ -130,9 +130,9 @@
 GDATA(__bss_start)
 GDATA(__bss_num_words)
 #ifdef CONFIG_XIP
-GDATA(__data_load_start)
-GDATA(__data_start)
-GDATA(__data_num_words)
+GDATA(__data_region_load_start)
+GDATA(__data_region_start)
+GDATA(__data_region_num_words)
 #endif
 
 #else /* ! _ASMLANGUAGE */
@@ -175,9 +175,9 @@ extern char __bss_end[];
 
 /* Used by z_data_copy() or arch-specific implementation */
 #ifdef CONFIG_XIP
-extern char __data_load_start[];
-extern char __data_start[];
-extern char __data_end[];
+extern char __data_region_load_start[];
+extern char __data_region_start[];
+extern char __data_region_end[];
 #endif /* CONFIG_XIP */
 
 #ifdef CONFIG_MMU

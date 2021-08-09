@@ -67,7 +67,8 @@ SECTIONS
 
     _image_rom_end = .;
 
-    __data_load_start = .;
+    __data_region_load_start = .;
+    __data_region_start = .;
 
 
     SECTION_PROLOGUE(.plt,,)
@@ -96,6 +97,8 @@ SECTIONS
  */
 #include <snippets-rwdata.ld>
 
+		 __data_end = .;
+
 	}  GROUP_DATA_LINK_IN(REGION_DATA_VMA, REGION_DATA_LMA)
 
 #include <linker/common-ram.ld>
@@ -104,7 +107,7 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-ram-sections.ld>
-    __data_end = .;
+    __data_region_end = .;
 
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{

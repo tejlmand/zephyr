@@ -292,6 +292,10 @@ SECTIONS
 
 #endif  /* CONFIG_USERSPACE */
 
+    GROUP_START(DATA_REGION)
+
+    __data_region_start = .;
+
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
 	__data_start = .;
@@ -307,17 +311,18 @@ SECTIONS
 #ifdef CONFIG_CODE_DATA_RELOCATION
 #include <linker_sram_data_relocate.ld>
 #endif
+	__data_end = .;
 
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-    __data_load_start = LOADADDR(_DATA_SECTION_NAME);
+    __data_region_load_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <linker/common-ram.ld>
 #include <linker/kobject-data.ld>
 
 #include <linker/cplusplus-ram.ld>
 
-    __data_end = .;
+    __data_region_end = .;
 
 #ifndef CONFIG_USERSPACE
    SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
