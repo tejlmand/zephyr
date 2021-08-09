@@ -56,6 +56,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
       ${STEERING_C_ARG}
       -DOUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${linker_script_gen}
       -P ${ZEPHYR_BASE}/cmake/linker/armlink/scatter_script.cmake
+      --trace-expand 2> ${CMAKE_CURRENT_BINARY_DIR}/scatter_script.trace
   )
 
   if("${PASS}" EQUAL 2)
