@@ -48,6 +48,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     COMMAND ${CMAKE_COMMAND}
       -DPASS=${PASS}
       -DMEMORY_REGIONS="$<TARGET_PROPERTY:linker,MEMORY_REGIONS>"
+      -DGROUPS="$<TARGET_PROPERTY:linker,GROUPS>"
       -DSECTIONS="$<TARGET_PROPERTY:linker,SECTIONS>"
       -DSECTION_SETTINGS="$<TARGET_PROPERTY:linker,SECTION_SETTINGS>"
       -DSYMBOLS="$<TARGET_PROPERTY:linker,SYMBOLS>"
