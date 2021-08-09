@@ -100,7 +100,7 @@ SECTIONS
 	}
 
     GROUP_START(ROMABLE_REGION)
-    _image_rom_start = ROM_BASE;
+    __rom_region_start = ROM_BASE;
 
     SECTION_PROLOGUE(_VECTOR_SECTION_NAME,,)
     {
@@ -144,7 +144,7 @@ SECTIONS
 
     _image_text_end = .;
 
-	_image_rodata_start = .;
+	__rodata_region_start = .;
 #include <linker/common-rom.ld>
 #include <linker/thread-local-storage.ld>
 
@@ -167,10 +167,10 @@ SECTIONS
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <linker/cplusplus-rom.ld>
-	_image_rodata_end = .;
-	MPU_ALIGN(_image_rodata_end - _image_rom_start);
-	_image_rom_end = .;
-	_image_rom_size = _image_rom_end - _image_rom_start;
+	__rodata_region_end = .;
+	MPU_ALIGN(__rodata_region_end - __rom_region_start);
+	__rom_region_end = .;
+	__rom_region_size = __rom_region_end - __rom_region_start;
     GROUP_END(ROMABLE_REGION)
 
     GROUP_START(RAMABLE_REGION)

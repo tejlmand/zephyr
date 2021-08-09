@@ -102,7 +102,7 @@ SECTIONS
 
     GROUP_START(ROMABLE_REGION)
 
-    _image_rom_start = ROM_ADDR;
+    __rom_region_start = ROM_ADDR;
 
     SECTION_PROLOGUE(rom_start,,)
     {
@@ -165,7 +165,7 @@ SECTIONS
         __exidx_end = .;
     } GROUP_LINK_IN(ROMABLE_REGION)
 
-    _image_rodata_start = .;
+    __rodata_region_start = .;
 
 #include <linker/common-rom.ld>
 #include <linker/thread-local-storage.ld>
@@ -198,9 +198,9 @@ SECTIONS
 
 #include <linker/cplusplus-rom.ld>
 
-    _image_rodata_end = .;
-    MPU_ALIGN(_image_rodata_end -_image_rom_start);
-    _image_rom_end = .;
+    __rodata_region_end = .;
+    MPU_ALIGN(__rodata_region_end -__rom_region_start);
+    __rom_region_end = .;
 
     GROUP_END(ROMABLE_REGION)
 
@@ -325,6 +325,6 @@ SECTIONS
 
     /* To provide the image size as a const expression,
      * calculate this value here. */
-    _flash_used = LOADADDR(.last_section) - _image_rom_start;
+    _flash_used = LOADADDR(.last_section) - __rom_region_start;
 
 }
