@@ -75,7 +75,7 @@ SECTIONS {
 
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,ALIGN(1024)) {
 		__rom_region_start = .;
-		_image_text_start = .;
+		__text_region_start = .;
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
@@ -88,7 +88,7 @@ SECTIONS {
 #include <linker/kobject-text.ld>
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
-	_image_text_end = .;
+	__text_region_end = .;
 	__rodata_region_start = .;
 
 #include <linker/common-rom.ld>

@@ -119,14 +119,14 @@ SECTIONS
          * we are going to waste flash space? */
         . = ALT_CPU_RESET_ADDR;
 
-        _image_text_start = .;
+        __text_region_start = .;
 
         *(.text)
         *(".text.*")
         *(.gnu.linkonce.t.*)
         } GROUP_LINK_IN(ROMABLE_REGION)
 
-    _image_text_end = .;
+    __text_region_end = .;
 
 #if defined(CONFIG_GP_ALL_DATA)
         _gp = ABSOLUTE(. + 0x8000);

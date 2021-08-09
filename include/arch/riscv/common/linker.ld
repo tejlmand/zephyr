@@ -134,7 +134,7 @@ SECTIONS
 		KEEP(*(.openocd_debug))
 		KEEP(*(".openocd_debug.*"))
 
-		_image_text_start = .;
+		__text_region_start = .;
 
 		*(.text)
 		*(".text.*")
@@ -142,7 +142,7 @@ SECTIONS
 #include <linker/kobject-text.ld>
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
-    _image_text_end = .;
+    __text_region_end = .;
 
 	__rodata_region_start = .;
 #include <linker/common-rom.ld>
