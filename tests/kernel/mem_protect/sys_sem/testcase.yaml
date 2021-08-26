@@ -1,6 +1,11 @@
 tests:
   kernel.memory_protection.sys_sem:
     tags: kernel userspace
+  kernel.memory_protection.sys_sem.linker_generator:
+    arch_allow: arm
+    tags: kernel userspace linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
   kernel.memory_protection.sys_sem.nouser:
     tags: kernel
     extra_configs:

@@ -26,3 +26,8 @@ tests:
     extra_configs:
       - CONFIG_CBPRINTF_NANO=y
       - CONFIG_CBPRINTF_FULL_INTEGRAL=y
+  kernel.common.linker_generator:
+    arch_allow: arm
+    tags: linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

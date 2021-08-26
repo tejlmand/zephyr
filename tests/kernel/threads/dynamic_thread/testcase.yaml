@@ -3,3 +3,9 @@ tests:
     tags: kernel threads userspace ignore_faults
     filter: CONFIG_ARCH_HAS_USERSPACE
     arch_exclude: x86 # see GitHub #17893
+  kernel.threads.dynamic.linker_generator:
+    arch_allow: arm
+    tags: kernel threads userspace ignore_faults linker_generator
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

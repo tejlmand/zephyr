@@ -2,3 +2,9 @@ tests:
   kernel.threads.error.case:
     tags: kernel threads userspace ignore_faults
     filter: CONFIG_USERSPACE
+  kernel.threads.error.case.linker_generator:
+    arch_allow: arm
+    tags: kernel threads userspace ignore_faults linker_generator
+    filter: CONFIG_USERSPACE
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

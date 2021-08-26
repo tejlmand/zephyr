@@ -1,3 +1,8 @@
 tests:
   kernel.mutex:
     tags: kernel userspace
+  kernel.mutex.linker_generator:
+    arch_allow: arm
+    tags: kernel userspace linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

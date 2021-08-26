@@ -2,3 +2,9 @@ tests:
   kernel.threads.apis:
     tags: kernel threads userspace ignore_faults
     min_flash: 34
+  kernel.threads.apis.linker_generator:
+    arch_allow: arm
+    tags: kernel threads userspace ignore_faults linker_generator
+    min_flash: 34
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

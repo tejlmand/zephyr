@@ -2,3 +2,9 @@ tests:
   arch.common.xip:
     filter: CONFIG_XIP
     tags: kernel xip
+  arch.common.xip.linker_generator:
+    arch_allow: arm
+    filter: CONFIG_XIP
+    tags: kernel xip linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

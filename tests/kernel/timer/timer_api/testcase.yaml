@@ -14,3 +14,8 @@ tests:
       - CONFIG_MULTITHREADING=n
       - CONFIG_TEST_USERSPACE=n
       - CONFIG_SPIN_VALIDATE=n
+  kernel.timer.linker_generator:
+    arch_allow: arm
+    tags: kernel timer userspace linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

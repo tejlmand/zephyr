@@ -13,3 +13,10 @@ tests:
     platform_allow: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
     extra_configs:
       - CONFIG_TEST_HW_STACK_PROTECTION=n
+  kernel.workqueue.linker_generator:
+    arch_allow: arm
+    platform_exclude: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
+    filter: not CONFIG_WDT_SAM
+    tags:  linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

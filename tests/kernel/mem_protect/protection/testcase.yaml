@@ -3,3 +3,10 @@ tests:
     platform_exclude: twr_ke18f
     filter: CONFIG_SRAM_REGION_PERMISSIONS
     tags: kernel security ignore_faults
+  kernel.memory_protection.protection.linker_generator:
+    arch_allow: arm
+    platform_exclude: twr_ke18f
+    filter: CONFIG_SRAM_REGION_PERMISSIONS
+    tags: kernel security ignore_faults linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

@@ -8,3 +8,9 @@ tests:
     filter: CONFIG_ARM_MPU and CONFIG_ARMV8_M_MAINLINE
     arch_allow: arm
     tags: kernel security userspace ignore_faults
+  kernel.threads.thread_stack.linker_generator:
+    arch_allow: arm
+    tags: kernel security userspace ignore_faults linker_generator
+    min_ram: 16
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

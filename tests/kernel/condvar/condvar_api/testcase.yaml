@@ -1,3 +1,8 @@
 tests:
   kernel.condvar:
     tags: kernel userspace condition_variables ignore_faults
+  kernel.condvar.linker_generator:
+    arch_allow: arm
+    tags: kernel userspace condition_variables ignore_faults linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

@@ -2,3 +2,9 @@ tests:
   kernel.workqueue:
     min_flash: 34
     tags: kernel
+  kernel.workqueue.linker_generator:
+    arch_allow: arm
+    min_flash: 34
+    tags: kernel linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

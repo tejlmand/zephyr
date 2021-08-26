@@ -6,6 +6,14 @@ tests:
     tags: kernel interrupt isr_table
     extra_configs:
       - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
+  arch.interrupt.gen_isr_table.arm_baseline.linker_generator:
+    arch_allow: arm
+    platform_allow: bbc_microbit atsamr21_xpro nrf51dk_nrf51422 nucleo_g071rb qemu_cortex_m0
+    filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV6_M_ARMV8_M_BASELINE
+    tags: kernel interrupt isr_table linker_generator
+    extra_configs:
+      - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
   arch.interrupt.gen_isr_table.arm_mainline:
     arch_allow: arm
     platform_exclude: stmf103_mini nucleo_f103rb olimexino_stm32 stm32_min_dev_black

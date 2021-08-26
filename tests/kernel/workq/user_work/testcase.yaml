@@ -3,3 +3,10 @@ tests:
     min_flash: 34
     filter: CONFIG_ARCH_HAS_USERSPACE
     tags: kernel userspace
+  kernel.work.user.linker_generator:
+    arch_allow: arm
+    min_flash: 34
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags: kernel userspace linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

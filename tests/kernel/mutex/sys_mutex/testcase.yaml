@@ -6,3 +6,9 @@ tests:
     tags: kernel
     extra_configs:
       - CONFIG_TEST_USERSPACE=n
+  system.mutex.linker_generator:
+    arch_allow: arm
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags: kernel userspace linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

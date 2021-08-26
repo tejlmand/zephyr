@@ -2,3 +2,9 @@ tests:
   kernel.mutex:
     filter: CONFIG_ARCH_HAS_USERSPACE
     tags: kernel userspace ignore_faults
+  kernel.mutex.linker_generator:
+    arch_allow: arm
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags: kernel userspace ignore_faults linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

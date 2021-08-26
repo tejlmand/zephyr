@@ -2,3 +2,9 @@ tests:
   kernel.memory_protection.syscalls:
     filter: CONFIG_ARCH_HAS_USERSPACE
     tags: kernel security userspace ignore_faults
+  kernel.memory_protection.syscalls.linker_generator:
+    arch_allow: arm
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags: kernel security userspace ignore_faults linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

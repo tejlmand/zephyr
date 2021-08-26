@@ -1,3 +1,8 @@
 tests:
   kernel.pipe:
       tags: kernel userspace ignore_faults
+  kernel.pipe.linker_generator:
+      arch_allow: arm
+      tags: kernel userspace ignore_faults linker_generator
+      extra_configs:
+          - CONFIG_CMAKE_LINKER_GENERATOR=y

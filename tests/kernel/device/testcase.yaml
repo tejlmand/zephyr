@@ -11,3 +11,9 @@ tests:
     platform_exclude: mec15xxevb_assy6853 beaglev_starlight_jh7100
     extra_configs:
       - CONFIG_PM_DEVICE=y
+  kernel.device.linker_generator:
+    arch_allow: arm
+    tags: kernel device linker_generator
+    platform_exclude: beaglev_starlight_jh7100
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
