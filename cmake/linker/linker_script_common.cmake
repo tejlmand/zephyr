@@ -127,7 +127,7 @@ function(create_section)
   set_property(GLOBAL PROPERTY SYMBOL_TABLE___${name_clean}_end        ${name_clean})
 
   set(INDEX 100)
-  set(settings_single "ALIGN;ANY;FIRST;KEEP;OFFSET;PASS;PRIO;SECTION;SORT")
+ set(settings_single "ALIGN;ANY;EXPR;FIRST;KEEP;OFFSET;PASS;PRIO;SECTION;SORT")
   set(settings_multi  "FLAGS;INPUT;SYMBOLS")
   foreach(settings ${SECTION_SETTINGS})
     if("${settings}" MATCHES "^{(.*)}$")
@@ -147,6 +147,13 @@ function(create_section)
       else()
         set(idx ${INDEX})
         math(EXPR INDEX "${INDEX} + 1")
+      endif()
+
+      if(DEFINED SETTINGS_OFFSET)
+        # Offset may contain an expression with spaces.
+	# Spaces are escaped when transferred from calling CMake system, hence
+	# remove the escape character.
+        string(REPLACE "\\ " " " SETTINGS_OFFSET ${SETTINGS_OFFSET})
       endif()
 
       foreach(setting ${settings_single} ${settings_multi})
