@@ -90,6 +90,7 @@ endforeach()
 # A list of common environment settings used when invoking Kconfig during CMake
 # configure time or menuconfig and related build target.
 string(REPLACE ";" "\\\;" SHIELD_AS_LIST_ESCAPED "${SHIELD_AS_LIST}")
+string(REPLACE ";" "\\\;" ZEPHYR_MODULE_NAMES_AS_LIST_ESCAPED "${ZEPHYR_MODULE_NAMES}")
 
 set(COMMON_KCONFIG_ENV_SETTINGS
   PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
@@ -130,29 +131,64 @@ set(EXTRA_KCONFIG_TARGET_COMMAND_FOR_hardenconfig
   ${ZEPHYR_BASE}/scripts/kconfig/hardenconfig.py
   )
 
-foreach(kconfig_target
-    menuconfig
-    guiconfig
-    hardenconfig
-    ${EXTRA_KCONFIG_TARGETS}
-    )
-  add_custom_target(
-    ${kconfig_target}
-    ${CMAKE_COMMAND} -E env
-    ZEPHYR_BASE=${ZEPHYR_BASE}
-    ZEPHYR_TOOLCHAIN_VARIANT=${ZEPHYR_TOOLCHAIN_VARIANT}
-    ${COMMON_KCONFIG_ENV_SETTINGS}
-    "SHIELD_AS_LIST=${SHIELD_AS_LIST_ESCAPED}"
-    DTS_POST_CPP=${DTS_POST_CPP}
-    DTS_ROOT_BINDINGS=${DTS_ROOT_BINDINGS}
-    ${PYTHON_EXECUTABLE}
-    ${EXTRA_KCONFIG_TARGET_COMMAND_FOR_${kconfig_target}}
-    ${KCONFIG_ROOT}
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
-    USES_TERMINAL
-    COMMAND_EXPAND_LISTS
-    )
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/menuconfig.env "${COMMON_KCONFIG_ENV_SETTINGS}")
+
+execute_process(COMMAND ${CMAKE_COMMAND} -G${CMAKE_GENERATOR}
+  -B${CMAKE_CURRENT_BINARY_DIR}/menuconfig
+  -S${CMAKE_CURRENT_LIST_DIR}/menuconfig
+  -DMENUCONFIG_ENV_FILE=${CMAKE_CURRENT_BINARY_DIR}/menuconfig.env
+  -DKCONFIG_TARGETS=menuconfig
+  -DZEPHYR_BASE=${ZEPHYR_BASE}
+  -DZEPHYR_TOOLCHAIN_VARIANT=${ZEPHYR_TOOLCHAIN_VARIANT}
+  -DSHIELD_AS_LIST="${SHIELD_AS_LIST_ESCAPED}"
+  -DDTS_POST_CPP=${DTS_POST_CPP}
+  -DDTS_ROOT_BINDINGS=${DTS_ROOT_BINDINGS}
+  -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
+  -DEXTRA_KCONFIG_TARGET_COMMAND_FOR_menuconfig=${EXTRA_KCONFIG_TARGET_COMMAND_FOR_menuconfig}
+#  -D${EXTRA_KCONFIG_TARGET_COMMAND_FOR_${kconfig_target}}
+  -DKCONFIG_ROOT=${KCONFIG_ROOT}
+)
+
+file(GLOB_RECURSE menuconfig_build_files RELATIVE ${CMAKE_CURRENT_BINARY_DIR}/menuconfig ${CMAKE_CURRENT_BINARY_DIR}/menuconfig/*)
+list(REMOVE_ITEM menuconfig_build_files CMakeCache.txt)
+list(REMOVE_ITEM menuconfig_build_files build.ninja)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test)
+foreach(file ${menuconfig_build_files})
+  get_filename_component(dir ${file} DIRECTORY)
+  file(COPY ${CMAKE_CURRENT_BINARY_DIR}/menuconfig/${file}
+       DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/${dir}
+  )
 endforeach()
+
+file(READ ${CMAKE_CURRENT_BINARY_DIR}/menuconfig/build.ninja build_file)
+string(REPLACE "build build.ninja:" "build build.ninja.rerun_disabled:" build_file "${build_file}")
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/build.ninja "${build_file}")
+
+#message(FATAL_ERROR "Big failure, will menuconfig work ?")
+
+#foreach(kconfig_target
+#    menuconfig
+#    guiconfig
+#    hardenconfig
+#    ${EXTRA_KCONFIG_TARGETS}
+#    )
+#  add_custom_target(
+#    ${kconfig_target}
+#    ${CMAKE_COMMAND} -E env
+#    ZEPHYR_BASE=${ZEPHYR_BASE}
+#    ZEPHYR_TOOLCHAIN_VARIANT=${ZEPHYR_TOOLCHAIN_VARIANT}
+#    ${COMMON_KCONFIG_ENV_SETTINGS}
+#    "SHIELD_AS_LIST=${SHIELD_AS_LIST_ESCAPED}"
+#    DTS_POST_CPP=${DTS_POST_CPP}
+#    DTS_ROOT_BINDINGS=${DTS_ROOT_BINDINGS}
+#    ${PYTHON_EXECUTABLE}
+#    ${EXTRA_KCONFIG_TARGET_COMMAND_FOR_${kconfig_target}}
+#    ${KCONFIG_ROOT}
+#    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
+#    USES_TERMINAL
+#    COMMAND_EXPAND_LISTS
+#    )
+#endforeach()
 
 # Support assigning Kconfig symbols on the command-line with CMake
 # cache variables prefixed with 'CONFIG_'. This feature is
