@@ -45,8 +45,12 @@ assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMa
 # is the last station. See "logical_target_for_zephyr_elf" below for
 # details.
 set(CMAKE_EXECUTABLE_SUFFIX .elf)
-set(ZEPHYR_PREBUILT_EXECUTABLE zephyr_prebuilt)
+#set(ZEPHYR_PREBUILT_EXECUTABLE zephyr_prebuilt)
+set(ZEPHYR_CURRENT_LINKER_PASS 0)
+set(ZEPHYR_CURRENT_LINKER_CMD  linker_zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS}.cmd)
+set(ZEPHYR_PREBUILT_EXECUTABLE zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS})
 set(ZEPHYR_FINAL_EXECUTABLE    zephyr_final)
+
 
 # Set some phony targets to collect dependencies
 set(OFFSETS_H_TARGET           offsets_h)
@@ -756,41 +760,6 @@ zephyr_get_include_directories_for_lang(C
   STRIP_PREFIX # Don't use a -I prefix
   )
 
-if(CONFIG_GEN_ISR_TABLES)
-  if(CONFIG_GEN_SW_ISR_TABLE)
-    list(APPEND GEN_ISR_TABLE_EXTRA_ARG --sw-isr-table)
-  endif()
-
-  if(CONFIG_GEN_IRQ_VECTOR_TABLE)
-    list(APPEND GEN_ISR_TABLE_EXTRA_ARG --vector-table)
-  endif()
-
-  # isr_tables.c is generated from ${ZEPHYR_PREBUILT_EXECUTABLE} by
-  # gen_isr_tables.py
-  add_custom_command(
-    OUTPUT isr_tables.c isrList.bin
-    COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
-            $<TARGET_PROPERTY:bintools,elfconvert_flag>
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_intarget>${OUTPUT_FORMAT}
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>binary
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_only>.intList
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>$<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>isrList.bin
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
-    COMMAND ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/arch/common/gen_isr_tables.py
-    --output-source isr_tables.c
-    --kernel $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
-    --intlist isrList.bin
-    $<$<BOOL:${CONFIG_BIG_ENDIAN}>:--big-endian>
-    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--debug>
-    ${GEN_ISR_TABLE_EXTRA_ARG}
-    DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
-    COMMAND_EXPAND_LISTS
-    )
-  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES isr_tables.c)
-endif()
-
 if(CONFIG_HAS_DTS)
   # dev_handles.c is generated from ${ZEPHYR_PREBUILT_EXECUTABLE} by
   # gen_handles.py
@@ -805,7 +774,7 @@ if(CONFIG_HAS_DTS)
     --start-symbol "$<TARGET_PROPERTY:linker,devices_start_symbol>"
     DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
     )
-  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES dev_handles.c)
+  set_property(GLOBAL APPEND PROPERTY GENERATED_APP_SOURCE_FILES dev_handles.c)
 endif()
 
 if(CONFIG_CODE_DATA_RELOCATION)
@@ -975,12 +944,6 @@ if(CONFIG_USERSPACE)
   )
 endif()
 
-# Read global variables into local variables
-get_property(GASF GLOBAL PROPERTY GENERATED_APP_SOURCE_FILES)
-get_property(GKOF GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES)
-get_property(GKSF GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES)
-
-
 get_property(CSTD GLOBAL PROPERTY CSTD)
 set_ifndef(CSTD c99)
 
@@ -999,9 +962,9 @@ if(CONFIG_USERSPACE)
 
   if(CONFIG_LINKER_USE_PINNED_SECTION)
     set(APP_SMEM_PINNED_ALIGNED_LD
-         "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_aligned.ld")
+        "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_aligned.ld")
     set(APP_SMEM_PINNED_UNALIGNED_LD
-         "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_unaligned.ld")
+        "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_unaligned.ld")
 
     if(NOT CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
       # The libc partition may hold symbols that are required during boot process,
@@ -1019,20 +982,6 @@ if(CONFIG_USERSPACE)
   endif()
 
   set(OBJ_FILE_DIR "${PROJECT_BINARY_DIR}/../")
-
-  add_custom_target(
-    ${APP_SMEM_ALIGNED_DEP}
-    DEPENDS
-    ${APP_SMEM_ALIGNED_LD}
-    ${APP_SMEM_PINNED_ALIGNED_LD}
-    )
-
-  add_custom_target(
-    ${APP_SMEM_UNALIGNED_DEP}
-    DEPENDS
-    ${APP_SMEM_UNALIGNED_LD}
-    ${APP_SMEM_PINNED_UNALIGNED_LD}
-    )
 
   if(CONFIG_NEWLIB_LIBC)
     set(NEWLIB_PART -l libc.a z_libc_partition)
@@ -1060,9 +1009,30 @@ if(CONFIG_USERSPACE)
     COMMENT "Generating app_smem_unaligned linker section"
     )
 
+  add_custom_target(
+    ${APP_SMEM_ALIGNED_DEP}
+    DEPENDS
+    ${APP_SMEM_ALIGNED_LD}
+    ${APP_SMEM_PINNED_ALIGNED_LD}
+    )
+
+  add_custom_target(
+    ${APP_SMEM_UNALIGNED_DEP}
+    DEPENDS
+    ${APP_SMEM_UNALIGNED_LD}
+    ${APP_SMEM_PINNED_UNALIGNED_LD}
+    )
+
+  set(APP_SMEM_UNALIGNED_LIB app_smem_unaligned_output_obj_renamed_lib)
+  list(APPEND LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE "-DLINKER_APP_SMEM_UNALIGNED")
+endif()
+
+if(CONFIG_USERSPACE OR CONFIG_HAS_DTS)
+  list(APPEND LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE "-DDEVICE_HANDLES_PASS1")
+
   configure_linker_script(
-    linker_app_smem_unaligned.cmd
-    "-DLINKER_APP_SMEM_UNALIGNED"
+    ${ZEPHYR_CURRENT_LINKER_CMD}
+    "${LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE}"
     ${CODE_RELOCATION_DEP}
     ${APP_SMEM_UNALIGNED_DEP}
     ${APP_SMEM_UNALIGNED_LD}
@@ -1071,38 +1041,41 @@ if(CONFIG_USERSPACE)
     )
 
   add_custom_target(
-    linker_app_smem_unaligned_script
+    linker_zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS}_script
     DEPENDS
-    linker_app_smem_unaligned.cmd
+    ${ZEPHYR_CURRENT_LINKER_CMD}
     )
 
   set_property(TARGET
-    linker_app_smem_unaligned_script
+    linker_zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS}_script
     PROPERTY INCLUDE_DIRECTORIES
     ${ZEPHYR_INCLUDE_DIRS}
     )
 
-  set(APP_SMEM_UNALIGNED_LIB app_smem_unaligned_output_obj_renamed_lib)
-  add_executable(       app_smem_unaligned_prebuilt misc/empty_file.c)
+  add_executable(       ${ZEPHYR_PREBUILT_EXECUTABLE} misc/empty_file.c)
   toolchain_ld_link_elf(
-    TARGET_ELF            app_smem_unaligned_prebuilt
-    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/app_smem_unaligned_prebuilt.map
+    TARGET_ELF            ${ZEPHYR_PREBUILT_EXECUTABLE}
+    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_PREBUILT_EXECUTABLE}.map
     LIBRARIES_PRE_SCRIPT  ""
-    LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker_app_smem_unaligned.cmd
+    LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/${ZEPHYR_CURRENT_LINKER_CMD}
     LIBRARIES_POST_SCRIPT ""
     DEPENDENCIES          ${CODE_RELOCATION_DEP}
   )
-  target_byproducts(TARGET app_smem_unaligned_prebuilt
-                    BYPRODUCTS ${PROJECT_BINARY_DIR}/app_smem_unaligned_prebuilt.map
+  target_byproducts(TARGET ${ZEPHYR_PREBUILT_EXECUTABLE}
+                    BYPRODUCTS ${PROJECT_BINARY_DIR}/${ZEPHYR_PREBUILT_EXECUTABLE}.map
   )
-  set_property(TARGET   app_smem_unaligned_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_app_smem_unaligned.cmd)
-  add_dependencies(     app_smem_unaligned_prebuilt linker_app_smem_unaligned_script ${OFFSETS_LIB})
+  set_property(TARGET   ${ZEPHYR_PREBUILT_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/${ZEPHYR_CURRENT_LINKER_CMD})
+  add_dependencies(${ZEPHYR_PREBUILT_EXECUTABLE} linker_zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS}_script ${OFFSETS_LIB})
 
+  math(EXPR ZEPHYR_CURRENT_LINKER_PASS "1 + ${ZEPHYR_CURRENT_LINKER_PASS}")
+endif()
+
+if (CONFIG_USERSPACE)
   add_custom_command(
     OUTPUT ${APP_SMEM_ALIGNED_LD} ${APP_SMEM_PINNED_ALIGNED_LD}
     COMMAND ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
-    -e $<TARGET_FILE:app_smem_unaligned_prebuilt>
+    -e $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
     -o ${APP_SMEM_ALIGNED_LD}
     $<$<BOOL:${APP_SMEM_PINNED_ALIGNED_LD}>:--pinoutput=${APP_SMEM_PINNED_ALIGNED_LD}>
     ${APP_SMEM_PINNED_PARTITION_LIST_ARG}
@@ -1112,7 +1085,7 @@ if(CONFIG_USERSPACE)
     DEPENDS
     kernel
     ${ZEPHYR_LIBS_PROPERTY}
-    app_smem_unaligned_prebuilt
+    ${ZEPHYR_PREBUILT_EXECUTABLE}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/
     COMMAND_EXPAND_LISTS
     COMMENT "Generating app_smem_aligned linker section"
@@ -1137,12 +1110,12 @@ if(CONFIG_USERSPACE)
     COMMAND
     ${PYTHON_EXECUTABLE}
     ${GEN_KOBJ_LIST}
-    --kernel $<TARGET_FILE:app_smem_unaligned_prebuilt>
+    --kernel $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
     --gperf-output ${KOBJECT_PREBUILT_HASH_LIST}
     ${gen_kobject_list_include_args}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS
-    app_smem_unaligned_prebuilt
+    ${ZEPHYR_PREBUILT_EXECUTABLE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
   add_custom_target(
@@ -1245,9 +1218,48 @@ if(CONFIG_USERSPACE)
   )
 endif()
 
+set(ZEPHYR_CURRENT_LINKER_CMD  linker_zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS}.cmd)
+set(ZEPHYR_PREBUILT_EXECUTABLE zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS})
+list(APPEND LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE "-DLINKER_ZEPHYR_PREBUILT")
+
+if(CONFIG_GEN_ISR_TABLES)
+  if(CONFIG_GEN_SW_ISR_TABLE)
+    list(APPEND GEN_ISR_TABLE_EXTRA_ARG --sw-isr-table)
+  endif()
+
+  if(CONFIG_GEN_IRQ_VECTOR_TABLE)
+    list(APPEND GEN_ISR_TABLE_EXTRA_ARG --vector-table)
+  endif()
+
+  # isr_tables.c is generated from ${ZEPHYR_PREBUILT_EXECUTABLE} by
+  # gen_isr_tables.py
+  add_custom_command(
+    OUTPUT isr_tables.c isrList.bin
+    COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_intarget>${OUTPUT_FORMAT}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>binary
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_only>.intList
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>$<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>isrList.bin
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+    COMMAND ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/arch/common/gen_isr_tables.py
+    --output-source isr_tables.c
+    --kernel $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
+    --intlist isrList.bin
+    $<$<BOOL:${CONFIG_BIG_ENDIAN}>:--big-endian>
+    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--debug>
+    ${GEN_ISR_TABLE_EXTRA_ARG}
+    DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
+    COMMAND_EXPAND_LISTS
+    )
+  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES isr_tables.c)
+endif()
+
 configure_linker_script(
-  linker_zephyr_prebuilt.cmd
-  "-DLINKER_ZEPHYR_PREBUILT"
+  ${ZEPHYR_CURRENT_LINKER_CMD}
+  "${LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE}"
   ${APP_SMEM_ALIGNED_DEP}
   ${KOBJECT_LINKER_DEP}
   ${CODE_RELOCATION_DEP}
@@ -1257,7 +1269,7 @@ configure_linker_script(
 add_custom_target(
   linker_zephyr_prebuilt_script_target
   DEPENDS
-  linker_zephyr_prebuilt.cmd
+  ${ZEPHYR_CURRENT_LINKER_CMD}
   )
 
 set_property(TARGET
@@ -1266,13 +1278,18 @@ set_property(TARGET
   ${ZEPHYR_INCLUDE_DIRS}
   )
 
+# Read global variables into local variables
+get_property(GASF GLOBAL PROPERTY GENERATED_APP_SOURCE_FILES)
+get_property(GKOF GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES)
+get_property(GKSF GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES)
+
 # FIXME: Is there any way to get rid of empty_file.c?
 add_executable(       ${ZEPHYR_PREBUILT_EXECUTABLE} misc/empty_file.c ${GASF})
 toolchain_ld_link_elf(
   TARGET_ELF            ${ZEPHYR_PREBUILT_EXECUTABLE}
   OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_PREBUILT_EXECUTABLE}.map
   LIBRARIES_PRE_SCRIPT  ""
-  LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker_zephyr_prebuilt.cmd
+  LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/${ZEPHYR_CURRENT_LINKER_CMD}
   DEPENDENCIES          ${CODE_RELOCATION_DEP}
 )
 target_byproducts(TARGET ${ZEPHYR_PREBUILT_EXECUTABLE}
@@ -1280,7 +1297,7 @@ target_byproducts(TARGET ${ZEPHYR_PREBUILT_EXECUTABLE}
 )
 set_property(TARGET
   ${ZEPHYR_PREBUILT_EXECUTABLE}
-  PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_zephyr_prebuilt.cmd
+  PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/${ZEPHYR_CURRENT_LINKER_CMD}
   )
 add_dependencies(
   ${ZEPHYR_PREBUILT_EXECUTABLE}
