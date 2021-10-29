@@ -219,7 +219,7 @@
 	SECTION_DATA_PROLOGUE(device_handles,,)
 	{
 		__device_handles_start = .;
-#ifdef LINKER_APP_SMEM_UNALIGNED
+#ifdef DEVICE_HANDLES_PASS1
 		KEEP(*(SORT(.__device_handles_pass1*)));
 #else
 		KEEP(*(SORT(.__device_handles_pass2*)));
