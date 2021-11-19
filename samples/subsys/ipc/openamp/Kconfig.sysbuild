@@ -1,0 +1,23 @@
+# Copyright (c) 2021 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "sysbuild/Kconfig"
+
+config SB_OPENAMP_REMOTE
+	bool "Openamp remote sample"
+	default y if BOARD_openamp_remote != ""
+
+config SB_BOARD_openamp_remote
+	string
+	# Note: the lpc boards uses generate_inc_file_for_gen_target() to embed
+	#       the second image into the first. This is not supported in initial
+	#       multi image approach.
+	default "lpcxpresso54114_m0" if $(BOARD) = "lpcxpresso54114_m4"
+	default "lpcxpresso55s69_cpu1"if $(BOARD) = "lpcxpresso55s69_cpu0"
+	default "mps2_an521_remote" if $(BOARD) = "mps2_an521"
+	default "v2m_musca_b1_ns" if $(BOARD) = "v2m_musca_b1"
+
+config SB_BOARD_USER_DEFINED_openamp_remote
+	string "Remote board for openamp sample"
+	depends on BOARD_openamp_remote = ""
