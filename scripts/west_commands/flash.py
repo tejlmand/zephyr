@@ -26,4 +26,4 @@ class Flash(WestCommand):
         return add_parser_common(self, parser_adder)
 
     def do_run(self, my_args, runner_args):
-        do_run_common(self, my_args, runner_args)
+        do_run_common(self, my_args, runner_args, multi_domain=True)

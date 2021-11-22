@@ -104,6 +104,8 @@ def add_parser_common(command, parser_adder=None, parser=None):
                        help='override default runner from --build-dir')
     group.add_argument('--skip-rebuild', action='store_true',
                        help='do not refresh cmake dependencies first')
+    group.add_argument('--domain',
+                       help='execute runner only for given domain')
 
     group = parser.add_argument_group(
         'runner configuration',
@@ -145,7 +147,7 @@ def add_parser_common(command, parser_adder=None, parser=None):
 
     return parser
 
-def do_run_common(command, user_args, user_runner_args):
+def do_run_common(command, user_args, user_runner_args, multi_domain=False):
     # This is the main routine for all the "west flash", "west debug",
     # etc. commands.
 
@@ -153,12 +155,40 @@ def do_run_common(command, user_args, user_runner_args):
         dump_context(command, user_args, user_runner_args)
         return
 
-    command_name = command.name
     build_dir = get_build_dir(user_args)
-    cache = load_cmake_cache(build_dir, user_args)
-    board = cache['CACHED_BOARD']
     if not user_args.skip_rebuild:
         rebuild(command, build_dir, user_args)
+
+    # Load domain_runners.yaml if exists.
+    yaml_path = domain_runners_yaml_path(build_dir)
+    if yaml_path is not None:
+        domain_runners_yaml = load_domain_runners_yaml(yaml_path)
+        domains = domain_runners_yaml['domains']
+        if user_args.domain:
+            attr = domains.get(user_args.domain)
+            if attr is None:
+                domain_names = list(domains.keys())
+                log.die(f'domain {user_args.domain} not found, '
+                        f'valid domains are:', *domain_names)
+            attrs = [attr]
+        elif multi_domain:
+            attrs = domains.values()
+        else:
+            attrs = [domains[domain_runners_yaml['default']]]
+
+        for attr in attrs:
+            build_dir = attr.get('build_dir')
+            do_run_common_image(command, user_args, user_runner_args, build_dir)
+    else:
+        # This is single domain build, let's just run that single runner.
+        do_run_common_image(command, user_args, user_runner_args)
+
+def do_run_common_image(command, user_args, user_runner_args, build_dir=None):
+    command_name = command.name
+    if build_dir is None:
+        build_dir = get_build_dir(user_args)
+    cache = load_cmake_cache(build_dir, user_args)
+    board = cache['CACHED_BOARD']
 
     # Load runners.yaml.
     yaml_path = runners_yaml_path(build_dir, board)
@@ -288,6 +318,14 @@ def runners_yaml_path(build_dir, board):
                 '(no ZEPHYR_RUNNERS_YAML in CMake cache)')
     return ret
 
+def domain_runners_yaml_path(build_dir):
+    ret = Path(build_dir) / 'domain_runners.yaml'
+
+    if not ret.is_file():
+        return None
+
+    return ret
+
 def load_runners_yaml(path):
     # Load runners.yaml and convert to Python object.
 
@@ -299,6 +337,21 @@ def load_runners_yaml(path):
 
     if not content.get('runners'):
         log.wrn(f'no pre-configured runners in {path}; '
+                "this probably won't work")
+
+    return content
+
+def load_domain_runners_yaml(path):
+    # Load domain_runners.yaml and convert to Python object.
+
+    try:
+        with open(path, 'r') as f:
+            content = yaml.safe_load(f.read())
+    except FileNotFoundError:
+        log.die(f'domain_runners.yaml file not found: {path}')
+
+    if not content.get('domains'):
+        log.wrn(f'no domains defined in {path}; '
                 "this probably won't work")
 
     return content
