@@ -1,0 +1,18 @@
+# Copyright (c) 2021 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SB_MPS2_AN521_REMOTE
+	bool
+	default y if $(BOARD) = "mps2_an521_remote"
+
+config SB_MPS2_AN521_EMPTY_CPU0
+	bool "Empty cpu0 wakeup sample"
+	depends on SB_MPS2_AN521_REMOTE
+	default y
+	help
+	  Building a wakeup firmware image for CPU0.
+	  When building firmware for CPU1 then a dedicated binary for CPU0
+	  is required which will boot the device and wake up CPU1.
+	  Building of empty CPU0 for wakeup of CPU1 can be disabled if a custom
+	  image is flashed to CPU0 ensuring correct wakeup of CPU1.
