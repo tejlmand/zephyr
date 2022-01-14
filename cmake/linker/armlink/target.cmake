@@ -32,17 +32,22 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     set(STEERING_C_ARG "-DSTEERING_C=${STEERING_C}")
   endif()
 
+  set(content "set(PASS ${linker_pass_define})\n")
+  foreach(list MEMORY_REGIONS GROUPS SECTIONS SECTION_SETTINGS SYMBOLS)
+    set(list_join_genex "$<JOIN:$<TARGET_PROPERTY:linker,${list}>,\")")
+    set(${list}_list "list(APPEND ${list} \"${list_join_genex}\nlist(APPEND ${list} \">\")\n")
+    list(APPEND content ${${list}_list})
+  endforeach()
+  string(REPLACE ";" "" content ${content})
+  get_filename_component(linker_script_we ${linker_script_gen} NAME_WE)
+  file(GENERATE OUTPUT ${linker_script_we}.cmake CONTENT "${content}")
+
   add_custom_command(
     OUTPUT ${linker_script_gen}
            ${STEERING_FILE}
            ${STEERING_C}
     COMMAND ${CMAKE_COMMAND}
-      -DPASS="${linker_pass_define}"
-      -DMEMORY_REGIONS="$<TARGET_PROPERTY:linker,MEMORY_REGIONS>"
-      -DGROUPS="$<TARGET_PROPERTY:linker,GROUPS>"
-      -DSECTIONS="$<TARGET_PROPERTY:linker,SECTIONS>"
-      -DSECTION_SETTINGS="$<TARGET_PROPERTY:linker,SECTION_SETTINGS>"
-      -DSYMBOLS="$<TARGET_PROPERTY:linker,SYMBOLS>"
+      -DIN_FILES=${linker_script_we}.cmake
       ${STEERING_FILE_ARG}
       ${STEERING_C_ARG}
       -DOUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${linker_script_gen}

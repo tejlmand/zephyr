@@ -3293,7 +3293,7 @@ function(zephyr_linker_memory)
   set(MEMORY)
   zephyr_linker_arg_val_list(MEMORY "${single_args}")
 
-  string(REPLACE ";" "\;" MEMORY "${MEMORY}")
+  string(REPLACE ";" "," MEMORY "${MEMORY}")
   set_property(TARGET linker
                APPEND PROPERTY MEMORY_REGIONS "{${MEMORY}}"
   )
@@ -3488,7 +3488,7 @@ function(zephyr_linker_group)
   set(GROUP)
   zephyr_linker_arg_val_list(GROUP "${single_args}")
 
-  string(REPLACE ";" "\;" GROUP "${GROUP}")
+  string(REPLACE ";" "," GROUP "${GROUP}")
   set_property(TARGET linker
                APPEND PROPERTY GROUPS "{${GROUP}}"
   )
@@ -3616,7 +3616,7 @@ function(zephyr_linker_section)
   zephyr_linker_arg_val_list(SECTION "${options}")
   zephyr_linker_arg_val_list(SECTION "${multi_args}")
 
-  string(REPLACE ";" "\;" SECTION "${SECTION}")
+  string(REPLACE ";" "," SECTION "${SECTION}")
   set_property(TARGET linker
                APPEND PROPERTY SECTIONS "{${SECTION}}"
   )
@@ -3844,7 +3844,7 @@ function(zephyr_linker_section_configure)
   zephyr_linker_arg_val_list(SECTION "${options}")
   zephyr_linker_arg_val_list(SECTION "${multi_args}")
 
-  string(REPLACE ";" "\;" SECTION "${SECTION}")
+  string(REPLACE ";" "," SECTION "${SECTION}")
   set_property(TARGET linker
                APPEND PROPERTY SECTION_SETTINGS "{${SECTION}}"
   )
@@ -3880,7 +3880,7 @@ function(zephyr_linker_symbol)
   set(SYMBOL)
   zephyr_linker_arg_val_list(SYMBOL "${single_args}")
 
-  string(REPLACE ";" "\;" SYMBOL "${SYMBOL}")
+  string(REPLACE ";" "," SYMBOL "${SYMBOL}")
   set_property(TARGET linker
                APPEND PROPERTY SYMBOLS "{${SYMBOL}}"
   )

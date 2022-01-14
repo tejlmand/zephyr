@@ -134,7 +134,8 @@ function(create_section)
   set(settings_multi  "FLAGS;INPUT;PASS;SYMBOLS")
   foreach(settings ${SECTION_SETTINGS})
     if("${settings}" MATCHES "^{(.*)}$")
-      cmake_parse_arguments(SETTINGS "" "${settings_single}" "${settings_multi}" ${CMAKE_MATCH_1})
+      string(REPLACE "," ";" settings_content ${CMAKE_MATCH_1})
+      cmake_parse_arguments(SETTINGS "" "${settings_single}" "${settings_multi}" ${settings_content})
 
       if(NOT ("${SETTINGS_SECTION}" STREQUAL "${SECTION_NAME}"))
         continue()
@@ -617,12 +618,17 @@ endfunction()
 # String functions - end
 #
 
+foreach(file ${IN_FILES})
+  include(${file})
+endforeach()
+
 create_system(OBJECT new_system NAME ZEPHYR_LINKER_v1 FORMAT ${FORMAT} ENTRY ${ENTRY})
 
 # Sorting the memory sections in ascending order.
 foreach(region ${MEMORY_REGIONS})
   if("${region}" MATCHES "^{(.*)}$")
-    cmake_parse_arguments(REGION "" "NAME;START" "" ${CMAKE_MATCH_1})
+    string(REPLACE "," ";" region_content ${CMAKE_MATCH_1})
+    cmake_parse_arguments(REGION "" "NAME;START" "" ${region_content})
     math(EXPR start_dec "${REGION_START}" OUTPUT_FORMAT DECIMAL)
     set(region_id ${start_dec}_${REGION_NAME})
     set(region_${region_id} ${region})
@@ -640,7 +646,8 @@ endforeach()
 
 foreach(region ${MEMORY_REGIONS_SORTED})
   if("${region}" MATCHES "^{(.*)}$")
-    create_region(OBJECT new_region ${CMAKE_MATCH_1})
+    string(REPLACE "," ";" region_content ${CMAKE_MATCH_1})
+    create_region(OBJECT new_region ${region_content})
 
     add_region(OBJECT ${new_system} REGION ${new_region})
   endif()
@@ -648,19 +655,22 @@ endforeach()
 
 foreach(group ${GROUPS})
   if("${group}" MATCHES "^{(.*)}$")
-    create_group(OBJECT new_group ${CMAKE_MATCH_1})
+    string(REPLACE "," ";" group_content ${CMAKE_MATCH_1})
+    create_group(OBJECT new_group ${group_content})
   endif()
 endforeach()
 
 foreach(section ${SECTIONS})
   if("${section}" MATCHES "^{(.*)}$")
-    create_section(${CMAKE_MATCH_1} SYSTEM ${new_system})
+    string(REPLACE "," ";" section_content ${CMAKE_MATCH_1})
+    create_section(${section_content} SYSTEM ${new_system})
   endif()
 endforeach()
 
 foreach(symbol ${SYMBOLS})
   if("${symbol}" MATCHES "^{(.*)}$")
-    create_symbol(OBJECT ${new_system} ${CMAKE_MATCH_1})
+    string(REPLACE "," ";" symbol_content ${CMAKE_MATCH_1})
+    create_symbol(OBJECT ${new_system} ${symbol_content})
   endif()
 endforeach()
 
