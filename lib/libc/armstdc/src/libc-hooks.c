@@ -23,5 +23,9 @@ void __stdout_hook_install(int (*hook)(int))
 
 volatile int *__aeabi_errno_addr(void)
 {
+#ifdef CONFIG_USERSPACE
+	return &_current->userspace_local_data->errno_var;
+#else
 	return &_current->errno_var;
+#endif /* CONFIG_USERSPACE */
 }

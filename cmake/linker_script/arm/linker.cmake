@@ -130,7 +130,7 @@ zephyr_linker_section_configure(SECTION .data INPUT ".kernel.*")
 include(${COMMON_ZEPHYR_LINKER_DIR}/common-ram.cmake)
 #include(kobject.ld)
 
-if(NOT CONFIG_USERSPACE)
+#if(NOT CONFIG_USERSPACE)
   zephyr_linker_section(NAME .bss VMA RAM LMA FLASH TYPE BSS)
   zephyr_linker_section_configure(SECTION .bss INPUT COMMON)
   zephyr_linker_section_configure(SECTION .bss INPUT ".kernel_bss.*")
@@ -142,7 +142,7 @@ if(NOT CONFIG_USERSPACE)
   # This section is used for non-initialized objects that
   # will not be cleared during the boot process.
   zephyr_linker_section_configure(SECTION .noinit INPUT ".kernel_noinit.*")
-endif()
+#endif()
 
 zephyr_linker_symbol(SYMBOL __kernel_ram_start EXPR "(@__bss_start@)")
 zephyr_linker_symbol(SYMBOL __kernel_ram_end  EXPR "(${RAM_ADDR} + ${RAM_SIZE})")
