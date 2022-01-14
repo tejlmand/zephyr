@@ -354,6 +354,11 @@ function(section_to_string)
     endif()
   endforeach()
 
+  if(empty)
+    set(TEMP "${TEMP}\n  {")
+    set(empty FALSE)
+  endif()
+
   if(section_close OR DEFINED endalign)
     set(section_close)
     set(TEMP "${TEMP}\n  }")
