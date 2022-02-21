@@ -119,6 +119,7 @@ function(create_section)
   set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_NOINPUT          ${SECTION_NOINPUT})
   set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_NOINIT           ${SECTION_NOINIT})
   set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_NOSYMBOLS        ${SECTION_NOSYMBOLS})
+  set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_PASS             ${SECTION_PASS})
 
   string(REGEX REPLACE "^[\.]" "" name_clean "${SECTION_NAME}")
   string(REPLACE "." "_" name_clean "${name_clean}")
