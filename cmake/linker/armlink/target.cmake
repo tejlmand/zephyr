@@ -19,13 +19,14 @@ macro(toolchain_ld_baremetal)
 endmacro()
 
 macro(configure_linker_script linker_script_gen linker_pass_define)
+  set(extra_dependencies ${ARGN})
   set(STEERING_FILE)
   set(STEERING_C)
   set(STEERING_FILE_ARG)
   set(STEERING_C_ARG)
   set(linker_pass_define_list ${linker_pass_define})
 
-  if("LINKER_ZEPHYR_FINAL" IN_LIST linker_pass_define_list)
+  if(NOT TARGET armlink_steering)
     set(STEERING_FILE ${CMAKE_CURRENT_BINARY_DIR}/armlink_symbol_steering.steer)
     set(STEERING_C ${CMAKE_CURRENT_BINARY_DIR}/armlink_symbol_steering.c)
     set(STEERING_FILE_ARG "-DSTEERING_FILE=${STEERING_FILE}")
@@ -46,6 +47,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     OUTPUT ${linker_script_gen}
            ${STEERING_FILE}
            ${STEERING_C}
+    DEPENDS ${extra_dependencies}
     COMMAND ${CMAKE_COMMAND}
       -DIN_FILES=${linker_script_we}.cmake
       ${STEERING_FILE_ARG}
@@ -54,7 +56,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
       -P ${ZEPHYR_BASE}/cmake/linker/armlink/scatter_script.cmake
   )
 
-  if("LINKER_ZEPHYR_FINAL" IN_LIST linker_pass_define_list)
+  if(NOT TARGET armlink_steering)
     add_library(armlink_steering OBJECT ${STEERING_C})
     target_link_libraries(armlink_steering PRIVATE zephyr_interface)
   endif()

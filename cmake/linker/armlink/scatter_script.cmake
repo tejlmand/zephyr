@@ -26,6 +26,12 @@ function(process_region)
     get_property(name_clean GLOBAL PROPERTY ${section}_NAME_CLEAN)
     get_property(noinput    GLOBAL PROPERTY ${section}_NOINPUT)
     get_property(type       GLOBAL PROPERTY ${section}_TYPE)
+    get_property(pass       GLOBAL PROPERTY ${section}_PASS)
+    if(DEFINED pass)
+      # Only sections defined in all passes must go to steering file, else we'll
+      # end up having references in steering file to undefined symbols in some passes.
+      continue()
+    endif()
 
     get_property(indicies GLOBAL PROPERTY ${section}_SETTINGS_INDICIES)
     list(LENGTH indicies length)
