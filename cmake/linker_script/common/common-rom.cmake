@@ -70,11 +70,7 @@ endif()
 if(CONFIG_USERSPACE)
   # Build-time assignment of permissions to kernel objects to
   # threads declared with K_THREAD_DEFINE()
-  zephyr_linker_section(
-    NAME z_object_assignment_area
-    VMA FLASH NOINPUT
-    SUBALIGN 4
-  )
+  zephyr_iterable_section(NAME z_object_assignment KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
   zephyr_linker_section_configure(
     SECTION z_object_assignment
     INPUT ".z_object_assignment.static.*"
