@@ -838,8 +838,15 @@ set(CMAKE_C_COMPILE_FEATURES ${compile_features_${CSTD}} PARENT_SCOPE)
 toolchain_ld_configure_files()
 
 if(CONFIG_USERSPACE)
-  set(APP_SMEM_ALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_aligned.ld")
-  set(APP_SMEM_UNALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_unaligned.ld")
+  if(CONFIG_CMAKE_LINKER_GENERATOR)
+    set(app_smem_format cmake)
+    set(app_smem_aligned "${PROJECT_BINARY_DIR}/include/generated/app_smem_aligned.cmake")
+    set(app_smem_unaligned "${PROJECT_BINARY_DIR}/include/generated/app_smem_unaligned.cmake")
+  else()
+    set(app_smem_format ld)
+    set(app_smem_aligned "${PROJECT_BINARY_DIR}/include/generated/app_smem_aligned.ld")
+    set(app_smem_unaligned "${PROJECT_BINARY_DIR}/include/generated/app_smem_unaligned.ld")
+  endif()
 
   if(CONFIG_LINKER_USE_PINNED_SECTION)
     set(APP_SMEM_PINNED_ALIGNED_LD
@@ -872,11 +879,12 @@ if(CONFIG_USERSPACE)
   endif()
 
   add_custom_command(
-    OUTPUT ${APP_SMEM_UNALIGNED_LD} ${APP_SMEM_PINNED_UNALIGNED_LD}
+    OUTPUT ${app_smem_unaligned} ${APP_SMEM_PINNED_UNALIGNED_LD}
     COMMAND ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
     -f ${CMAKE_BINARY_DIR}/compile_commands.json
-    -o ${APP_SMEM_UNALIGNED_LD}
+    -o ${app_smem_unaligned}
+    --output-format ${app_smem_format}
     $<$<BOOL:${APP_SMEM_PINNED_UNALIGNED_LD}>:--pinoutput=${APP_SMEM_PINNED_UNALIGNED_LD}>
     ${APP_SMEM_PINNED_PARTITION_LIST_ARG}
     ${NEWLIB_PART}
@@ -893,14 +901,14 @@ if(CONFIG_USERSPACE)
   add_custom_target(
     ${APP_SMEM_ALIGNED_DEP}
     DEPENDS
-    ${APP_SMEM_ALIGNED_LD}
+    ${app_smem_aligned}
     ${APP_SMEM_PINNED_ALIGNED_LD}
     )
 
   add_custom_target(
     ${APP_SMEM_UNALIGNED_DEP}
     DEPENDS
-    ${APP_SMEM_UNALIGNED_LD}
+    ${app_smem_unaligned}
     ${APP_SMEM_PINNED_UNALIGNED_LD}
     )
 
@@ -910,11 +918,11 @@ endif()
 
 if (CONFIG_USERSPACE)
   add_custom_command(
-    OUTPUT ${APP_SMEM_ALIGNED_LD} ${APP_SMEM_PINNED_ALIGNED_LD}
+    OUTPUT ${app_smem_aligned} ${APP_SMEM_PINNED_ALIGNED_LD}
     COMMAND ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
     -e $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
-    -o ${APP_SMEM_ALIGNED_LD}
+    -o ${app_smem_aligned}
     $<$<BOOL:${APP_SMEM_PINNED_ALIGNED_LD}>:--pinoutput=${APP_SMEM_PINNED_ALIGNED_LD}>
     ${APP_SMEM_PINNED_PARTITION_LIST_ARG}
     ${NEWLIB_PART}
@@ -1043,7 +1051,7 @@ if(CONFIG_USERSPACE OR CONFIG_HAS_DTS)
     "${LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE}"
     ${CODE_RELOCATION_DEP}
     ${APP_SMEM_UNALIGNED_DEP}
-    ${APP_SMEM_UNALIGNED_LD}
+    ${app_smem_unaligned}
     ${APP_SMEM_PINNED_UNALIGNED_LD}
     zephyr_generated_headers
     )

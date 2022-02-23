@@ -43,13 +43,21 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
   get_filename_component(linker_script_we ${linker_script_gen} NAME_WE)
   file(GENERATE OUTPUT ${linker_script_we}.cmake CONTENT "${content}")
 
+  if(CONFIG_USERSPACE)
+    if(LINKER_APP_SMEM_UNALIGNED IN_LIST linker_pass_define_list)
+      set(extra_input "${PROJECT_BINARY_DIR}/include/generated/app_smem_unaligned.cmake")
+    else()
+      set(extra_input "${PROJECT_BINARY_DIR}/include/generated/app_smem_aligned.cmake")
+    endif()
+  endif()
+  print(extra_dependencies)
   add_custom_command(
     OUTPUT ${linker_script_gen}
            ${STEERING_FILE}
            ${STEERING_C}
     DEPENDS ${extra_dependencies}
     COMMAND ${CMAKE_COMMAND}
-      -DIN_FILES=${linker_script_we}.cmake
+      -DIN_FILES="${linker_script_we}.cmake\;${extra_input}"
       ${STEERING_FILE_ARG}
       ${STEERING_C_ARG}
       -DOUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${linker_script_gen}

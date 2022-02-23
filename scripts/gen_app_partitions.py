@@ -50,46 +50,56 @@ LIB = 'libraries'
 # application shared memory partitions.
 # these are later read by the macros defined in app_memdomain.h for
 # initialization purpose when USERSPACE is enabled.
-data_template = """
+data_template = {"ld": """
 		/* Auto generated code do not modify */
 		SMEM_PARTITION_ALIGN(z_data_smem_{0}_bss_end - z_data_smem_{0}_part_start);
 		z_data_smem_{0}_part_start = .;
 		KEEP(*(data_smem_{0}_data*))
-"""
+""", "cmake": """
+list(APPEND SECTION_SETTINGS "{{SECTION,{1},SORT,NAME,ANY,FALSE,FIRST,FALSE,KEEP,TRUE,INPUT,data_smem_{0}_data*,SYMBOLS,z_data_smem_{0}_part_start,z_data_smem_{0}_part_end}}")
+"""}
 
-library_data_template = """
+library_data_template = {"ld": """"
 		*{0}:*(.data .data.* .sdata .sdata.*)
-"""
+""", "cmake": """
+list(APPEND SECTION_SETTINGS "}{SECTION,{1},SORT,NAME,ANY,FALSE,FIRST,FALSE,KEEP,TRUE,INPUT,.data,.data.*,.sdata,.sdata.*}}")
+"""}
 
-bss_template = """
+bss_template = {"ld": """
 		z_data_smem_{0}_bss_start = .;
 		KEEP(*(data_smem_{0}_bss*))
-"""
+""", "cmake": """
+list(APPEND SECTION_SETTINGS "{{SECTION,{1},SORT,NAME,ANY,FALSE,FIRST,FALSE,KEEP,TRUE,INPUT,data_smem_{0}_bss*,SYMBOLS,z_data_smem_{0}_bss_start,z_data_smem_{0}_bss_end}}")
+"""}
 
-library_bss_template = """
+library_bss_template =  {"ld": """
 		*{0}:*(.bss .bss.* .sbss .sbss.* COMMON COMMON.*)
-"""
+""", "cmake": """
+list(APPEND SECTION_SETTINGS "{{SECTION,{1},SORT,NAME,ANY,FALSE,FIRST,FALSE,KEEP,TRUE,INPUT,.bss,.bss.*,.sbss,.sbss.*}}")
+"""}
 
-footer_template = """
+footer_template = {"ld": """
 		z_data_smem_{0}_bss_end = .;
 		SMEM_PARTITION_ALIGN(z_data_smem_{0}_bss_end - z_data_smem_{0}_part_start);
 		z_data_smem_{0}_part_end = .;
-"""
+""", "cmake": ""}
 
-linker_start_seq = """
+linker_start_seq = {"ld": """
 	SECTION_PROLOGUE(_APP_SMEM{1}_SECTION_NAME,,)
 	{{
 		APP_SHARED_ALIGN;
 		_app_smem{0}_start = .;
-"""
+""", "cmake": """
+list(APPEND SECTIONS "{{GROUP,RODATA_REGION,NAME,app_smem{0},SUBALIGN,4,ALIGN_WITH_INPUT,FALSE,HIDDEN,FALSE,NOINIT,FALSE,NOINPUT,TRUE}}")
+"""}
 
-linker_end_seq = """
+linker_end_seq = {"ld": """
 		APP_SHARED_ALIGN;
 		_app_smem{0}_end = .;
 	}} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-"""
+""", "cmake": ""}
 
-empty_app_smem = """
+empty_app_smem = {"ld": """
 	SECTION_PROLOGUE(_APP_SMEM{1}_SECTION_NAME,,)
 	{{
 #ifdef EMPTY_APP_SHARED_ALIGN
@@ -98,12 +108,14 @@ empty_app_smem = """
 		_app_smem{0}_start = .;
 		_app_smem{0}_end = .;
 	}} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-"""
+""", "cmake": """
+list(APPEND SECTIONS "{{GROUP,RODATA_REGION,NAME,app_smem{0},SUBALIGN,4,ALIGN_WITH_INPUT,FALSE,HIDDEN,FALSE,NOINIT,FALSE,NOINPUT,TRUE}}")
+"""}
 
-size_cal_string = """
+size_cal_string = {"ld": """
 	z_data_smem_{0}_part_size = z_data_smem_{0}_part_end - z_data_smem_{0}_part_start;
 	z_data_smem_{0}_bss_size = z_data_smem_{0}_bss_end - z_data_smem_{0}_bss_start;
-"""
+""", "cmake": ""}
 
 section_regex = re.compile(r'data_smem_([A-Za-z0-9_]*)_(data|bss)*')
 
@@ -201,28 +213,28 @@ def parse_elf_file(partitions):
                     partitions[partition_name][SZ] += size
 
 
-def generate_final_linker(linker_file, partitions, lnkr_sect=""):
+def generate_final_linker(linker_file, linker_format, partitions, lnkr_sect=""):
     string = ""
 
     if len(partitions) > 0:
-        string = linker_start_seq.format(lnkr_sect, lnkr_sect.upper())
+        string = linker_start_seq[linker_format].format(lnkr_sect, lnkr_sect.upper())
         size_string = ''
         for partition, item in partitions.items():
-            string += data_template.format(partition)
+            string += data_template[linker_format].format(partition)
             if LIB in item:
                 for lib in item[LIB]:
-                    string += library_data_template.format(lib)
-            string += bss_template.format(partition, lnkr_sect)
+                    string += library_data_template[linker_format].format(lib)
+            string += bss_template[linker_format].format(partition, lnkr_sect)
             if LIB in item:
                 for lib in item[LIB]:
-                    string += library_bss_template.format(lib)
-            string += footer_template.format(partition)
-            size_string += size_cal_string.format(partition)
+                    string += library_bss_template[linker_format].format(lib)
+            string += footer_template[linker_format].format(partition)
+            size_string += size_cal_string[linker_format].format(partition)
 
-        string += linker_end_seq.format(lnkr_sect)
+        string += linker_end_seq[linker_format].format(lnkr_sect)
         string += size_string
     else:
-        string = empty_app_smem.format(lnkr_sect, lnkr_sect.upper())
+        string = empty_app_smem[linker_format].format(lnkr_sect, lnkr_sect.upper())
 
     with open(linker_file, "w") as fw:
         fw.write(string)
@@ -239,8 +251,10 @@ def parse_args():
                         help="ELF file")
     parser.add_argument("-f", "--compile-commands-file", required=False,
                         default=None, help="CMake compile commands file")
+    parser.add_argument("--output-format", choices=['ld', 'cmake'], default="ld",
+                        required=False, help="Output format")
     parser.add_argument("-o", "--output", required=False,
-                        help="Output ld file")
+                        help="Output file")
     parser.add_argument("-v", "--verbose", action="count", default=0,
                         help="Verbose Output")
     parser.add_argument("-l", "--library", nargs=2, action="append", default=[],
@@ -294,7 +308,7 @@ def main():
 
     partsorted = OrderedDict(decreasing_tuples)
 
-    generate_final_linker(args.output, partsorted)
+    generate_final_linker(args.output, args.output_format, partsorted)
     if args.verbose:
         print("Partitions retrieved:")
         for key in partsorted:
@@ -308,7 +322,7 @@ def main():
 
         partsorted = OrderedDict(decreasing_tuples)
 
-        generate_final_linker(args.pinoutput, partsorted, lnkr_sect="_pinned")
+        generate_final_linker(args.pinoutput, args.output_format, partsorted, lnkr_sect="_pinned")
         if args.verbose:
             print("Pinned partitions retrieved:")
             for key in partsorted:
