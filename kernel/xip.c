@@ -57,9 +57,9 @@ void z_data_copy(void)
 	 * value gets set later in z_cstart().
 	 */
 	uintptr_t guard_copy = __stack_chk_guard;
-	uint8_t *src = (uint8_t *)&_app_smem_rom_start;
-	uint8_t *dst = (uint8_t *)&_app_smem_start;
-	uint32_t count = _app_smem_end - _app_smem_start;
+	uint8_t *src = (uint8_t *)&__app_smem_load_start;
+	uint8_t *dst = (uint8_t *)&__app_smem_start;
+	uint32_t count = __app_smem_end - __app_smem_start;
 
 	guard_copy = __stack_chk_guard;
 	while (count > 0) {
@@ -68,8 +68,8 @@ void z_data_copy(void)
 	}
 	__stack_chk_guard = guard_copy;
 #else
-	(void)memcpy(&_app_smem_start, &_app_smem_rom_start,
-		 _app_smem_end - _app_smem_start);
+	(void)memcpy(&__app_smem_start, &__app_smem_load_start,
+		 __app_smem_end - __app_smem_start);
 #endif /* CONFIG_STACK_CANARIES */
 #endif /* CONFIG_USERSPACE */
 }

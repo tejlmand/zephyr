@@ -207,9 +207,9 @@ SECTIONS
 
 #include <app_smem.ld>
 
-	_image_ram_start = _app_smem_start;
-	_app_smem_size = _app_smem_end - _app_smem_start;
-	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
+	_image_ram_start = __app_smem_start;
+	__app_smem_size = __app_smem_end - __app_smem_start;
+	__app_smem_load_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #endif /* CONFIG_USERSPACE */
 
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)

@@ -18,7 +18,7 @@ struct x86_memmap_exclusion x86_memmap_exclusions[] = {
 #endif
 	{ "ram", _image_ram_start, _image_ram_end },
 #ifdef CONFIG_USERSPACE
-	{ "app_smem", _app_smem_start, _app_smem_end },
+	{ "app_smem", __app_smem_start, __app_smem_end },
 #endif
 #ifdef CONFIG_COVERAGE_GCOV
 	{ "gcov", __gcov_bss_start, __gcov_bss_end },

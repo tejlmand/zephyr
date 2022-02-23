@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(mpu, CONFIG_MPU_LOG_LEVEL);
 
 #ifdef CONFIG_USERSPACE
 static int dynamic_areas_init(uintptr_t start, size_t size);
-#define MPU_DYNAMIC_REGIONS_AREA_START ((uintptr_t)&_app_smem_start)
+#define MPU_DYNAMIC_REGIONS_AREA_START ((uintptr_t)&__app_smem_start)
 #else
 #define MPU_DYNAMIC_REGIONS_AREA_START ((uintptr_t)&__kernel_ram_start)
 #endif

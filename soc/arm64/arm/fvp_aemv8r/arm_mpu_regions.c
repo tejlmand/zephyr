@@ -34,7 +34,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 	/* Region 3 zephyr data */
 	MPU_REGION_ENTRY("SRAM_2",
 #ifdef CONFIG_USERSPACE
-			 (uintptr_t)_app_smem_start,
+			 (uintptr_t)__app_smem_start,
 #else
 			 (uintptr_t)__kernel_ram_start,
 #endif

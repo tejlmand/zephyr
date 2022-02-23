@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(mpu);
  * memory area, where dynamic memory regions may be programmed at run-time.
  */
 #if defined(CONFIG_USERSPACE)
-#define _MPU_DYNAMIC_REGIONS_AREA_START ((uint32_t)&_app_smem_start)
+#define _MPU_DYNAMIC_REGIONS_AREA_START ((uint32_t)&__app_smem_start)
 #else
 #define _MPU_DYNAMIC_REGIONS_AREA_START ((uint32_t)&__kernel_ram_start)
 #endif /* CONFIG_USERSPACE */

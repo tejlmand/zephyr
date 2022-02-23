@@ -191,10 +191,10 @@ GDATA(__data_region_num_words)
  * The policy for this memory will be to initially configure all of it as
  * kernel / supervisor thread accessible.
  */
-extern char _app_smem_start[];
-extern char _app_smem_end[];
-extern char _app_smem_size[];
-extern char _app_smem_rom_start[];
+extern char __app_smem_start[];
+extern char __app_smem_end[];
+extern char __app_smem_size[];
+extern char __app_smem_load_start[];
 extern char _app_smem_num_words[];
 
 #ifdef CONFIG_LINKER_USE_PINNED_SECTION

@@ -221,7 +221,7 @@ SECTIONS
 #if defined(CONFIG_ARM_MPU)
 /*
  * When _app_smem region is empty, alignment is also needed. If there
- * is no alignment, the _app_smem_start used by arm mpu can be lower
+ * is no alignment, the __app_smem_start used by arm mpu can be lower
  * than __rodata_region_end, and this two regions can overlap.
  * The Armv8-R aarch64 MPU does not allow overlapped regions.
  */
@@ -230,8 +230,8 @@ SECTIONS
 
 #include <app_smem.ld>
 
-    _app_smem_size = _app_smem_end - _app_smem_start;
-    _app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
+    __app_smem_size = __app_smem_end - __app_smem_start;
+    __app_smem_load_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #endif  /* CONFIG_USERSPACE */
 
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD), BSS_ALIGN)

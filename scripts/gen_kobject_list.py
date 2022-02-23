@@ -513,8 +513,8 @@ def find_kobjects(elf, syms):
     if not elf.has_dwarf_info():
         sys.exit("ELF file has no DWARF information")
 
-    app_smem_start = syms["_app_smem_start"]
-    app_smem_end = syms["_app_smem_end"]
+    app_smem_start = syms["__app_smem_start"]
+    app_smem_end = syms["__app_smem_end"]
 
     if "CONFIG_LINKER_USE_PINNED_SECTION" in syms and "_app_smem_pinned_start" in syms:
         app_smem_pinned_start = syms["_app_smem_pinned_start"]
