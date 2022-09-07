@@ -7,6 +7,9 @@ if SOC_NRF5340_CPUAPP_QKAA
 
 config BOARD_BL5340_DVK_CPUAPP
 	bool "BL5340-DVK (nRF5340) Application MCU"
+        select SOC_SERIES_NRF53X
+        select SOC_NRF5340_CPUAPP_QKAA
+
 
 config BOARD_BL5340_DVK_CPUAPP_NS
 	bool "BL5340-DVK (nRF5340) Application MCU non-secure"
