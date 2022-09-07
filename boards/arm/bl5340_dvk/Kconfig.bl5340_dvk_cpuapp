@@ -1,0 +1,4 @@
+
+config BOARD_BL5340_DVK_CPUAPP
+	bool
+	default y
