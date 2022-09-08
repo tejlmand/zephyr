@@ -42,12 +42,12 @@ config NET_DRIVERS
 # Note: $BOARD_DIR might be a glob pattern
 source "$(BOARD_DIR)/Kconfig.$(BOARD)"
 
-choice
-	prompt "Board Selection"
+#choice
+#	prompt "Board Selection"
 
-source "$(BOARD_DIR)/Kconfig.board"
+#source "$(BOARD_DIR)/Kconfig.board"
 
-endchoice
+#endchoice
 
 # Parse shields references
 # Don't do it as a menuconfig, as shield selection is a CMake feature.

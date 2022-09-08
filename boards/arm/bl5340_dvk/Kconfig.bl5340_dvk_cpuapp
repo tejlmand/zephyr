@@ -1,4 +1,7 @@
 
+soc = nrf5340_CPUAPP_QKAA
+
 config BOARD_BL5340_DVK_CPUAPP
 	bool
 	default y
+	select SOC_NRF5340_CPUAPP_QKAA

@@ -1,0 +1,4 @@
+
+config SOC_NRF5340_CPUNET_QKAA
+	bool
+	select SOC_NRF5340_CPUNET

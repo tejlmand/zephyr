@@ -16,6 +16,7 @@ osource "$(KCONFIG_BINARY_DIR)/Kconfig.soc.arch"
 # This loads Zephyr base SoC Kconfigs
 osource "soc/$(ARCH)/Kconfig"
 osource "soc/$(ARCH)/*/Kconfig"
+source "soc/$(ARCH)/*/*/Kconfig.$(soc)"
 
 module = SOC
 module-str = SOC
