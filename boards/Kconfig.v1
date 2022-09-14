@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Note: $BOARD_DIR might be a glob pattern
+
+choice
+	prompt "Board Selection"
+
+source "$(BOARD_DIR)/Kconfig.board"
+
+endchoice
