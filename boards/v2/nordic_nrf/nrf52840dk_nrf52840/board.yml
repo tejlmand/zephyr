@@ -1,0 +1,4 @@
+board:
+  name: nrf52840dk_nrf52840
+  vendor: Nordic Semiconductor
+  arch: arm
