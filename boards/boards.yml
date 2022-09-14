@@ -1,4 +1,5 @@
 boards:
-  - name: empty
-    folder: empty
-    comment: initial file, no board v2 defined.
+  - name: nrf52840dk_nrf52840
+    folder: v2/nordic_nrf/nrf52840dk_nrf52840
+    vendor: nordic
+    arch: arm
