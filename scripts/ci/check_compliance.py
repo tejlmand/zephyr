@@ -359,6 +359,8 @@ class KconfigCheck(ComplianceTest):
         os.environ["SOC_DIR"] = "soc/"
         os.environ["ARCH_DIR"] = "arch/"
         os.environ["BOARD_DIR"] = "boards/*/*"
+        os.environ["BOARD_SCHEME"] = "v*"
+        os.environ["BOARD"] = "*"
         os.environ["ARCH"] = "*"
         os.environ["KCONFIG_BINARY_DIR"] = tempfile.gettempdir()
         os.environ['DEVICETREE_CONF'] = "dummy"
