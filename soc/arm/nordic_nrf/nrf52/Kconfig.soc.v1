@@ -1,0 +1,17 @@
+# Nordic Semiconductor nRF52 MCU line
+
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "Kconfig.soc.common"
+
+choice
+	prompt "nRF52x MCU Selection"
+	depends on SOC_SERIES_NRF52X
+
+# The nordic Kconfig.soc.v2 is scheme v1 compatible, so safe to source here.
+rsource "Kconfig.soc.v2"
+
+endchoice
+
+rsource "Kconfig.soc.names"

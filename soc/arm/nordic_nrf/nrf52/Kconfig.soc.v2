@@ -1,0 +1,43 @@
+# Nordic Semiconductor nRF52 MCU line
+
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# This file is SoC scheme v2 compliant, but has been written so that it supports
+# SoC scheme v1 also.
+
+config SOC_NRF52805_CAAA
+	bool "NRF52805_CAAA" if "$(SOC_SCHEME)" = "v1"
+	select SOC_NRF52805
+
+config SOC_NRF52810_QFAA
+	bool "NRF52810_QFAA" if "$(SOC_SCHEME)" = "v1"
+	select SOC_NRF52810
+
+config SOC_NRF52811_QFAA
+	bool "NRF52811_QFAA" if "$(SOC_SCHEME)" = "v1"
+	select SOC_NRF52811
+
+config SOC_NRF52820_QDAA
+	bool "NRF52820_QDAA" if "$(SOC_SCHEME)" = "v1"
+	select SOC_NRF52820
+
+config SOC_NRF52832_CIAA
+	bool "NRF52832_CIAA" if "$(SOC_SCHEME)" = "v1"
+	select SOC_NRF52832
+
+config SOC_NRF52832_QFAA
+	bool "NRF52832_QFAA" if "$(SOC_SCHEME)" = "v1"
+	select SOC_NRF52832
+
+config SOC_NRF52832_QFAB
+	bool "NRF52832_QFAB" if "$(SOC_SCHEME)" = "v1"
+	select SOC_NRF52832
+
+config SOC_NRF52833_QIAA
+	bool "NRF52833_QIAA" if "$(SOC_SCHEME)" = "v1"
+	select SOC_NRF52833
+
+config SOC_NRF52840_QIAA
+	bool "NRF52840_QIAA" if "$(SOC_SCHEME)" = "v1"
+	select SOC_NRF52840

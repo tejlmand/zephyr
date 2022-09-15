@@ -8,12 +8,15 @@ config SOC_FAMILY_NRF
 	select PLATFORM_SPECIFIC_INIT
 	bool
 
+source "soc/arm/nordic_nrf/Kconfig.series.$(SOC_SCHEME)"
+
 if SOC_FAMILY_NRF
 config SOC_FAMILY
 	string
 	default "nordic_nrf"
 
 source "soc/arm/nordic_nrf/Kconfig.peripherals"
+source "soc/arm/nordic_nrf/*/Kconfig.soc.$(SOC_SCHEME)"
 source "soc/arm/nordic_nrf/*/Kconfig.soc"
 
 config NRF_SOC_SECURE_SUPPORTED

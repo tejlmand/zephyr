@@ -1,0 +1,32 @@
+# Nordic Semiconductor nRF52 MCU line, common v1 and v2 file
+
+# Copyright (c) 2016-2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_NRF52805
+	depends on SOC_SERIES_NRF52X
+	bool
+
+config SOC_NRF52810
+	depends on SOC_SERIES_NRF52X
+	bool
+
+config SOC_NRF52811
+	depends on SOC_SERIES_NRF52X
+	bool
+
+config SOC_NRF52820
+	depends on SOC_SERIES_NRF52X
+	bool
+
+config SOC_NRF52832
+	depends on SOC_SERIES_NRF52X
+	bool
+
+config SOC_NRF52833
+	depends on SOC_SERIES_NRF52X
+	bool
+
+config SOC_NRF52840
+	depends on SOC_SERIES_NRF52X
+	bool
