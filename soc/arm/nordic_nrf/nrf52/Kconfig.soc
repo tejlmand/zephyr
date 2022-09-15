@@ -19,6 +19,7 @@ config SOC_NRF52820
 
 config SOC_NRF52832
 	bool
+	select SOC_COMPATIBLE_NRF52832
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
 
@@ -32,55 +33,6 @@ config SOC_NRF52840
 	bool
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
-
-choice
-	prompt "nRF52x MCU Selection"
-
-config SOC_NRF52805_CAAA
-	bool "NRF52805_CAAA"
-	select SOC_NRF52805
-
-config SOC_NRF52810_QFAA
-	bool "NRF52810_QFAA"
-	select SOC_NRF52810
-
-config SOC_NRF52811_QFAA
-	bool "NRF52811_QFAA"
-	select SOC_NRF52811
-
-config SOC_NRF52820_QDAA
-	bool "NRF52820_QDAA"
-	select SOC_NRF52820
-
-config SOC_NRF52832_CIAA
-	bool "NRF52832_CIAA"
-	select SOC_NRF52832
-
-config SOC_NRF52832_QFAA
-	bool "NRF52832_QFAA"
-	select SOC_NRF52832
-
-config SOC_NRF52832_QFAB
-	bool "NRF52832_QFAB"
-	select SOC_NRF52832
-
-config SOC_NRF52833_QDAA
-	bool "NRF52833_QDAA"
-	select SOC_NRF52833
-
-config SOC_NRF52833_QIAA
-	bool "NRF52833_QIAA"
-	select SOC_NRF52833
-
-config SOC_NRF52840_QFAA
-	bool "NRF52840_QFAA"
-	select SOC_NRF52840
-
-config SOC_NRF52840_QIAA
-	bool "NRF52840_QIAA"
-	select SOC_NRF52840
-
-endchoice
 
 config SOC_DCDC_NRF52X
 	bool
