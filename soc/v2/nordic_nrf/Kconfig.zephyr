@@ -3,18 +3,22 @@
 # Copyright (c) 2016-2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+# This file is contains Zephyr build system Kconfig references and is not
+# re-usable outside the Zephyr tree.
+
 config SOC_FAMILY_NRF
 	select SOC_COMPATIBLE_NRF
 	select PLATFORM_SPECIFIC_INIT
-	bool
+
+source "soc/v2/nordic_nrf/*/Kconfig.series"
 
 if SOC_FAMILY_NRF
 config SOC_FAMILY
 	string
 	default "nordic_nrf"
 
-source "soc/arm/nordic_nrf/Kconfig.peripherals"
-source "soc/arm/nordic_nrf/*/Kconfig.soc"
+source "soc/v2/nordic_nrf/Kconfig.peripherals"
+source "soc/v2/nordic_nrf/*/Kconfig.soc"
 
 config NRF_SOC_SECURE_SUPPORTED
 	def_bool !TRUSTED_EXECUTION_NONSECURE || (BUILD_WITH_TFM && TFM_PARTITION_PLATFORM)

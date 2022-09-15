@@ -5,7 +5,7 @@
 
 if SOC_SERIES_NRF52X
 
-source "soc/arm/nordic_nrf/nrf52/Kconfig.defconfig.nrf52*"
+source "soc/v2/nordic_nrf/nrf52/Kconfig.defconfig.nrf52*"
 
 config SOC_SERIES
 	default "nrf52"
