@@ -5,7 +5,7 @@
 
 if SOC_SERIES_NRF91X
 
-source "soc/arm/nordic_nrf/nrf91/Kconfig.defconfig.nrf91*"
+source "soc/sub/v2/nordic_nrf/nrf91/Kconfig.defconfig.nrf91*"
 
 config SOC_SERIES
 	default "nrf91"

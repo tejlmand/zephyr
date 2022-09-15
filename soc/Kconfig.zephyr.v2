@@ -25,3 +25,4 @@
 # To include a new SoC HWMv2 containing Zephyr specific extensions, add a line
 # referencing the Kconfig, like this
 # source "soc/v2/<vendor|name|other>/Kconfig.zephyr"
+source "soc/sub/v2/nordic_nrf/Kconfig.zephyr"
