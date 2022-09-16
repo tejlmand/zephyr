@@ -6,6 +6,9 @@ comment "Sysbuild image configuration"
 
 osource "$(BOARD_DIR)/Kconfig.sysbuild"
 
+rsource "Kconfig.board.$(BOARD_SCHEME)"
+rsource "Kconfig.soc.$(BOARD_SCHEME)"
+
 config EXPERIMENTAL
 	bool
 	help
