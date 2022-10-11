@@ -141,4 +141,14 @@ function(ExternalZephyrProject_Add)
     BUILD_ALWAYS True
     USES_TERMINAL_BUILD True
   )
+
+  # Append the current image name and directory to the iterate lists for sysbuild inclusion
+  # checking
+  get_property(ITERATE_IMAGES GLOBAL PROPERTY ITERATE_IMAGES)
+  list(APPEND ITERATE_IMAGES ${ZBUILD_APPLICATION})
+  set_property(GLOBAL PROPERTY ITERATE_IMAGES ${ITERATE_IMAGES})
+
+  get_property(ITERATE_IMAGE_DIRS GLOBAL PROPERTY ITERATE_IMAGE_DIRS)
+  list(APPEND ITERATE_IMAGE_DIRS ${ZBUILD_SOURCE_DIR})
+  set_property(GLOBAL PROPERTY ITERATE_IMAGE_DIRS ${ITERATE_IMAGE_DIRS})
 endfunction()

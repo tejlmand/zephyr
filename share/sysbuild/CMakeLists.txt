@@ -24,8 +24,13 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} COMPONENTS ${zephyr_modules
 
 project(sysbuild LANGUAGES)
 
-# Global list of images enabled in this multi image build system.
+# Global list of images enabled in this multi image build system, with internal variables used
+# for holding a list of added images and directories for processing includes.
 set(IMAGES)
+set(ITERATE_IMAGES)
+set_property(GLOBAL PROPERTY ITERATE_IMAGES ${ITERATE_IMAGES})
+set(ITERATE_IMAGE_DIRS)
+set_property(GLOBAL PROPERTY ITERATE_IMAGE_DIRS ${ITERATE_IMAGE_DIRS})
 
 get_filename_component(APP_DIR  ${APP_DIR} ABSOLUTE)
 get_filename_component(app_name ${APP_DIR} NAME)
@@ -68,6 +73,33 @@ add_subdirectory(bootloader)
 
 # This allows for board and app specific images to be included.
 include(${BOARD_DIR}/sysbuild.cmake OPTIONAL)
-include(${APP_DIR}/sysbuild.cmake OPTIONAL)
+
+# Images must be processed in a nested loop to allow adding additional targets
+get_property(ITERATE_IMAGES GLOBAL PROPERTY ITERATE_IMAGES)
+get_property(ITERATE_IMAGE_DIRS GLOBAL PROPERTY ITERATE_IMAGE_DIRS)
+list(LENGTH ITERATE_IMAGES ITERATE_IMAGE_SIZE)
+while(ITERATE_IMAGE_SIZE GREATER 0)
+  set(ITERATE_IMAGE_INDEX 0)
+
+  # Use local loop variables to allow for appending to existing loops (which are cleared)
+  set(ITERATE_IMAGE_LOOP ${ITERATE_IMAGES})
+  set(ITERATE_IMAGES)
+  set_property(GLOBAL PROPERTY ITERATE_IMAGES ${ITERATE_IMAGES})
+
+  set(ITERATE_IMAGE_DIR_LOOP ${ITERATE_IMAGE_DIRS})
+  set(ITERATE_IMAGE_DIRS)
+  set_property(GLOBAL PROPERTY ITERATE_IMAGE_DIRS ${ITERATE_IMAGE_DIRS})
+
+  foreach(IMAGE ${ITERATE_IMAGE_LOOP})
+    # Include target sysbuild file, if it exists
+    list(GET ITERATE_IMAGE_DIR_LOOP ${ITERATE_IMAGE_INDEX} IMAGE_DIR)
+    include(${IMAGE_DIR}/sysbuild.cmake OPTIONAL)
+    math(EXPR ITERATE_IMAGE_INDEX "${ITERATE_IMAGE_INDEX} + 1")
+  endforeach()
+
+  get_property(ITERATE_IMAGES GLOBAL PROPERTY ITERATE_IMAGES)
+  get_property(ITERATE_IMAGE_DIRS GLOBAL PROPERTY ITERATE_IMAGE_DIRS)
+  list(LENGTH ITERATE_IMAGES ITERATE_IMAGE_SIZE)
+endwhile()
 
 include(cmake/domains.cmake)
