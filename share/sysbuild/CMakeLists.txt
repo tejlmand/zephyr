@@ -74,32 +74,19 @@ add_subdirectory(bootloader)
 # This allows for board and app specific images to be included.
 include(${BOARD_DIR}/sysbuild.cmake OPTIONAL)
 
-# Images must be processed in a nested loop to allow adding additional targets
-get_property(ITERATE_IMAGES GLOBAL PROPERTY ITERATE_IMAGES)
-get_property(ITERATE_IMAGE_DIRS GLOBAL PROPERTY ITERATE_IMAGE_DIRS)
-list(LENGTH ITERATE_IMAGES ITERATE_IMAGE_SIZE)
-while(ITERATE_IMAGE_SIZE GREATER 0)
-  set(ITERATE_IMAGE_INDEX 0)
-
-  # Use local loop variables to allow for appending to existing loops (which are cleared)
-  set(ITERATE_IMAGE_LOOP ${ITERATE_IMAGES})
-  set(ITERATE_IMAGES)
-  set_property(GLOBAL PROPERTY ITERATE_IMAGES ${ITERATE_IMAGES})
-
-  set(ITERATE_IMAGE_DIR_LOOP ${ITERATE_IMAGE_DIRS})
-  set(ITERATE_IMAGE_DIRS)
-  set_property(GLOBAL PROPERTY ITERATE_IMAGE_DIRS ${ITERATE_IMAGE_DIRS})
-
-  foreach(IMAGE ${ITERATE_IMAGE_LOOP})
-    # Include target sysbuild file, if it exists
-    list(GET ITERATE_IMAGE_DIR_LOOP ${ITERATE_IMAGE_INDEX} IMAGE_DIR)
-    include(${IMAGE_DIR}/sysbuild.cmake OPTIONAL)
-    math(EXPR ITERATE_IMAGE_INDEX "${ITERATE_IMAGE_INDEX} + 1")
+# This allows image specific sysbuild.cmake to be processed.
+list(LENGTH IMAGES images_length)
+while(NOT "${images_length}" EQUAL "${processed_length}")
+  foreach(image ${IMAGES})
+    if(NOT image IN_LIST images_sysbuild_processed)
+      ExternalProject_Get_property(${image} SOURCE_DIR)
+      include(${SOURCE_DIR}/sysbuild.cmake OPTIONAL)
+      list(APPEND images_sysbuild_processed ${image})
+    endif()
   endforeach()
 
-  get_property(ITERATE_IMAGES GLOBAL PROPERTY ITERATE_IMAGES)
-  get_property(ITERATE_IMAGE_DIRS GLOBAL PROPERTY ITERATE_IMAGE_DIRS)
-  list(LENGTH ITERATE_IMAGES ITERATE_IMAGE_SIZE)
+  list(LENGTH images_sysbuild_processed processed_length)
+  list(LENGTH IMAGES images_length)
 endwhile()
 
 include(cmake/domains.cmake)
