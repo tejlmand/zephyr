@@ -68,6 +68,12 @@ config EXTERNAL_LIBC
 
 endchoice # LIBC_IMPLEMENTATION
 
+config PICOLIBC_MODULE
+	bool "Use picolibc module"
+	default y if !CPLUSPLUS
+	help
+	  Use picolibc module instead of picolibc included with toolchain
+
 config HAS_NEWLIB_LIBC_NANO
 	bool
 

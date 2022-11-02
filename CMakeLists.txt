@@ -695,7 +695,7 @@ add_custom_command(
 # Make sure Picolibc is built before the rest of the system; there's no explicit
 # reference to any of the files as they're all picked up by various compiler
 # settings
-if(CONFIG_PICOLIBC_USE_MODULE)
+if(CONFIG_PICOLIBC AND CONFIG_PICOLIBC_MODULE)
   set(picolibc_dependency PicolibcBuild)
 endif()
 
