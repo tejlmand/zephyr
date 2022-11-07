@@ -19,6 +19,7 @@ config PICOLIBC_SUPPORTED
 	bool
 	depends on ARC || ARM || ARM64 || MIPS || RISCV
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "arcmwdt"
+	depends on !CPLUSPLUS || !PICOLIBC_MODULE
 	default y
 	help
 	  Selected when the target has support for picolibc.
