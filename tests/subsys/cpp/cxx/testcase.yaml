@@ -22,6 +22,6 @@ tests:
       - CONFIG_NEWLIB_LIBC_NANO=y
   cpp.main.picolibc:
     tags: picolibc
-    filter: CONFIG_PICOLIBC_SUPPORTED
+    filter: (TOOLCHAIN_HAS_PICOLIBC == 1) and CONFIG_PICOLIBC_SUPPORTED
     extra_configs:
       - CONFIG_PICOLIBC=y
