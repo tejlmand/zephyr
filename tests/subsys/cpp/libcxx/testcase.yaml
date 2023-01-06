@@ -21,6 +21,15 @@ tests:
       - CONFIG_NEWLIB_LIBC_NANO=y
     integration_platforms:
       - mps2_an385
+  cpp.libcxx.picolibc:
+    filter: (TOOLCHAIN_HAS_PICOLIBC == 1) and CONFIG_PICOLIBC_SUPPORTED
+    toolchain_exclude: xcc
+    tags: cpp
+    timeout: 60
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+    integration_platforms:
+      - mps2_an385
   cpp.libcxx.arcmwdtlib:
     toolchain_allow: arcmwdt
     min_flash: 54
