@@ -392,3 +392,15 @@ function(sysbuild_module_call)
   endforeach()
 
 endfunction()
+
+function(set_config_bool image setting value)
+  if(${value})
+    set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=y\n")
+  else()
+    set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=y\n")
+  endif()
+endfunction()
+
+function(set_config_string image setting value)
+  set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=${value}\n")
+endfunction()
