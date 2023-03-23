@@ -530,6 +530,7 @@ add_custom_command(
   OUTPUT ${PROJECT_BINARY_DIR}/include/generated/version.h
   COMMAND ${CMAKE_COMMAND} -DZEPHYR_BASE=${ZEPHYR_BASE}
     -DOUT_FILE=${PROJECT_BINARY_DIR}/include/generated/version.h
+    -DVERSION_FILE=${ZEPHYR_BASE}/VERSION
     ${build_version_argument}
     -P ${ZEPHYR_BASE}/cmake/gen_version_h.cmake
   DEPENDS ${ZEPHYR_BASE}/VERSION ${git_dependency}

@@ -33,71 +33,86 @@
 # The final load of `version.cmake` will setup correct build version values.
 
 include(${ZEPHYR_BASE}/cmake/hex.cmake)
-file(READ ${ZEPHYR_BASE}/VERSION ver)
+
+if(NOT DEFINED VERSION_FILE)
+  set(VERSION_FILE ${ZEPHYR_BASE}/VERSION)
+endif()
+
+if(NOT DEFINED VERSION_TYPE)
+  set(VERSION_TYPE KERNEL)
+  set(proj_type PROJECT)
+else()
+  set(proj_type ${VERSION_TYPE})
+endif()
+
+file(READ ${VERSION_FILE} ver)
 
 string(REGEX MATCH "VERSION_MAJOR = ([0-9]*)" _ ${ver})
-set(PROJECT_VERSION_MAJOR ${CMAKE_MATCH_1})
+set(${proj_type}_VERSION_MAJOR ${CMAKE_MATCH_1})
 
 string(REGEX MATCH "VERSION_MINOR = ([0-9]*)" _ ${ver})
-set(PROJECT_VERSION_MINOR ${CMAKE_MATCH_1})
+set(${proj_type}_VERSION_MINOR ${CMAKE_MATCH_1})
 
 string(REGEX MATCH "PATCHLEVEL = ([0-9]*)" _ ${ver})
-set(PROJECT_VERSION_PATCH ${CMAKE_MATCH_1})
+set(${proj_type}_VERSION_PATCH ${CMAKE_MATCH_1})
 
 string(REGEX MATCH "VERSION_TWEAK = ([0-9]*)" _ ${ver})
-set(PROJECT_VERSION_TWEAK ${CMAKE_MATCH_1})
+set(${proj_type}_VERSION_TWEAK ${CMAKE_MATCH_1})
 
 string(REGEX MATCH "EXTRAVERSION = ([a-z0-9]*)" _ ${ver})
-set(PROJECT_VERSION_EXTRA ${CMAKE_MATCH_1})
+set(${proj_type}_VERSION_EXTRA ${CMAKE_MATCH_1})
 
 # Temporary convenience variable
-set(PROJECT_VERSION_WITHOUT_TWEAK ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH})
+set(${proj_type}_VERSION_WITHOUT_TWEAK ${${proj_type}_VERSION_MAJOR}.${${proj_type}_VERSION_MINOR}.${${proj_type}_VERSION_PATCH})
 
 
-if(PROJECT_VERSION_EXTRA)
-  set(PROJECT_VERSION_EXTRA_STR "-${PROJECT_VERSION_EXTRA}")
+if(${proj_type}_VERSION_EXTRA)
+  set(${proj_type}_VERSION_EXTRA_STR "-${${proj_type}_VERSION_EXTRA}")
 endif()
 
-if(PROJECT_VERSION_TWEAK)
-  set(PROJECT_VERSION ${PROJECT_VERSION_WITHOUT_TWEAK}.${PROJECT_VERSION_TWEAK})
+if(${proj_type}_VERSION_TWEAK)
+  set(${proj_type}_VERSION ${${proj_type}_VERSION_WITHOUT_TWEAK}.${${proj_type}_VERSION_TWEAK})
 else()
-  set(PROJECT_VERSION ${PROJECT_VERSION_WITHOUT_TWEAK})
+  set(${proj_type}_VERSION ${${proj_type}_VERSION_WITHOUT_TWEAK})
 endif()
 
-set(PROJECT_VERSION_STR ${PROJECT_VERSION}${PROJECT_VERSION_EXTRA_STR})
+set(${proj_type}_VERSION_STR ${${proj_type}_VERSION}${${proj_type}_VERSION_EXTRA_STR})
 
 if(DEFINED BUILD_VERSION)
   set(BUILD_VERSION_STR ", build: ${BUILD_VERSION}")
 endif()
 
-if (NOT NO_PRINT_VERSION)
-  message(STATUS "Zephyr version: ${PROJECT_VERSION_STR} (${ZEPHYR_BASE})${BUILD_VERSION_STR}")
+if (NOT NO_PRINT_VERSION AND VERSION_TYPE STREQUAL KERNEL)
+    message(STATUS "Zephyr version: ${${proj_type}_VERSION_STR} (${ZEPHYR_BASE})${BUILD_VERSION_STR}")
 endif()
 
-set(MAJOR ${PROJECT_VERSION_MAJOR}) # Temporary convenience variable
-set(MINOR ${PROJECT_VERSION_MINOR}) # Temporary convenience variable
-set(PATCH ${PROJECT_VERSION_PATCH}) # Temporary convenience variable
+set(MAJOR ${${proj_type}_VERSION_MAJOR}) # Temporary convenience variable
+set(MINOR ${${proj_type}_VERSION_MINOR}) # Temporary convenience variable
+set(PATCH ${${proj_type}_VERSION_PATCH}) # Temporary convenience variable
 
-math(EXPR KERNEL_VERSION_NUMBER_INT "(${MAJOR} << 16) + (${MINOR} << 8)  + (${PATCH})")
-math(EXPR KERNELVERSION_INT         "(${MAJOR} << 24) + (${MINOR} << 16) + (${PATCH} << 8) + (${PROJECT_VERSION_TWEAK})")
+math(EXPR ${VERSION_TYPE}_VERSION_NUMBER_INT "(${MAJOR} << 16) + (${MINOR} << 8)  + (${PATCH})")
+math(EXPR KERNELVERSION_INT         "(${MAJOR} << 24) + (${MINOR} << 16) + (${PATCH} << 8) + (${${proj_type}_VERSION_TWEAK})")
 
-to_hex(${KERNEL_VERSION_NUMBER_INT} KERNEL_VERSION_NUMBER)
+to_hex(${${VERSION_TYPE}_VERSION_NUMBER_INT} ${VERSION_TYPE}_VERSION_NUMBER)
 to_hex(${KERNELVERSION_INT}         KERNELVERSION)
 
-set(KERNEL_VERSION_MAJOR      ${PROJECT_VERSION_MAJOR})
-set(KERNEL_VERSION_MINOR      ${PROJECT_VERSION_MINOR})
-set(KERNEL_PATCHLEVEL         ${PROJECT_VERSION_PATCH})
+set(${VERSION_TYPE}_VERSION_MAJOR      ${${proj_type}_VERSION_MAJOR})
+set(${VERSION_TYPE}_VERSION_MINOR      ${${proj_type}_VERSION_MINOR})
+set(${VERSION_TYPE}_PATCHLEVEL         ${${proj_type}_VERSION_PATCH})
 
-if(PROJECT_VERSION_EXTRA)
-  set(KERNEL_VERSION_STRING     "\"${PROJECT_VERSION_WITHOUT_TWEAK}-${PROJECT_VERSION_EXTRA}\"")
+if(${proj_type}_VERSION_EXTRA)
+  set(${VERSION_TYPE}_VERSION_STRING     "\"${${proj_type}_VERSION_WITHOUT_TWEAK}-${${proj_type}_VERSION_EXTRA}\"")
 else()
-  set(KERNEL_VERSION_STRING     "\"${PROJECT_VERSION_WITHOUT_TWEAK}\"")
+  set(${VERSION_TYPE}_VERSION_STRING     "\"${${proj_type}_VERSION_WITHOUT_TWEAK}\"")
 endif()
 
-set(ZEPHYR_VERSION_CODE ${KERNEL_VERSION_NUMBER_INT})
+if(VERSION_TYPE STREQUAL KERNEL)
+  set(ZEPHYR_VERSION_CODE ${${VERSION_TYPE}_VERSION_NUMBER_INT})
+  set(ZEPHYR_VERSION TRUE)
+endif()
 
 # Cleanup convenience variables
 unset(MAJOR)
 unset(MINOR)
 unset(PATCH)
-unset(PROJECT_VERSION_WITHOUT_TWEAK)
+unset(${proj_type}_VERSION_WITHOUT_TWEAK)
