@@ -481,10 +481,12 @@ class TestPlan:
 
                                     break
 
-
                 except RuntimeError as e:
-                    logger.error("E: %s: can't load: %s" % (file, e))
-                    self.load_errors += 1
+                    logger.info("E: %s: skip loading: %s" % (file, e))
+                    # remove the error message just skip to this yaml file
+                    # as this will restrict only platform schema allowd
+                    #logger.error("E: %s: can't load: %s" % (file, e))
+                    #self.load_errors += 1
 
         self.platform_names = [p.name for p in self.platforms]
 

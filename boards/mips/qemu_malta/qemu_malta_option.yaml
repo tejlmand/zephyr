@@ -1,0 +1,4 @@
+qemu:
+  qemu_option:
+    - "-serial null"
+    - "-serial null"

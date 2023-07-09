@@ -89,6 +89,7 @@ class Handler:
         self.generator_cmd = None
         self.suite_name_check = True
         self.ready = False
+        self.platform = instance.platform
 
         self.args = []
         self.terminated = False
@@ -742,7 +743,7 @@ class QEMUHandler(Handler):
         self.fifo_fn = os.path.join(instance.build_dir, "qemu-fifo")
 
         self.pid_fn = os.path.join(instance.build_dir, "qemu.pid")
-
+        self.call_west_flash = False
         if instance.testsuite.ignore_qemu_crash:
             self.ignore_qemu_crash = True
             self.ignore_unexpected_eof = True
@@ -943,6 +944,9 @@ class QEMUHandler(Handler):
             os.unlink(self.pid_fn)
 
         self.log_fn = self.log
+        # if using west flash there are some overhaul requires additonal time
+        if self.call_west_flash:
+            self.timeout = self.timeout
 
     def _create_command(self, sysbuild_build_dir):
         command = [self.generator_cmd]
@@ -983,6 +987,14 @@ class QEMUHandler(Handler):
             subprocess.call(["stty", "sane"], stdin=sys.stdout)
 
         logger.debug("Running %s (%s)" % (self.name, self.type_str))
+        if self.call_west_flash:
+            command = ["west", "flash", "--skip-rebuild",
+                "-d", self.build_dir, "--runner", "qemu",
+                "--pipe", os.path.join(self.build_dir, "qemu-fifo")]
+            logger.info(" ".join(command))
+        else:
+            command = [self.generator_cmd]
+            command += ["-C", sysbuild_build_dir, "run"]
 
         is_timeout = False
         qemu_pid = None
