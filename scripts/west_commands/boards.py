@@ -55,9 +55,6 @@ class Boards(WestCommand):
 
         # Remember to update west-completion.bash if you add or remove
         # flags
-        parser.add_argument('-f', '--format', default=default_fmt,
-                            help='''Format string to use to list each board;
-                                    see FORMAT STRINGS below.''')
         parser.add_argument('-n', '--name', dest='name_re',
                             help='''a regular expression; only boards whose
                             names match NAME_RE will be listed''')
@@ -85,4 +82,11 @@ class Boards(WestCommand):
             if name_re is not None and not name_re.search(board.name):
                 continue
             log.inf(args.format.format(name=board.name, arch=board.arch,
-                                       dir=board.dir))
+                                       dir=board.dir, hwm=board.hwm))
+
+        myboards = list_boards.find_v2_boards(args)
+        for board in list_boards.find_v2_boards(args)['boards']:
+            if name_re is not None and not name_re.search(board.name):
+                continue
+            log.inf(args.format.format(name=board['name'], arch=board['arch'],
+                                       dir=board['folder'], hwm=board['hwm']))
