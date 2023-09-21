@@ -6,8 +6,49 @@
 import argparse
 from collections import defaultdict
 import itertools
-from pathlib import Path
+from pathlib import Path, PurePath
+import pykwalify.core
 from typing import NamedTuple
+import sys
+import yaml
+
+METADATA_SCHEMA = '''
+## A pykwalify schema for basic validation of the structure of a
+## metadata YAML file.
+##
+# The boards.yml file is a simple list of key value pairs containing boards
+# and their location which is used by the build system.
+type: map
+mapping:
+  boards:
+    required: true
+    type: seq
+    sequence:
+      - type: map
+        mapping:
+          name:
+            required: true
+            type: str
+          folder:
+            required: true
+            type: str
+          vendor:
+            required: false
+            type: str
+          family:
+            required: false
+            type: str
+          arch:
+            required: false
+            type: str
+          comment:
+            required: false
+            type: str
+'''
+
+BOARDS_YML_PATH = PurePath('boards/v2/boards.yml')
+
+schema = yaml.safe_load(METADATA_SCHEMA)
 
 #
 # This is shared code between the build system's 'boards' target
@@ -41,7 +82,10 @@ def find_arch2board_set(args):
 
     for root in args.board_roots:
         for arch, boards in find_arch2board_set_in(root, arches).items():
-            ret[arch] |= boards
+            if args.board is not None:
+                ret[arch] |= {b for b in boards if b.name == args.board}
+            else:
+                ret[arch] |= boards
 
     return ret
 
@@ -87,6 +131,31 @@ def find_arch2board_set_in(root, arches):
 
     return ret
 
+def find_v2_boards(args):
+    ret = {'boards': []}
+    for root in args.board_roots:
+        boards_yml = root / BOARDS_YML_PATH
+
+        if Path(boards_yml).is_file():
+            with Path(boards_yml).open('r') as f:
+                boards = yaml.safe_load(f.read())
+
+            try:
+                pykwalify.core.Core(source_data=boards, schema_data=schema).validate()
+            except pykwalify.errors.SchemaError as e:
+                sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
+                         .format(boards_yml.as_posix(), e))
+
+            if args.board is not None:
+                boards = {'boards': list(filter(
+                    lambda board: board['name'] == args.board, boards['boards']))}
+            for board in boards['boards']:
+                board.update({'folder': root / board['folder']})
+
+            ret['boards'].extend(boards['boards'])
+
+    return ret
+
 def parse_args():
     parser = argparse.ArgumentParser(allow_abbrev=False)
     add_args(parser)
@@ -101,12 +170,42 @@ def add_args(parser):
     parser.add_argument("--board-root", dest='board_roots', default=[],
                         type=Path, action='append',
                         help='add a board root, may be given more than once')
+    parser.add_argument("--board", dest='board', default=None,
+                        help='lookup the specific board, fail if not found')
+    parser.add_argument("--format", type=str,
+                        help='format string to use when printing board details.')
 
-def dump_boards(arch2boards):
+def dump_v2_boards(args):
+    format_str = '    {name}'if args.format is None else args.format
+
+    boards = find_v2_boards(args)
+    if args.format is None:
+        print('v2 boards:')
+
+    for board in boards['boards']:
+        info = format_str.format(
+            name=board['name'],
+            folder=board['folder'],
+            arch=board['arch'],
+            vendor=board['vendor'])
+
+        print(info)
+
+def dump_boards(args):
+    format_str = '    {name}'if args.format is None else args.format
+
+    arch2boards = find_arch2boards(args)
     for arch, boards in arch2boards.items():
-        print(f'{arch}:')
+        if args.format is None:
+            print(f'{arch}:')
         for board in boards:
-            print(f'  {board.name}')
+            info = format_str.format(
+                name=board.name,
+                arch=board.arch,
+                folder=board.dir)
+            print(info)
 
 if __name__ == '__main__':
-    dump_boards(find_arch2boards(parse_args()))
+    args = parse_args()
+    dump_v2_boards(args)
+    dump_boards(args)
