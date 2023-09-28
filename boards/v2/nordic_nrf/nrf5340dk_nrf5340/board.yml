@@ -1,0 +1,13 @@
+board:
+  name: nrf5340dk_nrf5340
+  vendor: Nordic Semiconductor
+  arch: arm
+  revision:
+    format: fuzzy
+    default: 0.1.2
+    revisions:
+      - name: 0.1.2
+  cpuset:
+  - 'cpuapp'
+  - 'cpuapp_ns'
+  - 'cpunet'
