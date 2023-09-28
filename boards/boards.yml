@@ -7,3 +7,7 @@ boards:
     folder: v2/nordic_nrf/nrf52840dk_nrf52811
     vendor: nordic
     arch: arm
+  - name: nrf5340dk_nrf5340
+    folder: v2/nordic_nrf/nrf5340dk_nrf5340
+    vendor: nordic
+    arch: arm
