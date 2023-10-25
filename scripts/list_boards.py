@@ -29,26 +29,106 @@ mapping:
           name:
             required: true
             type: str
+            desc: Name of the board
           folder:
             required: true
             type: str
+            desc: Location of the board implementation relative to the boards.yml file.
           vendor:
             required: false
             type: str
+            desc: SoC family of the SoC on the board.
+                  This field is of informational use and can be used for filtering of boards.
           family:
             required: false
             type: str
+            desc: SoC family of the SoC on the board.
+                  This field is of informational use and can be used for filtering of boards.
           arch:
             required: false
             type: str
+            desc: architecture of the SoC on a single SoC board, for a board with multiple SoCs
+                  or multi-core SoC with mixed architectures, the value mixed can be used.
+                  This field is of informational use and can be used for filtering of boards.
           comment:
             required: false
             type: str
+            desc: Free form comment with extra information regarding the board.
 '''
 
-BOARDS_YML_PATH = PurePath('boards/v2/boards.yml')
+BOARD_METADATA_SCHEMA = '''
+## A pykwalify schema for basic validation of the structure of a
+## metadata YAML file.
+##
+# The board.yml file is a simple list of key value pairs containing board
+# information like: name, vendor, arch, cpuset.
+type: map
+mapping:
+  board:
+    required: true
+    type: map
+    mapping:
+      name:
+        required: true
+        type: str
+        desc: Name of the board
+      vendor:
+        required: false
+        type: str
+        desc: SoC family of the SoC on the board.
+      family:
+        required: false
+        type: str
+        desc: SoC family of the SoC on the board.
+      arch:
+        required: false
+        type: str
+        desc: architecture of the SoC on a single SoC board, for a board with multiple SoCs
+              or multi-core SoC with mixed architectures, the value mixed can be used.
+      revisions:
+        required: false
+        type: map
+        mapping:
+          format:
+            required: true
+            type: str
+            enum:
+              ["major.minor.patch", "letter", "number", "fuzzy", "custom"]
+          revision:
+            required: true
+            type: seq
+            sequence:
+              - type: map
+                mapping:
+                  name:
+                    required: true
+                    type: str
+                  cpuset:
+                    required: false
+                    desc: cpuset for the specific board revision SoCs.
+                    type: seq
+                    sequence:
+                     - type: str
+                       required: true
+      cpuset:
+        required: false
+        type: seq
+        desc: cpuset for the board when board contains multicore SoC or multiple
+              SoCs. If the cpuset is only valid for a specific board revision, then
+              the board revision cpuset should be used instead
+        sequence:
+         - type: str
+           required: true
+      comment:
+        required: false
+        type: str
+        desc: Free form comment with extra information regarding the board.
+'''
+BOARDS_YML_PATH = PurePath('boards/boards.yml')
+BOARD_YML = PurePath('board.yml')
 
 schema = yaml.safe_load(METADATA_SCHEMA)
+board_schema = yaml.safe_load(BOARD_METADATA_SCHEMA)
 
 #
 # This is shared code between the build system's 'boards' target
@@ -63,6 +143,7 @@ class Board(NamedTuple):
     name: str
     arch: str
     dir: Path
+    hwm: str
 
 def board_key(board):
     return board.name
@@ -127,7 +208,7 @@ def find_arch2board_set_in(root, arches):
                 file_name = maybe_defconfig.name
                 if file_name.endswith('_defconfig'):
                     board_name = file_name[:-len('_defconfig')]
-                    ret[arch].add(Board(board_name, arch, maybe_board))
+                    ret[arch].add(Board(board_name, arch, maybe_board, 'v1'))
 
     return ret
 
@@ -150,7 +231,8 @@ def find_v2_boards(args):
                 boards = {'boards': list(filter(
                     lambda board: board['name'] == args.board, boards['boards']))}
             for board in boards['boards']:
-                board.update({'folder': root / board['folder']})
+                board.update({'folder': root / 'boards' / board['folder']})
+                board.update({'hwm': 'v2'})
 
             ret['boards'].extend(boards['boards'])
 
@@ -164,6 +246,8 @@ def parse_args():
 def add_args(parser):
     # Remember to update west-completion.bash if you add or remove
     # flags
+    default_fmt = '{name}'
+
     parser.add_argument("--arch-root", dest='arch_roots', default=[],
                         type=Path, action='append',
                         help='add an architecture root, may be given more than once')
@@ -172,40 +256,49 @@ def add_args(parser):
                         help='add a board root, may be given more than once')
     parser.add_argument("--board", dest='board', default=None,
                         help='lookup the specific board, fail if not found')
-    parser.add_argument("--format", type=str,
-                        help='format string to use when printing board details.')
+    parser.add_argument("--format", default=default_fmt,
+                        help='''Format string to use to list each board;
+                                see FORMAT STRINGS below.''')
 
 def dump_v2_boards(args):
-    format_str = '    {name}'if args.format is None else args.format
-
     boards = find_v2_boards(args)
-    if args.format is None:
-        print('v2 boards:')
 
     for board in boards['boards']:
-        info = format_str.format(
+        board_yml = board['folder'] / BOARD_YML
+
+        if Path(board_yml).is_file():
+            with Path(board_yml).open('r') as f:
+                b = yaml.safe_load(f.read())
+
+            try:
+                pykwalify.core.Core(source_data=b, schema_data=board_schema).validate()
+            except pykwalify.errors.SchemaError as e:
+                sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
+                         .format(board_yml.as_posix(), e))
+        info = args.format.format(
             name=board['name'],
-            folder=board['folder'],
+            dir=board['folder'],
             arch=board['arch'],
-            vendor=board['vendor'])
+            vendor=board['vendor'],
+            hwm=board['hwm']
+        )
 
         print(info)
 
 def dump_boards(args):
-    format_str = '    {name}'if args.format is None else args.format
-
     arch2boards = find_arch2boards(args)
     for arch, boards in arch2boards.items():
         if args.format is None:
             print(f'{arch}:')
         for board in boards:
-            info = format_str.format(
+            info = args.format.format(
                 name=board.name,
                 arch=board.arch,
-                folder=board.dir)
+                dir=board.dir,
+                hwm=board.hwm)
             print(info)
 
 if __name__ == '__main__':
     args = parse_args()
-    dump_v2_boards(args)
     dump_boards(args)
+    dump_v2_boards(args)
