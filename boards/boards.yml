@@ -1,0 +1,4 @@
+boards:
+  - name: empty
+    folder: empty
+    comment: initial file, no board v2 defined.
