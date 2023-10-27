@@ -69,7 +69,7 @@ function(pre_dt_module_run)
         include
         include/zephyr
         dts/common
-        dts/${ARCH}
+        dts/arm
         dts
         )
       get_filename_component(full_path ${dts_root}/${dts_root_path} REALPATH)
