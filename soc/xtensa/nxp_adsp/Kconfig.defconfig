@@ -5,5 +5,9 @@
 
 source "soc/xtensa/nxp_adsp/*/Kconfig.defconfig.series"
 
+if SOC_FAMILY_NXP_ADSP
+
 config CACHE_MANAGEMENT
 	def_bool y
+
+endif
