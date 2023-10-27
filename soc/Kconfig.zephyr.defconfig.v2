@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# This file is loaded through the generated Zephyr SoC Kconfig defconfig for hw model v2.
+#
+# The purpose of this file is to adjust Zephyr specific defaults for hw model v2
+# SoC descriptions.
+
+# To include a new SoC HWMv2 containing Zephyr specific defconfigs, add a line
+# referencing the Kconfig.defconfig, like this
+# source "soc/v2/<vendor|name|other>/Kconfig.zephyr.defconfig"

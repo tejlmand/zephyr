@@ -23,10 +23,9 @@ source "boards/shields/*/Kconfig.defconfig"
 
 source "$(BOARD_DIR)/Kconfig.defconfig"
 
-# This loads custom SoC root defconfigs
-osource "$(KCONFIG_BINARY_DIR)/Kconfig.soc.defconfig"
-# This loads Zephyr base SoC root defconfigs
-osource "soc/$(ARCH)/*/Kconfig.defconfig"
+# This loads Zephyr specific SoC root defconfigs
+source "$(KCONFIG_BINARY_DIR)/Kconfig.zephyr.defconfig.$(HWM_SCHEME)"
+
 # This loads the toolchain defconfigs
 osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig.defconfig"
 # This loads the testsuite defconfig
@@ -43,7 +42,7 @@ source "modules/Kconfig"
 endmenu
 
 source "boards/Kconfig"
-source "soc/Kconfig"
+source "soc/Kconfig.$(HWM_SCHEME)"
 source "arch/Kconfig"
 source "kernel/Kconfig"
 source "drivers/Kconfig"

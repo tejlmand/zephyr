@@ -1,0 +1,14 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# This file is loaded through the generated SoC Kconfig for hw model v2.
+#
+# The purpose of this file is to load generic hw model v2 SoC descriptions.
+# The tree loaded below is required to be self-contained, and must not contain
+# any Kconfig references (select, depends on, if, etc) outside the tree itself.
+#
+# The tree is re-usable outside the Zephyr Kconfig tree, and can be re-used in
+# other Kconfig trees, for example the sysbuild Kconfig tree.
+
+# To include a new SoC HWMv2, add a line referencing the Kconfig, like this
+# source "soc/v2/<vendor|name|other>/Kconfig.soc.v2"
