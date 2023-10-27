@@ -120,17 +120,19 @@ include(${ZEPHYR_BASE}/cmake/linker_script/${ARCH}/linker.cmake OPTIONAL)
 
 # Don't add non-existing include directories, it creates noise and
 # warnings in some tooling
-foreach(optional_include_dir
-  ${SOC_DIR}/${ARCH}/${SOC_PATH}
-  ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
-  ${SOC_DIR}/${ARCH}/${SOC_PATH}/include/${SOC_NAME}
-  ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/include
-  ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/include
-  )
-  if(EXISTS ${optional_include_dir})
-    zephyr_include_directories(${optional_include_dir})
-  endif()
-endforeach()
+if(HWMv1)
+  foreach(optional_include_dir
+    ${SOC_DIR}/${ARCH}/${SOC_PATH}
+    ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
+    ${SOC_DIR}/${ARCH}/${SOC_PATH}/include/${SOC_NAME}
+    ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/include
+    ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/include
+    )
+    if(EXISTS ${optional_include_dir})
+      zephyr_include_directories(${optional_include_dir})
+    endif()
+  endforeach()
+endif()
 
 # Don't inherit compiler flags from the environment
 foreach(var AFLAGS CFLAGS CXXFLAGS CPPFLAGS LDFLAGS)
