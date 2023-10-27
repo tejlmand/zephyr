@@ -11,6 +11,9 @@
 # Note: $ARCH might be a glob pattern
 source "$(ARCH_DIR)/$(ARCH)/Kconfig"
 
+# ToDo: Generate a Kconfig.arch for loading of additional arch in HWMv2.
+osource "$(KCONFIG_BINARY_DIR)/Kconfig.arch"
+
 # Architecture symbols
 #
 # Should be 'select'ed by low-level symbols like SOC_SERIES_* or, lacking that,
