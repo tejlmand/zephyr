@@ -1,10 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# SoC scheme follows the board scheme versioning.
-SOC_SCHEME = $(BOARD_SCHEME)
-
-# This loads any SoC scheme specific content.
-rsource "Kconfig.$(SOC_SCHEME)"
+# This loads any hw model SoC scheme specific content.
+rsource "Kconfig.$(HWM_SCHEME)"
 
 menu "Hardware Configuration"
 # This loads custom SoC root Kconfig (only available if custom SoC root are defined)
