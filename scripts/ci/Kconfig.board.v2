@@ -6,6 +6,5 @@
 
 mainmenu "Zephyr board / SoC v2 Configuration"
 
-SOC_SCHEME = $(BOARD_SCHEME)
-source "boards/Kconfig.$(BOARD_SCHEME)"
-source "soc/Kconfig.$(SOC_SCHEME)"
+source "boards/Kconfig.$(HWM_SCHEME)"
+source "soc/Kconfig.$(HWM_SCHEME)"
