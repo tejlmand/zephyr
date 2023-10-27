@@ -118,7 +118,9 @@ zephyr_include_directories(
 
 include(${ZEPHYR_BASE}/cmake/linker_script/${ARCH}/linker.cmake OPTIONAL)
 
-zephyr_include_directories(${SOC_DIR}/${ARCH}/${SOC_PATH})
+if(HWMv1)
+  zephyr_include_directories(${SOC_DIR}/${ARCH}/${SOC_PATH})
+endif()
 
 # Don't inherit compiler flags from the environment
 foreach(var AFLAGS CFLAGS CXXFLAGS CPPFLAGS LDFLAGS)
