@@ -95,41 +95,100 @@ Hints:
   - if your board directory is '/foo/bar/boards/<ARCH>/my_board' then add '/foo/bar' to BOARD_ROOT, not the entire board directory
   - if in doubt, use absolute paths")
   endif()
+endforeach()
 
-  # NB: find_path will return immediately if the output variable is
-  # already set
-  if (BOARD_ALIAS)
-    find_path(BOARD_HIDDEN_DIR
-      NAMES ${BOARD_ALIAS}_defconfig
-      PATHS ${root}/boards/*/*
-      NO_DEFAULT_PATH
-      )
+if((HWMv1 AND NOT EXISTS ${BOARD_DIR}/${BOARD}_defconfig)
+   OR (HWMv2 AND NOT EXISTS ${BOARD_DIR}))
+  message(WARNING "BOARD_DIR: ${BOARD_DIR} has been moved or deleted. "
+                  "Trying to find new location."
+  )
+  set(BOARD_DIR BOARD_DIR-NOTFOUND CACHE PATH "Path to a file." FORCE)
+endif()
+
+# Prepare list boards command.
+# This command is used for locating the board dir as well as printing all boards
+# in the system in the following cases:
+# - User specifies an invalid BOARD
+# - User invokes '<build-command> boards' target
+list(TRANSFORM ARCH_ROOT PREPEND "--arch-root=" OUTPUT_VARIABLE arch_root_args)
+list(TRANSFORM BOARD_ROOT PREPEND "--board-root=" OUTPUT_VARIABLE board_root_args)
+
+set(list_boards_commands
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/list_boards.py
+            ${arch_root_args} ${board_root_args} --arch-root=${ZEPHYR_BASE}
+)
+
+if(NOT BOARD_DIR)
+  if(BOARD_ALIAS)
+    execute_process(${list_boards_commands} --board=${BOARD_ALIAS} --format={name}\;{dir}\;{hwm}
+                    OUTPUT_VARIABLE ret_board
+                    ERROR_VARIABLE err_board
+                    RESULT_VARIABLE ret_val
+    )
+    list(GET ret_board 1 BOARD_HIDDEN_DIR)
+    string(STRIP "${BOARD_HIDDEN_DIR}" BOARD_HIDDEN_DIR)
+    set(BOARD_HIDDEN_DIR ${BOARD_HIDDEN_DIR} CACHE PATH "Path to a folder." FORCE)
+
     if(BOARD_HIDDEN_DIR)
       message("Board alias ${BOARD_ALIAS} is hiding the real board of same name")
     endif()
   endif()
-  if(BOARD_DIR AND NOT EXISTS ${BOARD_DIR}/${BOARD}_defconfig)
-    message(WARNING "BOARD_DIR: ${BOARD_DIR} has been moved or deleted. "
-                    "Trying to find new location."
-    )
-    set(BOARD_DIR BOARD_DIR-NOTFOUND CACHE PATH "Path to a file." FORCE)
-  endif()
-  find_path(BOARD_DIR
-    NAMES ${BOARD}_defconfig
-    PATHS ${root}/boards/*/*
-    NO_DEFAULT_PATH
-    )
-  if(BOARD_DIR AND NOT (${root} STREQUAL ${ZEPHYR_BASE}))
-    set(USING_OUT_OF_TREE_BOARD 1)
-  endif()
-endforeach()
 
-if(EXISTS ${BOARD_DIR}/revision.cmake)
-  # Board provides revision handling.
-  include(${BOARD_DIR}/revision.cmake)
-elseif(BOARD_REVISION)
-  message(WARNING "Board revision ${BOARD_REVISION} specified for ${BOARD}, \
-                   but board has no revision so revision will be ignored.")
+  execute_process(${list_boards_commands} --board=${BOARD} --format={name}\;{dir}\;{hwm}
+                  OUTPUT_VARIABLE ret_board
+                  ERROR_VARIABLE err_board
+                  RESULT_VARIABLE ret_val
+  )
+  if(ret_val)
+    message(FATAL_ERROR "Error finding board: ${BOARD}\nError message: ${err_board}")
+  endif()
+
+  list(GET ret_board 1 BOARD_DIR)
+  string(STRIP "${BOARD_DIR}" BOARD_DIR)
+  set(BOARD_DIR ${BOARD_DIR} CACHE PATH "Board directory for board (${BOARD})" FORCE)
+
+  # Create two CMake variables identifying the hw model.
+  # CMake variable: HWM=[v1,v2]
+  # CMake variable: HWMv1=True, when HWMv1 is in use.
+  # CMake variable: HWMv2=True, when HWMv2 is in use.
+  list(GET ret_board 2 HWM)
+  string(STRIP "${HWM}" HWM)
+  set(HWM       ${HWM} CACHE INTERNAL "Zephyr hardware model version")
+  set(HWM${HWM} True   CACHE INTERNAL "Zephyr hardware model")
+endif()
+
+if(NOT BOARD_DIR)
+  message("No board named '${BOARD}' found.\n\n"
+          "Please choose one of the following boards:\n"
+  )
+  execute_process(${list_boards_commands})
+  unset(CACHED_BOARD CACHE)
+  message(FATAL_ERROR "Invalid BOARD; see above.")
+endif()
+
+cmake_path(IS_PREFIX ZEPHYR_BASE "${BOARD_DIR}" NORMALIZE in_zephyr_tree)
+if(NOT in_zephyr_tree)
+  set(USING_OUT_OF_TREE_BOARD 1)
+endif()
+
+if(HWMv1)
+  if(EXISTS ${BOARD_DIR}/revision.cmake)
+    # Board provides revision handling.
+    include(${BOARD_DIR}/revision.cmake)
+  elseif(BOARD_REVISION)
+    message(WARNING "Board revision ${BOARD_REVISION} specified for ${BOARD}, \
+                     but board has no revision so revision will be ignored.")
+  endif()
+elseif(HWMv2)
+  # ToDo: HWMv2
+  # Load following board info:
+  # - Revision
+  # - cpuset
+  # - Active revision
+  # - Active cpuset
+
+else()
+  message(FATAL_ERROR "Unknown hw model (${HWM}) for board: ${BOARD}.")
 endif()
 
 set(board_message "Board: ${BOARD}")
@@ -145,27 +204,6 @@ if(DEFINED BOARD_REVISION)
 endif()
 
 message(STATUS "${board_message}")
-
-# Prepare boards usage command printing.
-# This command prints all boards in the system in the following cases:
-# - User specifies an invalid BOARD
-# - User invokes '<build-command> boards' target
-list(TRANSFORM ARCH_ROOT PREPEND "--arch-root=" OUTPUT_VARIABLE arch_root_args)
-list(TRANSFORM BOARD_ROOT PREPEND "--board-root=" OUTPUT_VARIABLE board_root_args)
-
-set(list_boards_commands
-    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/list_boards.py
-            ${arch_root_args} ${board_root_args} --arch-root=${ZEPHYR_BASE}
-)
-
-if(NOT BOARD_DIR)
-  message("No board named '${BOARD}' found.\n\n"
-          "Please choose one of the following boards:\n"
-  )
-  execute_process(${list_boards_commands})
-  unset(CACHED_BOARD CACHE)
-  message(FATAL_ERROR "Invalid BOARD; see above.")
-endif()
 
 add_custom_target(boards ${list_boards_commands} USES_TERMINAL)
 
