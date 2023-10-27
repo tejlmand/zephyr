@@ -85,7 +85,7 @@ mapping:
         type: str
         desc: architecture of the SoC on a single SoC board, for a board with multiple SoCs
               or multi-core SoC with mixed architectures, the value mixed can be used.
-      revisions:
+      revision:
         required: false
         type: map
         mapping:
@@ -94,7 +94,10 @@ mapping:
             type: str
             enum:
               ["major.minor.patch", "letter", "number", "fuzzy", "custom"]
-          revision:
+          default:
+            required: true
+            type: str
+          revisions:
             required: true
             type: seq
             sequence:
