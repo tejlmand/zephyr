@@ -1,3 +1,9 @@
 socs:
-  - name: None
-    folder: None
+  - series: nrf52
+    folder: arm/nordic_nrf
+    vendor: nordic
+    arch: arm
+  - series: nrf53
+    folder: v2/nordic_nrf/nrf53
+    vendor: nordic
+    arch: arm
