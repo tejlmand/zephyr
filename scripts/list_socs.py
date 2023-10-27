@@ -27,10 +27,10 @@ mapping:
             required: false
             type: str
             desc: Name of the SoC
-          family:
+          series:
             required: false
             type: str
-            desc: SoC family / series of the SoC.
+            desc: SoC series of the SoC.
           folder:
             required: true
             type: str
@@ -38,7 +38,7 @@ mapping:
           vendor:
             required: false
             type: str
-            desc: SoC family of the SoC.
+            desc: SoC series of the SoC.
                   This field is of informational use and can be used for filtering of SoCs.
           arch:
             required: false
@@ -72,12 +72,12 @@ def find_v2_socs(args):
                 sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
                          .format(socs_yml.as_posix(), e))
 
-            if args.soc is not None and args.family is not None:
+            if args.soc is not None and args.series is not None:
                 socs = {'socs': list(filter(
-                    lambda soc: soc.get('name') == args.soc or soc.get('family') == args.family,
+                    lambda soc: soc.get('name') == args.soc or soc.get('series') == args.series,
                         socs['socs']))}
             for soc in socs['socs']:
-                soc.update({'folder': root / 'socs' / soc['folder']})
+                soc.update({'folder': root / 'soc' / soc['folder']})
                 soc.update({'hwm': 'v2'})
 
             ret['socs'].extend(socs['socs'])
@@ -99,8 +99,8 @@ def add_args(parser):
                         help='add a SoC root, may be given more than once')
     parser.add_argument("--soc", dest='soc', default=None,
                         help='lookup the specific soc')
-    parser.add_argument("--family", dest='family', default=None,
-                        help='lookup the specific soc family')
+    parser.add_argument("--series", dest='series', default=None,
+                        help='lookup the specific soc series')
     parser.add_argument("--format", default=default_fmt,
                         help='''Format string to use to list each soc.''')
 
@@ -111,7 +111,7 @@ def dump_v2_socs(args):
     for soc in socs['socs']:
         info = args.format.format(
             name=soc.get('name'),
-            family=soc.get('family'),
+            series=soc.get('series'),
             dir=soc.get('folder'),
             arch=soc.get('arch'),
             vendor=soc.get('vendor'),
