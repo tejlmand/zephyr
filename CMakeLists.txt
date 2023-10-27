@@ -472,30 +472,6 @@ if(CONFIG_USERSPACE)
   set(KOBJECT_LINKER_DEP kobject_linker)
 endif()
 
-get_property(TOPT GLOBAL PROPERTY TOPT)
-get_property(COMPILER_TOPT TARGET compiler PROPERTY linker_script)
-set_ifndef(  TOPT "${COMPILER_TOPT}")
-set_ifndef(  TOPT -Wl,-T) # Use this if the compiler driver doesn't set a value
-
-if(CONFIG_HAVE_CUSTOM_LINKER_SCRIPT)
-  set(LINKER_SCRIPT ${APPLICATION_SOURCE_DIR}/${CONFIG_CUSTOM_LINKER_SCRIPT})
-  if(NOT EXISTS ${LINKER_SCRIPT})
-    set(LINKER_SCRIPT ${CONFIG_CUSTOM_LINKER_SCRIPT})
-    assert_exists(CONFIG_CUSTOM_LINKER_SCRIPT)
-  endif()
-else()
-  # Try a board specific linker file
-  set(LINKER_SCRIPT ${BOARD_DIR}/linker.ld)
-  if(NOT EXISTS ${LINKER_SCRIPT})
-    # If not available, try an SoC specific linker file
-    set(LINKER_SCRIPT ${SOC_DIR}/${ARCH}/${SOC_PATH}/linker.ld)
-  endif()
-endif()
-
-if(NOT EXISTS ${LINKER_SCRIPT})
-  message(FATAL_ERROR "Could not find linker script: '${LINKER_SCRIPT}'. Corrupted configuration?")
-endif()
-
 if(DEFINED BUILD_VERSION)
   set(build_version_argument "-DBUILD_VERSION=${BUILD_VERSION}")
 elseif(NOT ZEPHYR_GIT_INDEX)
@@ -960,6 +936,36 @@ zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,cstd>${CSTD}>
 )
 set(CMAKE_C_COMPILE_FEATURES ${compile_features_${CSTD}} PARENT_SCOPE)
+
+get_property(TOPT GLOBAL PROPERTY TOPT)
+get_property(COMPILER_TOPT TARGET compiler PROPERTY linker_script)
+set_ifndef(  TOPT "${COMPILER_TOPT}")
+set_ifndef(  TOPT -Wl,-T) # Use this if the compiler driver doesn't set a value
+
+if(CONFIG_HAVE_CUSTOM_LINKER_SCRIPT)
+  set(LINKER_SCRIPT ${APPLICATION_SOURCE_DIR}/${CONFIG_CUSTOM_LINKER_SCRIPT})
+  if(NOT EXISTS ${LINKER_SCRIPT})
+    set(LINKER_SCRIPT ${CONFIG_CUSTOM_LINKER_SCRIPT})
+    assert_exists(CONFIG_CUSTOM_LINKER_SCRIPT)
+  endif()
+elseif(HWMv1)
+  # Try a board specific linker file
+  set(LINKER_SCRIPT ${BOARD_DIR}/linker.ld)
+  if(NOT EXISTS ${LINKER_SCRIPT})
+    # If not available, try an SoC specific linker file
+    set(LINKER_SCRIPT ${SOC_DIR}/${ARCH}/${SOC_PATH}/linker.ld)
+  endif()
+elseif(HWMv2)
+  if(DEFINED BOARD_LINKER_SCRIPT)
+    set(LINKER_SCRIPT ${BOARD_LINKER_SCRIPT})
+  elseif(DEFINED SOC_LINKER_SCRIPT)
+    set(LINKER_SCRIPT ${SOC_LINKER_SCRIPT})
+  endif()
+endif()
+
+if(NOT EXISTS ${LINKER_SCRIPT})
+  message(FATAL_ERROR "Could not find linker script: '${LINKER_SCRIPT}'. Corrupted configuration?")
+endif()
 
 # @Intent: Configure linker scripts, i.e. generate linker scripts with variables substituted
 toolchain_ld_configure_files()
