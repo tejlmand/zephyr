@@ -76,6 +76,7 @@ def find_v2_socs(args):
                 socs = {'socs': list(filter(
                     lambda soc: soc.get('name') == args.soc or soc.get('series') == args.series,
                         socs['socs']))}
+
             for soc in socs['socs']:
                 soc.update({'folder': root / 'soc' / soc['folder']})
                 soc.update({'hwm': 'v2'})
@@ -94,6 +95,9 @@ def parse_args():
 def add_args(parser):
     default_fmt = '{name}'
 
+    parser.add_argument('--kconfig-out',
+                        help="""File to write with KConfig import statements
+                             for SoCs""")
     parser.add_argument("--soc-root", dest='soc_roots', default=[],
                         type=Path, action='append',
                         help='add a SoC root, may be given more than once')
@@ -107,6 +111,7 @@ def add_args(parser):
 
 def dump_v2_socs(args):
     socs = find_v2_socs(args)
+    kconfig = ""
 
     for soc in socs['socs']:
         info = args.format.format(
@@ -119,6 +124,13 @@ def dump_v2_socs(args):
         )
 
         print(info)
+
+        if args.kconfig_out:
+            kconfig += 'source "{}/Kconfig"\n'.format(str(soc.get('folder')))
+
+    if args.kconfig_out:
+        with open(args.kconfig_out, 'w', encoding="utf-8") as fp:
+            fp.write(kconfig)
 
 
 if __name__ == '__main__':
