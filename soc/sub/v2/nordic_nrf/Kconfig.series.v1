@@ -1,7 +1,0 @@
-# Nordic Semiconductor nRF MCU lines
-
-# Copyright (c) 2022 Nordic Semiconductor ASA
-# SPDX-License-Identifier: Apache-2.0
-
-# Nothing to do.
-# */Kconfig.series for SoC scheme v1 has already been loaded through Kconfig.soc
