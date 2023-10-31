@@ -45,7 +45,7 @@ elseif(HWMv2)
   set(soc_defconfig_file ${KCONFIG_BINARY_DIR}/Kconfig.zephyr.defconfig.v2)
   set(soc_zephyr_file    ${KCONFIG_BINARY_DIR}/Kconfig.zephyr.v2)
   set(soc_kconfig_file   ${KCONFIG_BINARY_DIR}/Kconfig.soc.v2)
-  file(WRITE ${soc_defconfig_file} "source \"soc/Kconfig.defconfig.v2\"\n")
+  file(WRITE ${soc_defconfig_file} "source \"soc/Kconfig.zephyr.defconfig.v2\"\n")
   file(WRITE ${soc_zephyr_file}    "source \"soc/Kconfig.zephyr.v2\"\n")
   file(WRITE ${soc_kconfig_file}   "source \"soc/Kconfig.soc.v2\"\n")
 
