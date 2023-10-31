@@ -22,23 +22,40 @@ set_ifndef(KCONFIG_NAMESPACE "CONFIG")
 set_ifndef(KCONFIG_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Kconfig)
 file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
 
-# Support multiple SOC_ROOT, remove ZEPHYR_BASE as that is always sourced.
-set(kconfig_soc_root ${SOC_ROOT})
-list(REMOVE_ITEM kconfig_soc_root ${ZEPHYR_BASE})
-set(OPERATION WRITE)
-foreach(root ${kconfig_soc_root})
-  file(${OPERATION} ${KCONFIG_BINARY_DIR}/Kconfig.soc.defconfig
-       "osource \"${root}/soc/$(ARCH)/*/Kconfig.defconfig\"\n"
-  )
-  file(${OPERATION} ${KCONFIG_BINARY_DIR}/Kconfig.soc
-       "osource \"${root}/soc/$(ARCH)/*/Kconfig.soc\"\n"
-  )
-  file(${OPERATION} ${KCONFIG_BINARY_DIR}/Kconfig.soc.arch
-       "osource \"${root}/soc/$(ARCH)/Kconfig\"\n"
-       "osource \"${root}/soc/$(ARCH)/*/Kconfig\"\n"
-  )
-  set(OPERATION APPEND)
-endforeach()
+if(HWMv1)
+  # Support multiple SOC_ROOT
+  set(soc_defconfig_file ${KCONFIG_BINARY_DIR}/Kconfig.zephyr.defconfig.v1)
+  file(WRITE ${soc_defconfig_file} "source \"soc/$(ARCH)/*/Kconfig.defconfig\"\n")
+  file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.soc.v1 "source \"soc/Kconfig.soc.v1\"\n")
+
+  set(OPERATION WRITE)
+  foreach(root ${SOC_ROOT})
+    file(APPEND ${soc_defconfig_file} "osource \"${root}/soc/$(ARCH)/*/Kconfig.defconfig\"\n")
+    file(${OPERATION} ${KCONFIG_BINARY_DIR}/Kconfig.soc
+         "osource \"${root}/soc/$(ARCH)/*/Kconfig.soc\"\n"
+    )
+    file(${OPERATION} ${KCONFIG_BINARY_DIR}/Kconfig.soc.arch
+         "osource \"${root}/soc/$(ARCH)/Kconfig\"\n"
+         "osource \"${root}/soc/$(ARCH)/*/Kconfig\"\n"
+    )
+    set(OPERATION APPEND)
+  endforeach()
+elseif(HWMv2)
+  # Support multiple SOC_ROOT
+  set(soc_defconfig_file ${KCONFIG_BINARY_DIR}/Kconfig.zephyr.defconfig.v2)
+  set(soc_zephyr_file    ${KCONFIG_BINARY_DIR}/Kconfig.zephyr.v2)
+  set(soc_kconfig_file   ${KCONFIG_BINARY_DIR}/Kconfig.soc.v2)
+  file(WRITE ${soc_defconfig_file} "source \"soc/Kconfig.defconfig.v2\"\n")
+  file(WRITE ${soc_zephyr_file}    "source \"soc/Kconfig.zephyr.v2\"\n")
+  file(WRITE ${soc_kconfig_file}   "source \"soc/Kconfig.soc.v2\"\n")
+
+  # Support multiple SOC_ROOT
+  foreach(root ${SOC_ROOT})
+    file(APPEND ${soc_defconfig_file} "osource \"${root}/soc/Kconfig.zephyr.defconfig.v2\"\n")
+    file(APPEND ${soc_zephyr_file}    "osource \"${root}/soc/Kconfig.zephyr.v2\"\n")
+    file(APPEND ${soc_kconfig_file}   "osource \"${root}/soc/Kconfig.soc.v2\"\n")
+  endforeach()
+endif()
 
 # Support multiple shields in BOARD_ROOT, remove ZEPHYR_BASE as that is always sourced.
 set(kconfig_board_root ${BOARD_ROOT})
@@ -167,9 +184,19 @@ else()
   # glob-sources all arch roots, but for Zephyr itself, the current approach is
   # sufficient.
   list(APPEND COMMON_KCONFIG_ENV_SETTINGS
-    ARCH=*
+#    ARCH=*
     ARCH_DIR=${ZEPHYR_BASE}/arch
   )
+#
+#  set(soc_root ${SOC_ROOT} ${ZEPHYR_BASE})
+#  list(TRANSFORM soc_root PREPEND "--soc-root=" OUTPUT_VARIABLE soc_root_args)
+#
+#  execute_process(COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/list_socs.py ${soc_root_args}
+#                          --kconfig-out=${KCONFIG_BINARY_DIR}/Kconfig.soc.v2
+#                  OUTPUT_VARIABLE ret_soc
+#                  ERROR_VARIABLE err_soc
+#                  RESULT_VARIABLE ret_val
+#  )
 endif()
 
 # Allow out-of-tree users to add their own Kconfig python frontend
