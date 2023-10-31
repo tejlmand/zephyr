@@ -1,34 +1,54 @@
-# Copyright (c) 2022 Nordic Semiconductor ASA
-
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC
-	string
-	help
-	  SoC name which can be found under soc/<arch>/<soc name>.
-	  This option holds the directory name used by the build system to locate
-	  the correct linker and header files for the SoC.
+# This loads any hw model SoC scheme specific content.
+rsource "Kconfig.$(HWM_SCHEME)"
 
-config SOC_SERIES
-	string
-	help
-	  SoC series name which can be found under soc/<arch>/<family>/<series>.
-	  This option holds the directory name used by the build system to locate
-	  the correct linker and header files.
-
-config SOC_FAMILY
-	string
-	help
-	  SoC family name which can be found under soc/<arch>/<family>.
-	  This option holds the directory name used by the build system to locate
-	  the correct linker and header files.
-
-choice
-	prompt "SoC/CPU/Configuration Selection"
-
+menu "Hardware Configuration"
 # This loads custom SoC root Kconfig (only available if custom SoC root are defined)
-osource "$(KCONFIG_BINARY_DIR)/Kconfig.soc"
-# This loads Zephyr base SoC scheme v1 root Kconfig
-osource "soc/$(ARCH)/*/Kconfig.soc"
+osource "$(KCONFIG_BINARY_DIR)/Kconfig.soc.arch"
+# This loads Zephyr base SoC Kconfigs
+osource "soc/$(ARCH)/Kconfig"
+osource "soc/$(ARCH)/*/Kconfig"
 
-endchoice
+module = SOC
+module-str = SOC
+source "subsys/logging/Kconfig.template.log_config"
+
+endmenu
+
+# The helper symbols below are put here due to an unusual setup: The simulated
+# nrf52_bsim board uses the POSIX arch, but is compatible with Nordic ARM
+# boards
+
+config SOC_COMPATIBLE_NRF
+	bool
+
+config SOC_COMPATIBLE_NRF52X
+	bool
+
+config SOC_COMPATIBLE_NRF52833
+	bool
+
+#
+# SOC_*_LD: SoC specific Linker script additions
+#
+
+config SOC_DEPRECATED_RELEASE
+	string
+	help
+	  This hidden option is set in the SoC configuration and indicates
+	  the Zephyr release that the SoC configuration will be removed.
+	  When set, any build for that SoC will generate a clearly visible
+	  deprecation warning.
+
+config SOC_HAS_TIMING_FUNCTIONS
+	bool
+	help
+	  Should be selected if SoC provides custom method for retrieving
+	  timestamps and cycle count.
+
+config SOC_HAS_RUNTIME_NUM_CPUS
+	bool
+	help
+	  Should be selected if SoC handles determining the number of CPUs
+	  at runtime.
