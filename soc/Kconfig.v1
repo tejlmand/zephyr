@@ -1,7 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# This loads any hw model SoC scheme specific content.
-rsource "Kconfig.$(HWM_SCHEME)"
+choice
+	prompt "SoC/CPU/Configuration Selection"
+
+# This loads custom SoC root Kconfig (only available if custom SoC root are defined)
+osource "$(KCONFIG_BINARY_DIR)/Kconfig.soc"
+# This loads Zephyr base SoC scheme v1 root Kconfig
+osource "soc/$(ARCH)/*/Kconfig.soc"
+
+endchoice
 
 menu "Hardware Configuration"
 # This loads custom SoC root Kconfig (only available if custom SoC root are defined)
