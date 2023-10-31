@@ -3,4 +3,4 @@
 # Copyright (c) 2022 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-source "soc/arm/nordic_nrf/*/Kconfig.series"
+source "soc/sub/v2/nordic_nrf/*/Kconfig.series"
