@@ -16,5 +16,14 @@ if(HWMv1)
     add_subdirectory(${SOC_DIR}/${ARCH}/${SOC_PATH} soc/${ARCH}/${SOC_PATH})
   endif()
 elseif(HWMv2)
-  add_subdirectory(${SOC_V2_DIR} soc/${SOC_NAME})
+  # Code below is alt2 for HWMv2
+  add_subdirectory_ifdef(CONFIG_SOC_FAMILY_NRF sub/v2/nordic_nrf)
+
+  foreach(root ${SOC_ROOT})
+    # A SoC root for HWMv1 may not contain a CMakeLists.txt file on this so
+    # let's check for existance before including.
+    if(EXISTS ${root}/soc/CMakeLists.txt)
+      add_subdirectory(${root}/soc <What should be path ?>)
+    endif()
+  endforeach()
 endif()
