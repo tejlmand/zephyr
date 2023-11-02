@@ -855,13 +855,15 @@ endfunction()
 # When `EXACT` is not specified, this function will set the Zephyr build system
 # variable `ACTIVE_BOARD_REVISION` with the selected revision.
 #
-# FORMAT <LETTER | NUMBER | MAJOR.MINOR.PATCH>: Specify the revision format.
+# FORMAT <LETTER | NUMBER | MAJOR.MINOR.PATCH | FUZZY>: Specify the revision format.
 #         LETTER:             Revision format is a single letter from A - Z.
 #         NUMBER:             Revision format is a single integer number.
 #         MAJOR.MINOR.PATCH:  Revision format is three numbers, separated by `.`,
 #                             `x.y.z`. Trailing zeroes may be omitted on the
 #                             command line, which means:
 #                             1.0.0 == 1.0 == 1
+#         FUZZY:              Revision format follows MAJOR.MINOR.PATCH but
+#                             without EXACT.
 #
 # OPTIONAL: Revision specifier is optional. If revision is not provided the base
 #           board will be used. If both `EXACT` and `OPTIONAL` are given, then
@@ -873,6 +875,7 @@ endfunction()
 #        when `EXACT` is given.
 #        If `EXACT` is not provided, then closest lower revision will be selected
 #        as the active revision, which in the example will be `0.1.0`.
+#        EXACT cannot be used together with revision format FUZZY.
 #
 # DEFAULT_REVISION: Provides a default revision to use when user has not selected
 #                   a revision number. If no default revision is provided then
@@ -906,6 +909,10 @@ function(board_check_revision)
     message(FATAL_ERROR "Arguments BOARD_REVISION and OPTIONAL are mutually exclusive")
   endif()
 
+  if(BOARD_REV_EXACT AND BOARD_REV_FORMAT MATCHES "FUZZY")
+    message(FATAL_ERROR "Arguments FORMAT=FUZZY and EXACT are mutually exclusive")
+  endif()
+
   if(NOT DEFINED BOARD_REVISION)
     if(BOARD_REV_OPTIONAL)
       return()
@@ -936,7 +943,7 @@ function(board_check_revision)
     set(revision_regex "([A-Z])")
   elseif(BOARD_REV_FORMAT STREQUAL NUMBER)
     set(revision_regex "([0-9]+)")
-  elseif(BOARD_REV_FORMAT MATCHES "^MAJOR\.MINOR\.PATCH$")
+  elseif(BOARD_REV_FORMAT MATCHES "^MAJOR\.MINOR\.PATCH$|FUZZY")
     set(revision_regex "((0|[1-9][0-9]*)(\.[0-9]+)(\.[0-9]+))")
     # We allow loose <board>@<revision> typing on command line.
     # so append missing zeroes.
@@ -952,7 +959,7 @@ function(board_check_revision)
     endif()
   else()
     message(FATAL_ERROR "Invalid format specified for \
-    `board_check_revision(FORMAT <LETTER | NUMBER | MAJOR.MINOR.PATCH>)`")
+    `board_check_revision(FORMAT <LETTER | NUMBER | MAJOR.MINOR.PATCH> | FUZZY)`")
   endif()
 
   if(NOT (BOARD_REVISION MATCHES "^${revision_regex}$"))
@@ -981,7 +988,7 @@ function(board_check_revision)
 
   if(NOT BOARD_REV_EXACT)
     foreach(TEST_REVISION ${BOARD_REV_VALID_REVISIONS})
-      if((BOARD_REV_FORMAT MATCHES "^MAJOR\.MINOR\.PATCH$") AND
+      if((BOARD_REV_FORMAT MATCHES "^MAJOR\.MINOR\.PATCH$|FUZZY") AND
          (${BOARD_REVISION} VERSION_GREATER_EQUAL ${TEST_REVISION}) AND
          (${TEST_REVISION} VERSION_GREATER_EQUAL "${ACTIVE_BOARD_REVISION}")
       )
