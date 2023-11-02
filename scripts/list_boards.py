@@ -106,13 +106,6 @@ mapping:
                   name:
                     required: true
                     type: str
-                  cpuset:
-                    required: false
-                    desc: cpuset for the specific board revision SoCs.
-                    type: seq
-                    sequence:
-                     - type: str
-                       required: true
       cpuset:
         required: false
         type: seq
@@ -262,6 +255,8 @@ def add_args(parser):
     parser.add_argument("--format", default=default_fmt,
                         help='''Format string to use to list each board;
                                 see FORMAT STRINGS below.''')
+    parser.add_argument("--cmakeformat", default=None,
+                        help='''CMake Format string to use to list each board''')
 
 def dump_v2_boards(args):
     boards = find_v2_boards(args)
@@ -278,14 +273,32 @@ def dump_v2_boards(args):
             except pykwalify.errors.SchemaError as e:
                 sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
                          .format(board_yml.as_posix(), e))
-        info = args.format.format(
-            name=board['name'],
-            dir=board['folder'],
-            arch=board['arch'],
-            vendor=board['vendor'],
-            hwm=board['hwm']
-        )
+            b['board'].update({'folder': board['folder']})
+            b['board'].update({'hwm': board['hwm']})
+            board = b['board']
 
+        if args.cmakeformat is not None:
+            board_rev = board.get('revision', {})
+            info = args.cmakeformat.format(
+                NAME='NAME;' + board['name'],
+                DIR='DIR;' + str(board['folder']),
+                ARCH='ARCH;' + board.get('arch', 'NOTFOUND'),
+                VENDOR='VENDOR;' + board.get('vendor', 'NOTFOUND'),
+                HWM='HWM;' + board['hwm'],
+                REVISION_DEFAULT='REVISION_DEFAULT;' + board_rev.get('default', 'NOTFOUND'),
+                REVISION_FORMAT='REVISION_FORMAT;' + board_rev.get('format', 'NOTFOUND'),
+                REVISIONS='REVISIONS;' + ';'.join(
+                          [x['name'] for x in board_rev.get('revisions', [{'name': 'NOTFOUND'}])]),
+                CPUSET='CPUSET;' + ';'.join(board.get('cpuset', ['NOTFOUND']))
+            )
+        else:
+            info = args.format.format(
+                name=board['name'],
+                dir=board['folder'],
+                arch=board['arch'],
+                vendor=board['vendor'],
+                hwm=board['hwm']
+            )
         print(info)
 
 def dump_boards(args):
@@ -294,11 +307,24 @@ def dump_boards(args):
         if args.format is None:
             print(f'{arch}:')
         for board in boards:
-            info = args.format.format(
-                name=board.name,
-                arch=board.arch,
-                dir=board.dir,
-                hwm=board.hwm)
+            if args.cmakeformat is not None:
+                info = args.cmakeformat.format(
+                    NAME='NAME;' + board.name,
+                    DIR='DIR;' + str(board.dir),
+                    ARCH='ARCH;' + board.arch,
+                    HWM='HWM;' + board.hwm,
+                    VENDOR='VENDOR;NOTFOUND',
+                    REVISION_DEFAULT='REVISION_DEFAULT;NOTFOUND',
+                    REVISION_FORMAT='REVISION_FORMAT;NOTFOUND',
+                    REVISIONS='REVISIONS;NOTFOUND',
+                    CPUSET='CPUSET;NOTFOUND',
+                )
+            else:
+              info = args.format.format(
+                  name=board.name,
+                  arch=board.arch,
+                  dir=board.dir,
+                  hwm=board.hwm)
             print(info)
 
 if __name__ == '__main__':
