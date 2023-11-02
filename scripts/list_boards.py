@@ -61,7 +61,7 @@ BOARD_METADATA_SCHEMA = '''
 ## metadata YAML file.
 ##
 # The board.yml file is a simple list of key value pairs containing board
-# information like: name, vendor, arch, cpuset.
+# information like: name, vendor, arch, cpusets.
 type: map
 mapping:
   board:
@@ -106,15 +106,22 @@ mapping:
                   name:
                     required: true
                     type: str
-      cpuset:
+      cpusets:
         required: false
-        type: seq
-        desc: cpuset for the board when board contains multicore SoC or multiple
+        type: map
+        desc: cpusets for the board when board contains multicore SoC or multiple
               SoCs. If the cpuset is only valid for a specific board revision, then
               the board revision cpuset should be used instead
-        sequence:
-         - type: str
-           required: true
+        mapping:
+          default:
+            required: true
+            type: str
+          names:
+            required: true
+            type: seq
+            sequence:
+             - type: str
+               required: true
       comment:
         required: false
         type: str
@@ -279,6 +286,7 @@ def dump_v2_boards(args):
 
         if args.cmakeformat is not None:
             board_rev = board.get('revision', {})
+            board_cpu = board.get('cpusets', {})
             info = args.cmakeformat.format(
                 NAME='NAME;' + board['name'],
                 DIR='DIR;' + str(board['folder']),
@@ -289,7 +297,8 @@ def dump_v2_boards(args):
                 REVISION_FORMAT='REVISION_FORMAT;' + board_rev.get('format', 'NOTFOUND'),
                 REVISIONS='REVISIONS;' + ';'.join(
                           [x['name'] for x in board_rev.get('revisions', [{'name': 'NOTFOUND'}])]),
-                CPUSET='CPUSET;' + ';'.join(board.get('cpuset', ['NOTFOUND']))
+                CPUSET_DEFAULT='CPUSET_DEFAULT;' + board_cpu.get('default', 'NOTFOUND'),
+                CPUSETS='CPUSETS;' + ';'.join(board_cpu.get('names', ['NOTFOUND']))
             )
         else:
             info = args.format.format(
@@ -317,7 +326,8 @@ def dump_boards(args):
                     REVISION_DEFAULT='REVISION_DEFAULT;NOTFOUND',
                     REVISION_FORMAT='REVISION_FORMAT;NOTFOUND',
                     REVISIONS='REVISIONS;NOTFOUND',
-                    CPUSET='CPUSET;NOTFOUND',
+                    CPUSET_DEFAULT='CPUSET_DEFAULT;NOTFOUND',
+                    CPUSETS='CPUSETS;NOTFOUND',
                 )
             else:
               info = args.format.format(
