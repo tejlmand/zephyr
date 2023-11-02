@@ -1,3 +1,3 @@
 socs:
-  - folder: empty
-    comment: initial file, no SoC v2 defined.
+  - family: nordic_nrf
+    folder: v2/nordic_nrf
