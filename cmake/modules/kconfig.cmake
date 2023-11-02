@@ -85,7 +85,7 @@ else()
 endif()
 
 if(NOT DEFINED BOARD_DEFCONFIG)
-  if(DEFINED BOARD_CPUSET)
+  if(BOARD_CPUSET)
     set(BOARD_DEFCONFIG ${BOARD_DIR}/${BOARD}_${BOARD_CPUSET}_defconfig)
   else()
     set(BOARD_DEFCONFIG ${BOARD_DIR}/${BOARD}_defconfig)
