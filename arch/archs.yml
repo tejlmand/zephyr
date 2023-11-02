@@ -1,0 +1,21 @@
+archs:
+  - name: arc
+    folder: arc
+  - name: arm
+    folder: arm
+  - name: arm64
+    folder: arm64
+  - name: mips
+    folder: mips
+  - name: nios2
+    folder: nios2
+  - name: posix
+    folder: posix
+  - name: riscv
+    folder: riscv
+  - name: sparc
+    folder: sparc
+  - name: xtensa
+    folder: xtensa
+  - name: x86
+    folder: x86
