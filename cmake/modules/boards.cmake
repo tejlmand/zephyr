@@ -62,6 +62,20 @@ if(NOT unittest IN_LIST Zephyr_FIND_COMPONENTS)
 endif()
 
 string(FIND "${BOARD}" "@" REVISION_SEPARATOR_INDEX)
+string(FIND "${BOARD}" "/" CPUSET_SEPARATOR_INDEX)
+
+if(NOT (REVISION_SEPARATOR_INDEX EQUAL -1 OR CPUSET_SEPARATOR_INDEX EQUAL -1))
+  if(REVISION_SEPARATOR_INDEX GREATER CPUSET_SEPARATOR_INDEX)
+    message(FATAL_ERROR "Invalid revision / cpuset format, format is: <board>@<revision>/<cpuset>")
+  endif()
+endif()
+
+if(NOT (CPUSET_SEPARATOR_INDEX EQUAL -1))
+  math(EXPR CPUSET_REVISION_INDEX "${CPUSET_SEPARATOR_INDEX} + 1")
+  string(SUBSTRING ${BOARD} ${CPUSET_REVISION_INDEX} -1 BOARD_CPUSET)
+  string(SUBSTRING ${BOARD} 0 ${CPUSET_SEPARATOR_INDEX} BOARD)
+endif()
+
 if(NOT (REVISION_SEPARATOR_INDEX EQUAL -1))
   math(EXPR BOARD_REVISION_INDEX "${REVISION_SEPARATOR_INDEX} + 1")
   string(SUBSTRING ${BOARD} ${BOARD_REVISION_INDEX} -1 BOARD_REVISION)
@@ -135,7 +149,7 @@ if(NOT BOARD_DIR)
   endif()
 
   execute_process(${list_boards_commands} --board=${BOARD}
-    --cmakeformat={NAME}\;{DIR}\;{HWM}\;{REVISION_FORMAT}\;{REVISION_DEFAULT}\;{REVISIONS}\;{CPUSET}
+    --cmakeformat={NAME}\;{DIR}\;{HWM}\;{REVISION_FORMAT}\;{REVISION_DEFAULT}\;{REVISIONS}\;{CPUSET_DEFAULT}\;{CPUSETS}
                   OUTPUT_VARIABLE ret_board
                   ERROR_VARIABLE err_board
                   RESULT_VARIABLE ret_val
@@ -144,7 +158,7 @@ if(NOT BOARD_DIR)
     message(FATAL_ERROR "Error finding board: ${BOARD}\nError message: ${err_board}")
   endif()
   string(STRIP "${ret_board}" ret_board)
-  cmake_parse_arguments(BOARD "" "NAME;DIR;HWM;REVISION_FORMAT;REVISION_DEFAULT" "REVISIONS;CPUSET" ${ret_board})
+  cmake_parse_arguments(BOARD "" "NAME;DIR;HWM;REVISION_FORMAT;REVISION_DEFAULT;CPUSET_DEFAULT" "REVISIONS;CPUSETS" ${ret_board})
   set(BOARD_DIR ${BOARD_DIR} CACHE PATH "Board directory for board (${BOARD})" FORCE)
 
   # Create two CMake variables identifying the hw model.
@@ -178,13 +192,34 @@ if(HWMv1)
                      but board has no revision so revision will be ignored.")
   endif()
 elseif(HWMv2)
-  # ToDo: HWMv2
-  # Load following board info:
-  # - Revision
-  # - cpuset
-  # - Active revision
-  # - Active cpuset
+  if(BOARD_REVISION_FORMAT)
+    if(BOARD_REVISION_FORMAT STREQUAL "custom")
+      include(${BOARD_DIR}/revision.cmake)
+    else()
+      string(TOUPPER "${BOARD_REVISION_FORMAT}" rev_format)
+      if(rev_format STREQUAL "MAJOR.MINOR.PATCH")
+        set(rev_exact EXACT)
+      endif()
 
+      board_check_revision(
+        FORMAT ${rev_format}
+        DEFAULT_REVISION ${BOARD_REVISION_DEFAULT}
+        VALID_REVISIONS ${BOARD_REVISIONS}
+        ${rev_exact}
+      )
+    endif()
+  endif()
+
+  if(BOARD_CPUSETS)
+    if(NOT DEFINED BOARD_CPUSET)
+      set(BOARD_CPUSET ${BOARD_CPUSET_DEFAULT})
+    endif()
+
+    if(NOT (BOARD_CPUSET IN_LIST BOARD_CPUSETS))
+      message(FATAL_ERROR "Board cpuset `${BOARD_CPUSET}` for board \
+            `${BOARD}` not found. Please specify a valid board cpuset.")
+    endif()
+  endif()
 else()
   message(FATAL_ERROR "Unknown hw model (${HWM}) for board: ${BOARD}.")
 endif()
@@ -199,6 +234,10 @@ if(DEFINED BOARD_REVISION)
   endif()
 
   string(REPLACE "." "_" BOARD_REVISION_STRING ${BOARD_REVISION})
+endif()
+
+if(DEFINED BOARD_CPUSET)
+  set(board_message "${board_message}, cpuset: ${BOARD_CPUSET}")
 endif()
 
 message(STATUS "${board_message}")
