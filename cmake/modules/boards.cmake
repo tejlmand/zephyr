@@ -134,7 +134,8 @@ if(NOT BOARD_DIR)
     endif()
   endif()
 
-  execute_process(${list_boards_commands} --board=${BOARD} --format={name}\;{dir}\;{hwm}
+  execute_process(${list_boards_commands} --board=${BOARD}
+    --cmakeformat={NAME}\;{DIR}\;{HWM}\;{REVISION_FORMAT}\;{REVISION_DEFAULT}\;{REVISIONS}\;{CPUSET}
                   OUTPUT_VARIABLE ret_board
                   ERROR_VARIABLE err_board
                   RESULT_VARIABLE ret_val
@@ -142,18 +143,15 @@ if(NOT BOARD_DIR)
   if(ret_val)
     message(FATAL_ERROR "Error finding board: ${BOARD}\nError message: ${err_board}")
   endif()
-
-  list(GET ret_board 1 BOARD_DIR)
-  string(STRIP "${BOARD_DIR}" BOARD_DIR)
+  string(STRIP "${ret_board}" ret_board)
+  cmake_parse_arguments(BOARD "" "NAME;DIR;HWM;REVISION_FORMAT;REVISION_DEFAULT" "REVISIONS;CPUSET" ${ret_board})
   set(BOARD_DIR ${BOARD_DIR} CACHE PATH "Board directory for board (${BOARD})" FORCE)
 
   # Create two CMake variables identifying the hw model.
   # CMake variable: HWM=[v1,v2]
   # CMake variable: HWMv1=True, when HWMv1 is in use.
   # CMake variable: HWMv2=True, when HWMv2 is in use.
-  list(GET ret_board 2 HWM)
-  string(STRIP "${HWM}" HWM)
-  set(HWM       ${HWM} CACHE INTERNAL "Zephyr hardware model version")
+  set(HWM       ${BOARD_HWM} CACHE INTERNAL "Zephyr hardware model version")
   set(HWM${HWM} True   CACHE INTERNAL "Zephyr hardware model")
 endif()
 
