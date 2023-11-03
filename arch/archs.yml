@@ -9,8 +9,8 @@ archs:
     folder: nios2
   - name: posix
     folder: posix
-  - name: posix
-    folder: posix
+  - name: riscv
+    folder: riscv
   - name: sparc
     folder: sparc
   - name: xtensa
