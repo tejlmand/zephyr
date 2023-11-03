@@ -30,19 +30,8 @@ if(HWMv2)
   # the Board / SoC path is no longer sufficient for determine the arch
   # (read: multi-core and multi-arch SoC).
   set(ARCH ${CONFIG_ARCH})
-
-  # 'ARCH_ROOT' is a prioritized list of directories where archs may be
-  # found. It always includes ${ZEPHYR_BASE} at the lowest priority (except for unittesting).
-  if(NOT unittest IN_LIST Zephyr_FIND_COMPONENTS)
-    list(APPEND ARCH_ROOT ${ZEPHYR_BASE})
-  endif()
-
-  foreach(root ${ARCH_ROOT})
-    if(EXISTS ${root}/arch/${ARCH}/CMakeLists.txt)
-      set(ARCH_DIR ${root}/arch)
-      break()
-    endif()
-  endforeach()
+  string(TOUPPER "${ARCH}" arch_upper)
+  cmake_path(GET ARCH_V2_${arch_upper}_DIR PARENT_PATH ARCH_DIR)
 
   if(NOT ARCH_DIR)
     message(FATAL_ERROR "Could not find ARCH=${ARCH} for BOARD=${BOARD}, \
