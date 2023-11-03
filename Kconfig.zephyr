@@ -24,7 +24,7 @@ source "boards/shields/*/Kconfig.defconfig"
 source "$(BOARD_DIR)/Kconfig.defconfig"
 
 # This loads Zephyr specific SoC root defconfigs
-source "$(KCONFIG_BINARY_DIR)/Kconfig.zephyr.defconfig.$(HWM_SCHEME)"
+source "$(KCONFIG_BINARY_DIR)/Kconfig.zephyr.defconfig"
 
 # This loads the toolchain defconfigs
 osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig.defconfig"
