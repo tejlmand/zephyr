@@ -17,7 +17,7 @@ if(HWMv1)
   endif()
 elseif(HWMv2)
   # Below is inclusion of HWMv2 SoC CMake lists.
-  include(${CMAKE_CURRENT_LIST_DIR}/soc.v2.cmake)
+  include(${CMAKE_BINARY_DIR}/soc.v2.cmake)
 
   # Include all SoC roots except Zephyr, as we are already in the Zephyr SoC root.
   set(local_soc_root ${SOC_ROOT})
