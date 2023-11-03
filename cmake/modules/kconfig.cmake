@@ -24,13 +24,17 @@ file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
 
 if(HWMv1)
   # Support multiple SOC_ROOT
-  set(soc_defconfig_file ${KCONFIG_BINARY_DIR}/Kconfig.zephyr.defconfig.v1)
+  set(kconfig_soc_root ${BOARD_ROOT})
+  list(REMOVE_ITEM kconfig_soc_root ${ZEPHYR_BASE})
+  set(soc_defconfig_file ${KCONFIG_BINARY_DIR}/Kconfig.zephyr.defconfig)
+
+  # This loads Zephyr base SoC root defconfigs
   file(WRITE ${soc_defconfig_file} "source \"soc/$(ARCH)/*/Kconfig.defconfig\"\n")
-  file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.soc.v1 "source \"soc/Kconfig.soc.v1\"\n")
 
   set(OPERATION WRITE)
-  foreach(root ${SOC_ROOT})
-    file(APPEND ${soc_defconfig_file} "osource \"${root}/soc/$(ARCH)/*/Kconfig.defconfig\"\n")
+  foreach(root ${kconfig_soc_root})
+    file(APPEND ${soc_defconfig_file}
+         "osource \"${root}/soc/$(ARCH)/*/Kconfig.defconfig\"\n")
     file(${OPERATION} ${KCONFIG_BINARY_DIR}/Kconfig.soc
          "osource \"${root}/soc/$(ARCH)/*/Kconfig.soc\"\n"
     )
@@ -446,5 +450,3 @@ foreach (name ${cache_variable_names})
   endif()
   unset(temp_${name})
 endforeach()
-
-set(ARCH ${CONFIG_ARCH})
