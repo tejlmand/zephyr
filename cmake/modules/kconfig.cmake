@@ -40,21 +40,6 @@ if(HWMv1)
     )
     set(OPERATION APPEND)
   endforeach()
-elseif(HWMv2)
-  # Support multiple SOC_ROOT
-  set(soc_defconfig_file ${KCONFIG_BINARY_DIR}/Kconfig.zephyr.defconfig.v2)
-  set(soc_zephyr_file    ${KCONFIG_BINARY_DIR}/Kconfig.zephyr.v2)
-  set(soc_kconfig_file   ${KCONFIG_BINARY_DIR}/Kconfig.soc.v2)
-  file(WRITE ${soc_defconfig_file} "source \"soc/Kconfig.zephyr.defconfig.v2\"\n")
-  file(WRITE ${soc_zephyr_file}    "source \"soc/Kconfig.zephyr.v2\"\n")
-  file(WRITE ${soc_kconfig_file}   "source \"soc/Kconfig.soc.v2\"\n")
-
-  # Support multiple SOC_ROOT
-  foreach(root ${SOC_ROOT})
-    file(APPEND ${soc_defconfig_file} "osource \"${root}/soc/Kconfig.zephyr.defconfig.v2\"\n")
-    file(APPEND ${soc_zephyr_file}    "osource \"${root}/soc/Kconfig.zephyr.v2\"\n")
-    file(APPEND ${soc_kconfig_file}   "osource \"${root}/soc/Kconfig.soc.v2\"\n")
-  endforeach()
 endif()
 
 # Support multiple shields in BOARD_ROOT, remove ZEPHYR_BASE as that is always sourced.
