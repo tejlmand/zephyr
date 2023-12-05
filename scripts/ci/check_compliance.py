@@ -388,6 +388,11 @@ class KconfigCheck(ComplianceTest):
         # For Kconfig.dts support
         self.get_kconfig_dts(os.path.join(kconfiglib_dir, "Kconfig.dts"))
 
+        # For SoC hw model v2 support
+        self.get_kconfig_dts(os.path.join(kconfiglib_dir, "Kconfig"))
+        self.get_kconfig_dts(os.path.join(kconfiglib_dir, "Kconfig.defconfig"))
+        self.get_kconfig_dts(os.path.join(kconfiglib_dir, "Kconfig.soc"))
+
         # Tells Kconfiglib to generate warnings for all references to undefined
         # symbols within Kconfig files
         os.environ["KCONFIG_WARN_UNDEF"] = "y"
