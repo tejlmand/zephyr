@@ -12,6 +12,20 @@
 # It does so by loading the Zephyr CMake modules specified with the 'MODULES'
 # argument.
 #
+# The script supports two modes.
+# 1. Partial creation of a build tree, similar to a regular build, until all
+#    modules given with '-DMODULES=<modules>' has executed.
+#    This means that if 'dts' is given, then all modules up-to and including dts
+#    are include, such as boards, shields, snippets, etc.
+#    To use this mode, prefix MODULES with 'zephyr_default:',
+#    like: '-DMODULES=zephyr_default:dts'
+# 2. Running only the specific module, and modules included by that module.
+#    To use this mode, modules are specified directly, so to load only
+#    'dts', use '-DMODULES=dts'
+#    Note, in this mode extra care must be taken as other modules, such as 'west'
+#    which are not loaded and therefore can give a different behavior compared
+#    to a regular build.
+#
 # This script executes the given module identical to Zephyr CMake configure time.
 # The application source directory must be specified using
 # '-S <path-to-sample>'
@@ -24,7 +38,7 @@
 #
 # you can invoke only dts module (and dependencies) as:
 #   $ cmake -DBOARD=<board> -B build -S samples/hello_world \
-#           -DMODULES=dts -P <ZEPHYR_BASE>/cmake/package_helper.cmake
+#           -DMODULES=zephyr_default:dts -P <ZEPHYR_BASE>/cmake/package_helper.cmake
 #
 # It is also possible to pass additional build settings.
 # If you invoke CMake for 'hello_world' as:
@@ -33,7 +47,7 @@
 #
 # you just add the same argument to the helper like:
 #   $ cmake -DBOARD=<board> -B build -S samples/hello_world -DEXTRA_CONF_FILE=foo.conf \
-#           -DMODULES=dts -P <ZEPHYR_BASE>/cmake/package_helper.cmake
+#           -DMODULES=zephyr_default:dts -P <ZEPHYR_BASE>/cmake/package_helper.cmake
 #
 # Note: the samples CMakeLists.txt file is not processed by package helper, so
 #       any 'set(<var> <value>)' specified before 'find_package(Zephyr)' must be
@@ -90,7 +104,7 @@ if(DEFINED argS_index)
   endif()
 endif()
 
-if(NOT DEFINED APPLICATION_SOURCE_DIR)
+if(NOT DEFINED APPLICATION_SOURCE_DIR AND MODULES MATCHES "^zephyr_default:")
   message(FATAL_ERROR
     "Source directory not defined, please use '-S <path-to-source>' to the "
     "application for which this tool shall run.\n"
@@ -122,5 +136,7 @@ function(zephyr_set variable)
   # This silence the error: zephyr_set(...  SCOPE <scope>) doesn't exists.
 endfunction()
 
-string(REPLACE ";" "," MODULES "${MODULES}")
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} COMPONENTS zephyr_default:${MODULES})
+if(MODULES MATCHES "^zephyr_default:")
+  string(REPLACE ";" "," MODULES "${MODULES}")
+endif()
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} COMPONENTS ${MODULES})

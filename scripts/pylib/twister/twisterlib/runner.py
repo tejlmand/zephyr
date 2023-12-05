@@ -344,7 +344,7 @@ class CMake:
         # testcases that should be built
         if filter_stages:
             cmake_filter_args = [
-                f'-DMODULES={",".join(filter_stages)}',
+                f'-DMODULES=zephyr_default:{",".join(filter_stages)}',
                 f'-P{canonical_zephyr_base}/cmake/package_helper.cmake',
             ]
 
