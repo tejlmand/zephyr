@@ -7,8 +7,13 @@ family:
     - name: nrf51822
   - name: nrf52
     socs:
-    - name: nrf52840
+    - name: nrf52805
+    - name: nrf52810
     - name: nrf52811
+    - name: nrf52820
+    - name: nrf52832
+    - name: nrf52833
+    - name: nrf52840
   - name: nrf53
     socs:
     - name: nrf5340
