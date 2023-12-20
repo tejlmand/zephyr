@@ -3,8 +3,8 @@
 # Copyright (c) 2018-2019 PHYTEC Messtechnik GmbH
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_ENABLE_DCDC
-	bool "DCDC mode"
-	select SOC_DCDC_NRF52X
+config BOARD_REEL_BOARD
+	bool
 	default y
-	depends on BOARD_REEL_BOARD || BOARD_REEL_BOARD_V2
+	select SOC_SERIES_NRF52X
+	select SOC_NRF52840_QIAA
