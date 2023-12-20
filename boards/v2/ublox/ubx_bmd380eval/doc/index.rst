@@ -422,7 +422,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: ubx_bmd380eval_nrf52840
+   :board: ubx_bmd380eval/nrf52840
    :goals: build flash
 
 Debugging
