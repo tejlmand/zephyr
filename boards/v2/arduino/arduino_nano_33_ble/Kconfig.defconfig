@@ -3,10 +3,6 @@
 
 if BOARD_ARDUINO_NANO_33_BLE || BOARD_ARDUINO_NANO_33_BLE_SENSE
 
-config BOARD
-	default "arduino_nano_33_ble" if BOARD_ARDUINO_NANO_33_BLE
-	default "arduino_nano_33_ble_sense" if BOARD_ARDUINO_NANO_33_BLE_SENSE
-
 config BT_CTLR
 	default BT
 
