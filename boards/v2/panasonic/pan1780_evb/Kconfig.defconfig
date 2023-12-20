@@ -5,9 +5,6 @@
 
 if BOARD_PAN1780_EVB
 
-config BOARD
-	default "pan1780_evb"
-
 config BT_CTLR
 	default BT
 
