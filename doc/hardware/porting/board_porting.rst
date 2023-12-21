@@ -14,9 +14,10 @@ Boards, SoCs, etc.
 Zephyr's hardware support hierarchy has these layers, from most to least
 specific:
 
-- Board: a particular CPU instance and its peripherals in a concrete hardware
-  specification
-- SoC: the exact system on a chip the board's CPU is part of
+- Board: a specific board which usually corresponds to a physical board.
+         A board may contain multiple SoCs.
+         A build  target a specific SoC / CPU core on a multi SoC board or a
+         specific core for a multi-core SoC.
 - SoC series: a smaller group of tightly related SoCs
 - SoC family: a wider group of SoCs with similar characteristics
 - CPU core: a particular CPU in an architecture
@@ -34,39 +35,23 @@ You can visualize the hierarchy like this:
 Here are some examples. Notice how the SoC series and family levels are
 not always used.
 
-.. list-table::
-   :header-rows: 1
+.. table::
 
-   * - Board
-     - SoC
-     - SoC series
-     - SoC family
-     - CPU core
-     - Architecture
-   * - :ref:`nrf52dk_nrf52832 <nrf52dk_nrf52832>`
-     - nRF52832
-     - nRF52
-     - Nordic nRF5
-     - Arm Cortex-M4
-     - Arm
-   * - :ref:`frdm_k64f <frdm_k64f>`
-     - MK64F12
-     - Kinetis K6x
-     - NXP Kinetis
-     - Arm Cortex-M4
-     - Arm
-   * - :ref:`stm32h747i_disco <stm32h747i_disco_board>`
-     - STM32H747XI
-     - STM32H7
-     - STMicro STM32
-     - Arm Cortex-M7
-     - Arm
-   * - :ref:`rv32m1_vega_ri5cy <rv32m1_vega>`
-     - RV32M1
-     - (Not used)
-     - (Not used)
-     - RI5CY
-     - RISC-V
+   +--------------------------------------------------+-------------+-------------+---------------+---------------+----------------+--------------+
+   | Board                                            | Identifier  | SoC         | SoC Series    | SoC family    | CPU core       | Architecture |
+   +==================================================+=============+=============+===============+===============+================+==============+
+   | :ref:`nrf52dk <nrf52dk>`                         | /nRF52832   | nRF52832    | nRF52         | Nordic nRF5   | Arm Cortex-M4  | Arm          |
+   +--------------------------------------------------+-------------+-------------+---------------+---------------+----------------+--------------+
+   | :ref:`frdm_k64f <frdm_k64f>`                     |             | MK64F12     | Kinetis K6x   | NXP Kinetis   | Arm Cortex-M4  | Arm          |
+   +--------------------------------------------------+-------------+-------------+---------------+---------------+----------------+--------------+
+   | :ref:`stm32h747i_disco <stm32h747i_disco_board>` |             | STM32H747XI | STM32H7       | STMicro STM32 | Arm Cortex-M7  | Arm          |
+   +--------------------------------------------------+-------------+-------------+---------------+---------------+----------------+--------------+
+   | :ref:`rv32m1_vega_ri5cy <rv32m1_vega>`           |             | RV32M1      | (Not used)    | (Not used)    | RI5CY          | RISC-V       |
+   +--------------------------------------------------+-------------+-------------+---------------+---------------+----------------+--------------+
+   | :ref:`mimx8mp_evk <imx8mp_evk>`                  | /a53        | i.MX8M Plus | i.MXM8M A53   | NXP i.MX      | Arm Cortex-A53 | Arm64        |
+   |                                                  +-------------+-------------+---------------+---------------+----------------+--------------+
+   |                                                  | /m7         | i.MX8M Plus | i.MXM8MM M4   | NXP i.MX      | Arm Cortex-M7  | Arm          |
+   +--------------------------------------------------+-------------+-------------+---------------+---------------+----------------+--------------+
 
 Make sure your SoC is supported
 *******************************
