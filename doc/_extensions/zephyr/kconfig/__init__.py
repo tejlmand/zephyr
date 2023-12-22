@@ -84,8 +84,27 @@ def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
             f.write(kconfig)
 
         (Path(td) / 'soc').mkdir(exist_ok=True)
+        root_args = argparse.Namespace(**{'soc_roots': [Path(ZEPHYR_BASE)]})
+        v2_systems = list_hardware.find_v2_systems(root_args)
+        kconfig = ""
+        for soc in v2_systems.get_socs():
+            kconfig += 'source "' + str(Path(soc.folder) / 'Kconfig.soc') + '"\n'
+            kconfig += 'source "' + str(Path(soc.folder) / 'Kconfig') + '"\n'
         with open(Path(td) / "soc" / "Kconfig.defconfig", "w") as f:
             f.write('')
+        with open(Path(td) / "soc" / "Kconfig.soc", "w") as f:
+            f.write('')
+        with open(Path(td) / "soc" / "Kconfig", "w") as f:
+            f.write(kconfig)
+
+        (Path(td) / 'arch').mkdir(exist_ok=True)
+        root_args = argparse.Namespace(**{'arch_roots': [Path(ZEPHYR_BASE)], 'arch': None})
+        v2_archs = list_hardware.find_v2_archs(root_args)
+        kconfig = ""
+        for arch in v2_archs['archs']:
+            kconfig += 'source "' + str(Path(arch['path']) / 'Kconfig') + '"\n'
+        with open(Path(td) / "arch" / "Kconfig", "w") as f:
+            f.write(kconfig)
 
         # base environment
         os.environ["ZEPHYR_BASE"] = str(ZEPHYR_BASE)
@@ -97,7 +116,7 @@ def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
         os.environ["ARCH_DIR"] = "arch"
         os.environ["ARCH"] = "[!v][!2]*"
         os.environ["BOARD_DIR"] = "boards/*/*"
-        os.environ["HWM_SCHEME"] = "v1"
+        os.environ["HWM_SCHEME"] = "v2"
 
         # insert external Kconfigs to the environment
         module_paths = dict()
