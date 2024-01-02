@@ -5,9 +5,6 @@
 
 if BOARD_CONTEXTELEC_ABC
 
-config BOARD
-	default "nrf52840_ble_cell"
-
 config BT_CTLR
 	default BT
 
