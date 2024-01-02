@@ -3,7 +3,7 @@
 # Copyright (c) 2018-2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NRF9160DK_NRF52840
+if $(BOARD_IDENTIFIER) = "/nrf52840"
 
 config BOARD_ENABLE_DCDC
 	bool "DCDC mode"
@@ -14,4 +14,4 @@ module = BOARD_NRF9160DK
 module-str = Board Control
 source "subsys/logging/Kconfig.template.log_config"
 
-endif # BOARD_NRF52840_NRF9160DK
+endif # $(BOARD_IDENTIFIER) = "/nrf52840"
