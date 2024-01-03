@@ -1,5 +1,5 @@
 board:
-  name: nrf9160_innblue21
+  name: nrf9160_innblue22
   vendor: innblue
   socs:
   - name: nrf9160
