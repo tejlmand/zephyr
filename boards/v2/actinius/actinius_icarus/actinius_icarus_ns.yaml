@@ -1,4 +1,4 @@
-identifier: actinius_icarus_ns
+identifier: actinius_icarus/ns
 name: Actinius Icarus Non-Secure
 type: mcu
 arch: arm
