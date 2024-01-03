@@ -1,9 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-CONFIG_SOC_SERIES_NRF91X=y
-CONFIG_SOC_NRF9160_SICA=y
-CONFIG_BOARD_ACTINIUS_ICARUS_BEE=y
-
 # Enable MPU
 CONFIG_ARM_MPU=y
 
@@ -12,6 +8,9 @@ CONFIG_HW_STACK_PROTECTION=y
 
 # Enable TrustZone-M
 CONFIG_ARM_TRUSTZONE_M=y
+
+# This Board implies building Non-Secure firmware
+CONFIG_TRUSTED_EXECUTION_NONSECURE=y
 
 # enable GPIO
 CONFIG_GPIO=y
