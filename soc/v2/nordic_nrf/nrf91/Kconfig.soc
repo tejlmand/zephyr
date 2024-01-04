@@ -40,6 +40,10 @@ config SOC
 	depends on SOC_NRF9131_LACA
 
 config SOC
+	default "nRF9151_LACA"
+	depends on SOC_NRF9151_LACA
+
+config SOC
 	default "nRF9160_SICA"
 	depends on SOC_NRF9160_SICA
 
