@@ -591,7 +591,7 @@ set(ZEPHYR_CURRENT_MODULE_DIR)
 set(ZEPHYR_CURRENT_CMAKE_DIR)
 
 get_property(LIBC_LINK_LIBRARIES TARGET zephyr_interface PROPERTY LIBC_LINK_LIBRARIES)
-zephyr_link_libraries(${LIBC_LINK_LIBRARIES})
+target_link_libraries(zephyr_interface INTERFACE ${LIBC_LINK_LIBRARIES})
 
 set(syscall_list_h   ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
 set(syscalls_json    ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
@@ -864,6 +864,9 @@ foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
   # TODO: Could this become an INTERFACE property of zephyr_interface?
   add_dependencies(${zephyr_lib} zephyr_generated_headers)
 endforeach()
+
+# Convenience variable for linkers
+get_property(ZEPHYR_LINK_LIBS_PROPERTY TARGET zephyr_interface PROPERTY LINK_LIBS)
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
 
