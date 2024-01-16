@@ -176,6 +176,10 @@ target_include_directories(kernel PRIVATE
 
 target_link_libraries(kernel zephyr_interface)
 
+# Add any toolchain-specific libraries that the kernel needs to
+# link against. These are set using zephyr_kernel_link_libraries
+target_link_libraries(kernel $<TARGET_PROPERTY:zephyr_interface,KERNEL_LINK_LIBRARIES>)
+
 endif()
 
 add_dependencies(kernel zephyr_generated_headers)
