@@ -2,14 +2,18 @@
 
 zephyr_system_include_directories(include)
 
-zephyr_library()
+add_library(c)
+
+zephyr_kernel_link_libraries(c)
+target_link_libraries(c PRIVATE zephyr_interface kernel c_common)
+set_target_properties(c PROPERTIES LINK_INTERFACE_MULTIPLICITY 3)
 
 set(GEN_DIR ${ZEPHYR_BINARY_DIR}/include/generated)
 set(STRERROR_TABLE_H ${GEN_DIR}/libc/minimal/strerror_table.h)
 
-zephyr_library_compile_options($<TARGET_PROPERTY:compiler,no_builtin>)
+target_compile_options(c PRIVATE $<TARGET_PROPERTY:compiler,no_builtin>)
 
-zephyr_library_sources(
+target_sources(c PRIVATE
   source/stdlib/atoi.c
   source/stdlib/strtol.c
   source/stdlib/strtoul.c
@@ -31,11 +35,17 @@ zephyr_library_sources(
   ${STRERROR_TABLE_H}
 )
 
-if(CONFIG_MINIMAL_LIBC_TIME)
-  zephyr_library_sources(source/time/gmtime.c)
-endif()
+target_sources_ifdef(CONFIG_MINIMAL_LIBC_TIME
+  c
+  PRIVATE
+  source/time/gmtime.c
+  )
 
-zephyr_library_sources_ifdef(CONFIG_MINIMAL_LIBC_RAND source/stdlib/rand.c)
+target_sources_ifdef(CONFIG_MINIMAL_LIBC_RAND
+  c
+  PRIVATE
+  source/stdlib/rand.c
+  )
 
 add_custom_command(
   OUTPUT ${STRERROR_TABLE_H}
