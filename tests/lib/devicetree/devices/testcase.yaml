@@ -8,7 +8,7 @@ tests:
     platform_exclude:
       - hsdk
       - hsdk_2cores
-      - thingy52_nrf52832
+      - thingy52/nrf52832
       - bbc_microbit
       - bbc_microbit_v2
       - bt610
@@ -16,6 +16,6 @@ tests:
       - bl5340_dvk_cpuapp_ns
       - m5stack_core2
       - mimxrt595_evk_cm33
-      - nrf9131ek_nrf9131
-      - nrf9131ek_nrf9131_ns
+      - nrf9131ek/nrf9131
+      - nrf9131ek/nrf9131/ns
       - kincony_kc868_a32

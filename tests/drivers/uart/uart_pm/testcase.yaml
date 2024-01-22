@@ -3,7 +3,7 @@ common:
     - drivers
     - uart
   harness: ztest
-  platform_allow: nrf52840dk_nrf52840
+  platform_allow: nrf52840dk/nrf52840
   harness_config:
     fixture: gpio_loopback
   depends_on: gpio

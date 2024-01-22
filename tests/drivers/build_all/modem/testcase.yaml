@@ -10,7 +10,7 @@ tests:
     platform_exclude:
       - serpente
       - particle_boron
-      - rak5010_nrf52840
+      - rak5010/nrf52840
       - litex_vexriscv
       - ip_k66f
     min_ram: 68
@@ -45,7 +45,7 @@ tests:
     platform_exclude:
       - serpente
       - particle_boron
-      - rak5010_nrf52840
+      - rak5010/nrf52840
       - litex_vexriscv
       - ip_k66f
     min_ram: 36
@@ -54,7 +54,7 @@ tests:
     platform_exclude:
       - serpente
       - particle_boron
-      - rak5010_nrf52840
+      - rak5010/nrf52840
       - litex_vexriscv
       - ip_k66f
     min_ram: 36
