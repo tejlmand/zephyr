@@ -14,4 +14,4 @@ module = BOARD_NRF9160DK
 module-str = Board Control
 source "subsys/logging/Kconfig.template.log_config"
 
-endif # BOARD_NRF52840_NRF9160DK
+endif # BOARD_NRF9160DK_NRF52840
