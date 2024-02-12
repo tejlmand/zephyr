@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf54l15_cpuapp.dtsi>
-#include "nrf54l15pdk_nrf54l15_cpuapp-pinctrl.dtsi"
+#include "nrf54l15pdk_nrf54l15_enga_cpuapp-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
