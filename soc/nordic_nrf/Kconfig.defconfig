@@ -5,7 +5,7 @@
 
 if SOC_FAMILY_NRF
 
-rsource "*/Kconfig.defconfig.series"
+rsource "*/Kconfig.defconfig"
 
 # If the kernel has timer support, enable clock control
 if SYS_CLOCK_EXISTS

@@ -1,0 +1,42 @@
+# Nordic Semiconductor nRF54H MCU line
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NRF54HX
+	bool
+	select SOC_FAMILY_NRF
+	help
+	  Nordic Semiconductor nRF54H series MCU
+
+config SOC_NRF54H20
+	bool
+	select SOC_SERIES_NRF54HX
+	help
+	  nRF54H20
+
+config SOC_NRF54H20_ENGA_CPUAPP
+	bool
+	select SOC_NRF54H20
+	help
+	  nRF54H20 ENGA CPUAPP
+
+config SOC_NRF54H20_ENGA_CPURAD
+	bool
+	select SOC_NRF54H20
+	help
+	  nRF54H20 ENGA CPURAD
+
+config SOC_NRF54H20_ENGA_CPUPPR
+	bool
+	select SOC_NRF54H20
+	help
+	  nRF54H20 ENGA CPUPPR
+
+config SOC_SERIES
+	default "nrf54h" if SOC_SERIES_NRF54HX
+
+config SOC
+	default "nrf54h20_enga_cpuapp" if SOC_NRF54H20_ENGA_CPUAPP
+	default "nrf54h20_enga_cpurad" if SOC_NRF54H20_ENGA_CPURAD
+	default "nrf54h20_enga_cpuppr" if SOC_NRF54H20_ENGA_CPUPPR

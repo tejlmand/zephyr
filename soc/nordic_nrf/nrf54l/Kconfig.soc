@@ -1,0 +1,34 @@
+# Nordic Semiconductor nRF54L MCU line
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NRF54LX
+	bool
+	select SOC_FAMILY_NRF
+	help
+	  Nordic Semiconductor nRF54L series MCU
+
+config SOC_NRF54L15
+	bool
+	select SOC_SERIES_NRF54LX
+	help
+	  NRF54L15
+
+config SOC_NRF54L15_ENGA
+	bool
+	select SOC_NRF54L15
+	help
+	  NRF54L15 ENGA
+
+config SOC_NRF54L15_ENGA_CPUAPP
+	bool
+	select SOC_NRF54L15_ENGA
+	help
+	  NRF54L15 ENGA CPUAPP
+
+config SOC_SERIES
+	default "nrf54l" if SOC_SERIES_NRF54LX
+
+config SOC
+	default "nrf54l15_enga" if SOC_NRF54L15_ENGA

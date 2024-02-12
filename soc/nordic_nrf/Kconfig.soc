@@ -17,9 +17,7 @@ config SOC_FAMILY_NRF
 	bool
 
 config SOC_FAMILY
-	string
-	default "nordic_nrf"
-	depends on SOC_FAMILY_NRF
+	default "nordic_nrf" if SOC_FAMILY_NRF
 
 config SOC_SERIES_NRF51X
 	bool
