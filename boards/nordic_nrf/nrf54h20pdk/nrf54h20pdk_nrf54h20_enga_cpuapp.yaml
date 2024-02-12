@@ -1,8 +1,8 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: nrf54h20pdk_nrf54h20_cpurad
-name: nRF54H20-PDK-nRF54H20-Radio
+identifier: nrf54h20pdk/nrf54h20_enga/cpuapp
+name: nRF54H20-PDK-nRF54H20-Application
 type: mcu
 arch: arm
 toolchain:
