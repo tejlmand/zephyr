@@ -77,8 +77,20 @@ zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards DTS APP_BOARD_DTS SUFFIX
 
 zephyr_get(DTC_OVERLAY_FILE SYSBUILD LOCAL)
 if(NOT DEFINED DTC_OVERLAY_FILE)
+  set(board_with_identifier_overlay)
+
+  if(DEFINED BOARD_IDENTIFIER)
+    # Generate overlay filename of board with identifier present
+    zephyr_build_string(board_with_identifier_overlay
+                        BOARD ${BOARD}
+                        BOARD_IDENTIFIER ${BOARD_IDENTIFIER}
+    )
+
+    set(board_with_identifier_overlay "${board_with_identifier_overlay}.overlay")
+  endif()
+
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR} DTS DTC_OVERLAY_FILE
-              NAMES "${APP_BOARD_DTS};${BOARD}.overlay;app.overlay" SUFFIX ${FILE_SUFFIX})
+              NAMES "${APP_BOARD_DTS};${board_with_identifier_overlay};${BOARD}.overlay;app.overlay" SUFFIX ${FILE_SUFFIX})
 endif()
 
 set(DTC_OVERLAY_FILE ${DTC_OVERLAY_FILE} CACHE STRING "If desired, you can \
