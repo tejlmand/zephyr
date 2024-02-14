@@ -5,6 +5,8 @@ zephyr_include_directories(.)
 
 zephyr_library_sources_ifdef(CONFIG_NRF53_SYNC_RTC sync_rtc.c)
 
+set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
+
 if (CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED AND
     NOT CONFIG_SYS_CLOCK_EXISTS)
   message(WARNING "

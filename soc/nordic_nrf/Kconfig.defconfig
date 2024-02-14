@@ -25,7 +25,7 @@ config SYS_CLOCK_TICKS_PER_SEC
 	default 32768
 
 config ARCH_HAS_CUSTOM_BUSY_WAIT
-	default y if !QEMU_TARGET
+	default y if ARM && !QEMU_TARGET
 
 config BUILD_OUTPUT_HEX
 	default y

@@ -1,12 +1,15 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_NRF soc_nrf_common.S)
+add_subdirectory_ifdef(CONFIG_RISCV_CORE_NORDIC_VPR vpr)
+
+if(CONFIG_ARM AND CONFIG_SOC_FAMILY_NRF)
+  zephyr_library_sources(soc_nrf_common.S)
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 
 zephyr_include_directories(.)
-
-set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
 
 if (CONFIG_TFM_PARTITION_PLATFORM)
   zephyr_library_sources(soc_secure.c)

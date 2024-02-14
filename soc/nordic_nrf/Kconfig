@@ -8,11 +8,11 @@
 
 config SOC_FAMILY_NRF
 	select SOC_COMPATIBLE_NRF
-	select PLATFORM_SPECIFIC_INIT
+	select PLATFORM_SPECIFIC_INIT if ARM
 
 if SOC_FAMILY_NRF
 
-source "soc/common/nordic_nrf/Kconfig.peripherals"
+rsource "common/Kconfig.peripherals"
 rsource "*/Kconfig"
 
 config NRF_SOC_SECURE_SUPPORTED
