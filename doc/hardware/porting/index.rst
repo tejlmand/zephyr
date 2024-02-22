@@ -11,3 +11,4 @@ These pages document how to port Zephyr to new hardware.
    arch.rst
    board_porting.rst
    shields.rst
+   soc_porting.rst
