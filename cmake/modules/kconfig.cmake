@@ -130,6 +130,23 @@ foreach(module_name ${ZEPHYR_MODULE_NAMES})
   endif()
 endforeach()
 
+set(hardware_model_kconfig_env)
+get_target_property(socs hardware_model SOCS)
+get_target_property(families hardware_model SOC_FAMILY)
+get_target_property(series hardware_model SOC_SERIES)
+foreach(soc ${socs})
+  get_property(s_series TARGET hardware_model PROPERTY ${soc}_SERIES)
+  get_property(s_family TARGET hardware_model PROPERTY ${soc}_FAMILY)
+  list(APPEND hardware_model_kconfig_env "${soc}_SERIES=${s_series}")
+  list(APPEND hardware_model_kconfig_env "${soc}_FAMILY=${s_family}")
+endforeach()
+list(JOIN socs "," socs)
+list(JOIN families "," families)
+list(JOIN series "," series)
+list(APPEND hardware_model_kconfig_env "SOCS=${socs}")
+list(APPEND hardware_model_kconfig_env "SOC_SERIES=${series}")
+list(APPEND hardware_model_kconfig_env "SOC_FAMILIES=${families}")
+
 # A list of common environment settings used when invoking Kconfig during CMake
 # configure time or menuconfig and related build target.
 string(REPLACE ";" "\\\;" SHIELD_AS_LIST_ESCAPED "${SHIELD_AS_LIST}")
@@ -171,6 +188,7 @@ set(COMMON_KCONFIG_ENV_SETTINGS
   EDT_PICKLE=${EDT_PICKLE}
   # Export all Zephyr modules to Kconfig
   ${ZEPHYR_KCONFIG_MODULES_DIR}
+  ${hardware_model_kconfig_env}
 )
 
 if(HWMv1)

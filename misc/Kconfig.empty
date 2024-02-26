@@ -1,0 +1,9 @@
+# Intentionally left empty.
+#
+# This file can be used when loading Kconfig files conditionally.
+# Note, the snippet:
+# if FOO
+# source "bar/Kconfig"
+# endif
+# is not a conditional load in Kconfig, but simply applies `if FOO` on all
+# entries in bar/Kconfig.

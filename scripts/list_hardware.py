@@ -248,6 +248,8 @@ def dump_v2_system(args, type, system):
         info = args.cmakeformat.format(
            TYPE='TYPE;' + type,
            NAME='NAME;' + system.name,
+           SERIES='SERIES;' + str(system.series if type == 'soc' else ''),
+           FAMILY='FAMILY;' + str(system.family if type == 'soc' or type == 'series' else ''),
            DIR='DIR;' + Path(system.folder).as_posix(),
            HWM='HWM;' + 'v2'
         )
@@ -255,6 +257,8 @@ def dump_v2_system(args, type, system):
         info = args.format.format(
            type=type,
            name=system.name,
+           series=system.series if type == 'soc' else '',
+           family=system.family if type == 'soc' or type == 'series' else '',
            dir=system.folder,
            hwm='v2'
         )

@@ -37,3 +37,26 @@ config SOC_PART_NUMBER
 
 # Source all Kconfig HWMv2 from SoC roots.
 source "$(KCONFIG_BINARY_DIR)/soc/Kconfig.soc"
+
+config SOC_SERIES_NONE
+	bool
+	help
+	  Setting selected when the SoC is not part of a SoC series
+
+config SOC_FAMILY_NONE
+	bool
+	help
+	  Setting selected when the SoC is not part of a SoC family
+
+SOCS := $(get_env_list,SOCS)
+SOC_SERIES := $(get_env_list,SOC_SERIES)
+SOC_FAMILIES := $(get_env_list,SOC_FAMILIES)
+
+RECURSIVE_SOURCE :=
+rsource "Kconfig.soc"
+
+RECURSIVE_SOURCE :=
+rsource "Kconfig.soc.series"
+
+RECURSIVE_SOURCE :=
+rsource "Kconfig.soc.family"

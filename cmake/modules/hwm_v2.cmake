@@ -22,6 +22,8 @@ if(NOT HWMv2)
   return()
 endif()
 
+add_custom_target(hardware_model)
+
 # Internal helper function for creation of Kconfig files.
 function(kconfig_gen bin_dir file dirs)
   file(MAKE_DIRECTORY "${bin_dir}")
@@ -44,7 +46,7 @@ list(TRANSFORM SOC_ROOT PREPEND "--soc-root=" OUTPUT_VARIABLE soc_root_args)
 execute_process(COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/list_hardware.py
                 ${arch_root_args} ${soc_root_args}
                 --archs --socs
-                --cmakeformat={TYPE}\;{NAME}\;{DIR}\;{HWM}
+                --cmakeformat={TYPE}\;{HWM}\;{NAME}\;{SERIES}\;{FAMILY}\;{DIR}
                 OUTPUT_VARIABLE ret_hw
                 ERROR_VARIABLE err_hw
                 RESULT_VARIABLE ret_val
@@ -70,14 +72,19 @@ while(TRUE)
     string(TOUPPER "${ARCH_V2_NAME}" ARCH_V2_NAME_UPPER)
     set(ARCH_V2_${ARCH_V2_NAME_UPPER}_DIR ${ARCH_V2_DIR})
   elseif(HWM_TYPE MATCHES "^soc|^series|^family")
-    cmake_parse_arguments(SOC_V2 "" "NAME;DIR;HWM" "" ${line})
+    cmake_parse_arguments(SOC_V2 "" "NAME;DIR;HWM;SERIES;FAMILY" "" ${line})
 
     list(APPEND kconfig_soc_source_dir "${SOC_V2_DIR}")
 
     if(HWM_TYPE STREQUAL "soc")
       set(setting_name SOC_${SOC_V2_NAME}_DIR)
+      set_property(TARGET hardware_model APPEND PROPERTY SOCS ${SOC_V2_NAME})
+      set_property(TARGET hardware_model PROPERTY ${SOC_V2_NAME}_SERIES ${SOC_V2_SERIES})
+      set_property(TARGET hardware_model PROPERTY ${SOC_V2_NAME}_FAMILY ${SOC_V2_FAMILY})
     else()
       set(setting_name SOC_${HWM_TYPE}_${SOC_V2_NAME}_DIR)
+      string(TOUPPER ${HWM_TYPE} HWM_TYPE_UPPER)
+      set_property(TARGET hardware_model APPEND PROPERTY SOC_${HWM_TYPE_UPPER} ${SOC_V2_NAME})
     endif()
     # We support both SOC_foo_DIR and SOC_FOO_DIR.
     set(${setting_name} ${SOC_V2_DIR})
