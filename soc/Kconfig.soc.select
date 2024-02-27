@@ -1,0 +1,5 @@
+
+SERIES_UPPER := $(sanitize_upper,$($(SOC)_SERIES))
+
+config SOC_$(SOC_UPPER)
+	select SOC_SERIES_$(SERIES_UPPER)

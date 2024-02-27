@@ -852,6 +852,43 @@ def sanitize_upper(kconf, _, string):
     return re.sub(r'[^a-zA-Z0-9_]', '_', string).upper()
 
 
+def defined(kconf, _, variable, true_value, false_value):
+    """
+    Check if the variable is defined with a value.
+    If the variable defines a value, then <true_value> is returned
+    Else <false_value> is returned.
+    """
+    if variable == "":
+        return false_value
+    return true_value
+
+
+def get(kconf, _, list, index):
+    """
+    Get the value from the list at <index>
+    This list is a comma separated string.
+    """
+    local_list = list.split(',')
+    return local_list[int(index)]
+
+
+def get_env_list(kconf, _, name):
+    """
+    Return the environment list setting matching name.
+    """
+    return os.environ.get(f"{name}")
+
+
+def remove(kconf, _, inlist, element):
+    """
+    Remove the element from the list.
+    This list is a comma separated string.
+    """
+    local_list = inlist.split(',')
+    local_list.remove(element)
+    return ','.join(local_list)
+
+
 def shields_list_contains(kconf, _, shield):
     """
     Return "n" if cmake environment variable 'SHIELD_AS_LIST' doesn't exist.
@@ -921,4 +958,8 @@ functions = {
         "dt_chosen_partition_addr_hex": (dt_chosen_partition_addr, 1, 3),
         "sanitize_upper": (sanitize_upper, 1, 1),
         "shields_list_contains": (shields_list_contains, 1, 1),
+        "defined": (defined, 3, 3),
+        "remove": (remove, 2, 2),
+        "get": (get, 2, 2),
+        "get_env_list": (get_env_list, 1, 1),
 }

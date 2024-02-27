@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+
+# SPDX-License-Identifier: Apache-2.0
+
+# Convert list of SoCs into Kconfig settings
+
+FAMILY := $(get,$(SOC_FAMILIES),0)
+FAMILY_UPPER := $(sanitize_upper,$(FAMILY))
+SOC_FAMILIES := $(remove,$(SOC_FAMILIES),$(FAMILY))
+
+config SOC_FAMILY_$(FAMILY_UPPER)
+	bool
+
+config SOC_FAMILY
+	default "$(FAMILY)" if SOC_FAMILY_$(FAMILY_UPPER)
+
+RECURSIVE_SOURCE := ./$(RECURSIVE_SOURCE)
+source "$(defined,$(SOC_FAMILIES),soc/$(RECURSIVE_SOURCE)Kconfig.soc.family,misc/Kconfig.empty)"
