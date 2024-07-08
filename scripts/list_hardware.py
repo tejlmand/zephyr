@@ -103,22 +103,10 @@ class Systems:
                             soc_name, *components = qualifiers.split('/')
                             found_match = False
 
-                            # Allow 'ns' as final qualifier until "virtual" CPUs are ported to soc.yml
-                            # https://github.com/zephyrproject-rtos/zephyr/issues/70721
-                            if components and components[-1] == 'ns':
-                                components.pop()
-
                             for soc in self._socs + self._extended_socs:
                                 if re.match(fr'^{soc_name}$', soc.name) is not None:
-                                    if soc.cpuclusters and components:
-                                        check_string = '/'.join(components)
-                                        for cpucluster in soc.cpuclusters:
-                                            if re.match(fr'^{check_string}$', cpucluster) is not None:
-                                                found_match = True
-                                                break
-                                    elif not soc.cpuclusters and not components:
-                                        found_match = True
-                                        break
+                                    found_match = True
+                                    break
 
                             if found_match is False:
                                 sys.exit(f'ERROR: SoC qualifier match unresolved: {qualifiers}')
