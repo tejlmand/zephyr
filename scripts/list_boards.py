@@ -311,6 +311,10 @@ def extend_v2_boards(boards, board_extensions):
                 sys.exit(f'ERROR: Variant: {v["name"]}, defined multiple times for board: '
                          f'{board.name}.\nLast defined in {board_yml}')
             node.variants.append(Variant.from_dict(v))
+            if isinstance(node, Soc) and node.cpuclusters and node.variants:
+                sys.exit(f'ERROR: Variant: {v["name"]}, extends board qualifier {v["qualifier"]} '
+                         'but SoC contains CPU clusters.\n'
+                         f'{v["name"]} variant must specify a CPU cluster in its qualifier.')
 
 
 # Note that this does not share the args.board functionality of find_v2_boards
