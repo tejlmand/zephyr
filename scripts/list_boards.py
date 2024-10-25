@@ -217,6 +217,14 @@ def load_v2_boards(board_name, board_yml, systems):
             if len(mutual_exclusive - board.keys()) < 1:
                 sys.exit(f'ERROR: Malformed "board" section in file: {board_yml.as_posix()}\n'
                          f'{mutual_exclusive} are mutual exclusive at this level.')
+
+            for s in board.get('socs', {}):
+                if systems.get_soc(s['name']).cpuclusters:
+                    vn = [v['name'] for v in s.get('variants', []) if v.get('cpucluster') is None]
+                    if vn:
+                        sys.exit(f'ERROR: Malformed {vn} variant in file: {board_yml.as_posix()}\n'
+                                 '"cpucluster" field required when SoC defines CPU clusters.')
+
             socs = [Soc.from_soc(systems.get_soc(s['name']), s.get('variants', []))
                     for s in board.get('socs', {})]
 
