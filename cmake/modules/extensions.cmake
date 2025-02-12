@@ -1454,7 +1454,7 @@ function(zephyr_code_relocate)
   if(CODE_REL_PHDR)
     set(CODE_REL_LOCATION "${CODE_REL_LOCATION}\ :${CODE_REL_PHDR}")
   endif()
-  # We use the "|" character to separate code relocation directives, instead of
+  # Each code relocation directives is place on independent line, instead of
   # using set_property(APPEND) to produce a ";"-separated CMake list. This way,
   # each directive can embed multiple CMake lists, representing flags and files,
   # the latter of which can come from generator expressions.
@@ -1462,7 +1462,7 @@ function(zephyr_code_relocate)
     PROPERTY COMPILE_DEFINITIONS)
   set_property(TARGET code_data_relocation_target
     PROPERTY COMPILE_DEFINITIONS
-    "${code_rel_str}|${CODE_REL_LOCATION}:${flag_list}:${file_list}")
+    "${code_rel_str}\n${CODE_REL_LOCATION}:${flag_list}:${file_list}")
 endfunction()
 
 # Usage:
