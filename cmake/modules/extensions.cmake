@@ -3037,15 +3037,24 @@ endfunction()
 # This function extends the CMake string function by providing additional
 # manipulation arguments to CMake string.
 #
-# ESCAPE:   Ensure that any single '\' in the input string is escaped with the
-#           escape char '\'. For example the string 'foo\bar' will be escaped
-#           so that it becomes 'foo\\bar'.
+# ESCAPE:   Ensure that any single '\' or '\"' in string is properly escaped.
+#
+#           A '\"' is escaped with an extra set of '\\' to ensure that the
+#           double quote is not written as a single \".
+#           For example the string 'foo\"bar' will be escaped so that it becomes
+#           'foo\\\"bar'.
+#
+#           A single escape char '\' will be escaped with an extra '\'.
+#           For example the string 'foo\bar' will be escaped so that it becomes
+#           'foo\\bar'.
 #           Backslashes which are already escaped will not be escaped further,
 #           for example 'foo\\bar' will not be modified.
-#           This is useful for handling of windows path separator in strings or
-#           when strings contains newline escapes such as '\n' and this can
-#           cause issues when writing to a file where a '\n' is desired in the
-#           string instead of a newline.
+#
+#           This is useful for handling CMake string which contains '\"' like
+#           Kconfig strings passed on command line windows path separator in
+#           strings, or when strings contains newline escapes such as '\n' as
+#           this can cause issues when writing to a file if a literal'\n' is
+#           desired in the string instead of a newline.
 #
 # SANITIZE: Ensure that the output string does not contain any special
 #           characters. Special characters, such as -, +, =, $, etc. are
@@ -3084,7 +3093,9 @@ function(zephyr_string)
     # If a single '\' is discovered, such as 'foo\bar', then it must be escaped like: 'foo\\bar'
     # \\1 and \\2 are keeping the match patterns, the \\\\ --> \\ meaning an escaped '\',
     # which then becomes a single '\' in the final string.
-    string(REGEX REPLACE "([^\\][\\])([^\\])" "\\1\\\\\\2" work_string "${ZEPHYR_STRING_UNPARSED_ARGUMENTS}")
+    set(work_string "${ZEPHYR_STRING_UNPARSED_ARGUMENTS}")
+    string(REGEX REPLACE "([^\\][\\])([\"][^\\])" "\\1\\\\\\\\\\2" work_string "${work_string}")
+    string(REGEX REPLACE "([^\\][\\])([^\\])" "\\1\\\\\\2" work_string "${work_string}")
   endif()
 
   set(${return_arg} ${work_string} PARENT_SCOPE)
