@@ -5,15 +5,25 @@
 #####################################################
 # This section covers flags related to optimization #
 #####################################################
-set_compiler_property(PROPERTY no_optimization)
+# Old property names now deprecated.
+# New optimization property names corresponds to the similar Kconfig settings.
+set_compiler_property(PROPERTY no_optimization $<TARGET_PROPERTY:compiler,no_optimizations>)
+set_compiler_property(PROPERTY optimization_debug $<TARGET_PROPERTY:compiler,debug_optimizations>)
+set_compiler_property(PROPERTY optimization_speed $<TARGET_PROPERTY:compiler,speed_optimizations>)
+set_compiler_property(PROPERTY optimization_size $<TARGET_PROPERTY:compiler,size_optimizations>)
+set_compiler_property(PROPERTY optimization_size_aggressive
+                      $<TARGET_PROPERTY:compiler,size_optimizations_aggressive>
+)
 
-set_compiler_property(PROPERTY optimization_debug)
+set_compiler_property(PROPERTY no_optimizations)
 
-set_compiler_property(PROPERTY optimization_speed)
+set_compiler_property(PROPERTY debug_optimizations)
 
-set_compiler_property(PROPERTY optimization_size)
+set_compiler_property(PROPERTY speed_optimizations)
 
-set_compiler_property(PROPERTY optimization_size_aggressive)
+set_compiler_property(PROPERTY size_optimizations)
+
+set_compiler_property(PROPERTY size_optimizations_aggressive)
 
 set_compiler_property(PROPERTY optimization_fast)
 
