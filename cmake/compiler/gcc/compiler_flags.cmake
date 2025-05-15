@@ -116,14 +116,12 @@ set_compiler_property(PROPERTY warning_error_coding_guideline
 # GCC compiler flags for C standard. The specific standard must be appended by user.
 set_compiler_property(PROPERTY cstd -std=)
 
-if (NOT CONFIG_NEWLIB_LIBC AND
-    NOT (CONFIG_PICOLIBC AND NOT CONFIG_PICOLIBC_USE_MODULE) AND
-    NOT COMPILER STREQUAL "xcc" AND
-    NOT CONFIG_HAS_ESPRESSIF_HAL AND
-    NOT CONFIG_NATIVE_BUILD)
-  set_compiler_property(PROPERTY nostdinc -nostdinc)
-  set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
-endif()
+set_compiler_property(PROPERTY nostdinc -nostdinc)
+# Keeping nostdinc property empty. The compiler will populate include paths
+# from its default search path. The toolchain may adjust the value to a
+# specific location, for example gcc infrastructure will set the value based
+# on output from --print-libgcc-file-name.
+set_compiler_property(APPEND PROPERTY nostdinc_include)
 
 check_set_compiler_property(PROPERTY no_printf_return_value -fno-printf-return-value)
 

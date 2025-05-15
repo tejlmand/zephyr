@@ -109,6 +109,7 @@ endif()
 foreach(isystem_include_dir ${NOSTDINC})
   list(APPEND isystem_include_flags -isystem "\"${isystem_include_dir}\"")
 endforeach()
+set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
 
 # The CMAKE_REQUIRED_FLAGS variable is used by check_c_compiler_flag()
 # (and other commands which end up calling check_c_source_compiles())
